@@ -1,0 +1,40 @@
+{
+  "name": "pinequest-s4-e1-team-3",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^3.0.67",
+    "@clerk/nextjs": "^7.4.3",
+    "@prisma/client": "^7.8.0",
+    "@supabase/supabase-js": "^2.107.0",
+    "ai": "^6.0.196",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.17.0",
+    "next": "^16.2.7",
+    "openai": "^6.42.0",
+    "radix-ui": "^1.4.3",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "shadcn": "^4.10.0",
+    "tailwind-merge": "^3.6.0",
+    "tw-animate-css": "^1.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.35",
+    "postcss": "^8",
+    "prisma": "^7.8.0",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}
