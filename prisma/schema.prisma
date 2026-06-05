@@ -4,14 +4,13 @@
 // ============================================
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  extensions = [vector] // pgvector — Supabase дээр идэвхжүүлнэ
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ============================================
@@ -22,6 +21,8 @@ model User {
   clerkId   String   @unique // Clerk auth-ийн ID
   email     String?  @unique
   name      String?
+  birthday  String?
+  gender    String?
   createdAt DateTime @default(now())
 
   flowers     Flower[]
