@@ -1,23 +1,41 @@
 // ============================================
-//  Reflect — Prisma Schema
-//  Garden metaphor: хүлэмж → цэцэг → яриа → memory tree → цөөрөм
+//  Bloom — Prisma Schema
+//
+//  Core concept:
+//  Every conversation a user has becomes a Flower in their garden.
+//  The user first picks a FlowerSpecies (Workshop) which sets the AI persona.
+//  After the conversation ends, the pipeline extracts memories, detects mood,
+//  and updates the Flower's visual state (growthStage, mood, summary, tags).
+//
+//  Flow:
+//    FlowerSpecies (chosen in Workshop)
+//      → Flower (planted in garden, holds posX/posY)
+//        → Conversation (the actual chat session)
+//          → Messages (individual chat messages)
+//          → Memories (extracted insights, stored with embeddings)
+//          → MoodEntry (the "stone" thrown into the pond after completion)
 // ============================================
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
   extensions = [vector]
 }
 
 // ============================================
 //  USER
+//  Created via /api/users after Clerk sign-up.
+//  clerkId links this record to the Clerk auth identity.
 // ============================================
 model User {
   id        String   @id @default(cuid())
-  clerkId   String   @unique // Clerk auth-ийн ID
+  clerkId   String   @unique
   email     String?  @unique
   name      String?
   birthday  String?
@@ -31,61 +49,118 @@ model User {
 }
 
 // ============================================
-//  FLOWER SPECIES — тогтсон цэцгийн төрлүүд
-//  Цэцэг бүр өөр зан төлөвтэй (chat persona)
+//  FLOWER SPECIES — the 5 types available in the Workshop
+//
+//  Each species represents an emotional intention:
+//    sunflower      → career & purpose
+//    rose           → relationships & connection
+//    lotus          → self-reflection & inner peace
+//    lavender       → stress & emotional relief
+//    cherry-blossom → future goals & dreams
+//
+//  systemPrompt: injected into the AI's context so the companion
+//  personality matches the chosen intention.
+//  color + svgPath: used by the frontend to render the correct flower.
+//
+//  Seeded via: prisma/seed.ts (run: npx prisma db seed)
 // ============================================
 model FlowerSpecies {
-  id           String  @id @default(cuid())
-  key          String  @unique // "rose", "tulip", "sunflower", "lavender"
-  name         String // "Сарнай"
-  description  String // товч тайлбар
-  color        String // hex өнгө — UI-д ашиглана
-  svgPath      String // /public/flowers/rose.svg
-  systemPrompt String // энэ цэцгийн chat зан төлөв
+  id           String @id @default(cuid())
+  key          String @unique // "sunflower" | "rose" | "lotus" | "lavender" | "cherry-blossom"
+  name         String
+  description  String // shown in the Workshop picker UI
+  color        String // hex — frontend uses this for flower tint
+  svgPath      String // path to SVG asset, e.g. "/flowers/sunflower.svg"
+  systemPrompt String // AI persona injected into buildSystemPrompt()
 
   flowers Flower[]
 }
 
 // ============================================
-//  FLOWER — гацаанд тарьсан нэг цэцэг
-//  Нэг цэцэг = нэг яриа
+//  FLOWER — one planted flower = one conversation
+//
+//  Created when the user selects a species in the Workshop.
+//  posX / posY: position in the garden (0–100 percentage grid).
+//    Frontend scales these to actual canvas pixels.
+//
+//  After conversation completes (POST /api/conversations/:id/complete):
+//    summary     → short description of what was discussed
+//    tags        → topic keywords extracted by AI (e.g. ["career", "startup"])
+//    mood        → dominant mood detected (e.g. "reflective")
+//    growthStage → set to BLOOMING
+//    completedAt → timestamp of completion
+//
+//  growthStage before completion is updated based on message count
+//  (see computeGrowthStage in src/lib/memoryPipeline.ts).
 // ============================================
 model Flower {
-  id        String   @id @default(cuid())
-  userId    String
-  speciesId String
-  plantedAt DateTime @default(now())
-
-  // garden дээрх байрлал
-  posX Float
-  posY Float
+  id          String      @id @default(cuid())
+  userId      String
+  speciesId   String
+  plantedAt   DateTime    @default(now())
+  posX        Float                         // garden X position (0–100)
+  posY        Float                         // garden Y position (0–100)
+  summary     String?                       // set after pipeline runs
+  tags        String[]    @default([])      // set after pipeline runs
+  mood        String?                       // set after pipeline runs
+  growthStage GrowthStage @default(SEED)    // visual growth state
+  completedAt DateTime?                     // null until user ends conversation
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   species      FlowerSpecies @relation(fields: [speciesId], references: [id])
-  conversation Conversation? // цэцэг тарихад яриа үүснэ
+  conversation Conversation?
 
   @@index([userId])
 }
 
 // ============================================
-//  CONVERSATION — нэг цэцэгт хадгалагдсан яриа
+//  GROWTH STAGE — visual state of the flower in the garden
+//
+//  Progression is based on message count:
+//    SEED     → 0 messages (just created)
+//    SPROUT   → 1–4 messages
+//    YOUNG    → 5–9 messages
+//    MATURE   → 10–14 messages
+//    BLOOMING → conversation completed (or 15+ messages)
+//
+//  The frontend renders a different SVG/animation for each stage.
 // ============================================
-model Conversation {
-  id        String   @id @default(cuid())
-  flowerId  String   @unique
-  title     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  flower    Flower     @relation(fields: [flowerId], references: [id], onDelete: Cascade)
-  messages  Message[]
-  memories  Memory[]
-  notes     Note[] // ярианаас үүссэн note-ууд
-  moodEntry MoodEntry? // яриа дуусахад шидсэн чулуу = нэг mood entry
+enum GrowthStage {
+  SEED
+  SPROUT
+  YOUNG
+  MATURE
+  BLOOMING
 }
 
 // ============================================
-//  MESSAGE — яриа доторх мессеж
+//  CONVERSATION — the chat session attached to a flower
+//
+//  flowerId is unique — one flower = one conversation, always.
+//  isCompleted / completedAt: set by POST /api/conversations/:id/complete
+//    which also triggers the memory extraction pipeline.
+// ============================================
+model Conversation {
+  id          String   @id @default(cuid())
+  flowerId    String   @unique
+  title       String?
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  completedAt DateTime?
+
+  flower    Flower      @relation(fields: [flowerId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  memories  Memory[]
+  notes     Note[]
+  moodEntry MoodEntry?  // created when conversation completes (the pond stone)
+}
+
+// ============================================
+//  MESSAGE — individual messages inside a conversation
+//
+//  role: "user" for user messages, "assistant" for AI responses.
+//  These are loaded on every chat request to provide full history context.
 // ============================================
 model Message {
   id             String   @id @default(cuid())
@@ -105,8 +180,22 @@ enum Role {
 }
 
 // ============================================
-//  MEMORY — ярианаас гаргаж авсан санах ой
-//  Memory tree-д харагдана, embedding-ээр хооронд нь холбоно
+//  MEMORY — extracted insight from a conversation
+//
+//  After a conversation completes, the AI pipeline reads all messages
+//  and extracts structured memories (goals, concerns, lessons, etc.).
+//
+//  embedding: 1536-dimension vector from text-embedding-3-small.
+//    Stored in pgvector and used for semantic similarity search.
+//    On each new chat message, the top 3 most similar memories
+//    are retrieved and injected into the AI's system prompt so the
+//    AI "remembers" relevant past thoughts naturally.
+//
+//  Two memory sources exist:
+//    1. Profile memories (goal, value, concern, lesson) — always injected,
+//       describe who the user IS.
+//    2. Semantic memories — retrieved by cosine similarity to the current
+//       message, describe what's RELEVANT to what the user is saying now.
 // ============================================
 model Memory {
   id             String                       @id @default(cuid())
@@ -123,25 +212,43 @@ model Memory {
   @@index([userId])
 }
 
+// ============================================
+//  MEMORY TYPE — category of extracted insight
+//
+//  Used for two purposes:
+//    1. Profile memories: goal, value, concern, lesson are always
+//       loaded and injected as "who this user is" context.
+//    2. All types participate in semantic search via pgvector.
+// ============================================
 enum MemoryType {
-  goal // зорилго
-  value // үнэт зүйл
-  decision // шийдвэр
-  lesson // сургамж
-  concern // санаа зовнил
+  goal         // long-term aspiration
+  value        // core belief or principle
+  decision     // a significant choice made
+  lesson       // something learned from experience
+  concern      // ongoing worry or challenge
+  reflection   // general personal insight
+  relationship // thoughts about people in their life
+  career       // work or professional thoughts
+  habit        // recurring behavior patterns
 }
 
 // ============================================
-//  NOTE — хувийн сануулга
-//  Шүүгээнд хийх (archived), устгах боломжтой
+//  NOTE — quick personal note (desk feature)
+//
+//  Appears beside the chat on the Botanist's Desk.
+//  Can be linked to a conversation or standalone.
+//  archived: moved to archive shelf on the desk.
+//
+//  Notes are also treated as memory sources — the AI can
+//  reference them via semantic search just like conversation memories.
 // ============================================
 model Note {
   id             String   @id @default(cuid())
   userId         String
-  conversationId String? // яриатай холбоотой бол
+  conversationId String?
   title          String
   body           String
-  archived       Boolean  @default(false) // шүүгээнд хийсэн эсэх
+  archived       Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -152,19 +259,30 @@ model Note {
 }
 
 // ============================================
-//  MOOD ENTRY — яриа дуусахад шидсэн чулуу
-//  Нэг яриа → нэг чулуу → нэг mood entry
-//  rippleColor: усны долгионы өнгө (сэтгэл санааг илэрхийлнэ)
-//  weather: цаг агаарын төлөөлөл (өнгөрсөн өдрүүдийг харуулна)
+//  MOOD ENTRY — the "stone" thrown into the pond
+//
+//  One MoodEntry is created per completed conversation.
+//  conversationId is @unique → enforces one stone per conversation.
+//
+//  mood:        detected by AI pipeline (e.g. "reflective")
+//  rippleColor: hex color of the water ripple animation
+//               derived from mood via MOOD_COLORS in src/lib/moodMapping.ts
+//  weather:     weather metaphor for the Forecast feature
+//               derived from mood via MOOD_TO_WEATHER in src/lib/moodMapping.ts
+//  intensity:   1–5, controls ripple size and stone size in the pond UI
+//               derived from conversation length and emotional weight
+//
+//  Pond UI:     shows all stones ever thrown (full history)
+//  Forecast UI: groups stones by day to show dominant weather per day
 // ============================================
 model MoodEntry {
   id             String   @id @default(cuid())
   userId         String
-  conversationId String?  @unique // аль ярианаас үүссэн (чулуугүй шидвэл null)
-  mood           String // "calm", "anxious", "happy", "sad", "confused"
-  rippleColor    String // hex — долгионы өнгө
-  weather        String // "sunny", "rainy", "cloudy", "stormy", "partly_cloudy"
-  intensity      Int      @default(3) // 1–5 (долгионы хүч / чулууны хэмжээ)
+  conversationId String?  @unique
+  mood           String
+  rippleColor    String
+  weather        String
+  intensity      Int      @default(3) // 1–5
   note           String?
   date           DateTime @default(now())
 

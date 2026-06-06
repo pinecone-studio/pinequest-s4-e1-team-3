@@ -13,10 +13,14 @@ export default async function Home() {
       <h1 className="text-4xl font-bold">Welcome to PineQuest</h1>
       {user && (
         <p className="text-muted-foreground">
-          Signed in as <span className="font-medium text-foreground">{user.emailAddresses[0]?.emailAddress}</span>
+          Signed in as{" "}
+          <span className="font-medium text-foreground">
+            {user.emailAddresses[0]?.emailAddress}
+          </span>
         </p>
       )}
       <LogoutButton />
     </main>
   );
 }
+1;
