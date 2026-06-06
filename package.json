@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "next lint"
   },
+  "prisma": {
+    "seed": "bun prisma/seed.ts"
+  },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.67",
     "@clerk/nextjs": "^7.4.3",
