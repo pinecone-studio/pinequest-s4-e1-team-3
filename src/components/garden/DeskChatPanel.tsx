@@ -72,7 +72,7 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
   const { data: archived, refetch: refetchArchived } = useFetchJson<Note[]>(
     "/api/notes?archived=true",
   );
-  const pinnedNotes = (pinned ?? []).slice(0, 2);
+  const pinnedNotes = pinned ?? [];
   const archivedNotes = archived ?? [];
   const archivedCount = archivedNotes.length;
 
@@ -114,6 +114,12 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
       body: JSON.stringify({ archived: value }),
     });
     refetchNotes();
+    refetchArchived();
+  }
+
+  // Permanently remove a note from the drawer (DELETE /api/notes/:id).
+  async function deleteNote(id: string) {
+    await fetch(`/api/notes/${id}`, { method: "DELETE" });
     refetchArchived();
   }
 
@@ -344,7 +350,13 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
                 className={"dc-msg " + (m.role === "user" ? "me" : "them")}
               >
                 <div className="dc-bubble">
-                  {m.content || <span className="dc-typing">●●●</span>}
+                  {m.content || (
+                    <span className="dc-typing" aria-label="Sage is thinking">
+                      <span />
+                      <span />
+                      <span />
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -455,25 +467,37 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
               >
                 Close drawer
               </button>
-            </div>
+            </>
           ) : (
             <>
               <div className="dc-corkboard">
-                {pinnedNotes.map((note, i) => (
-                  <article key={note.id} className={"dc-pin pin-" + i}>
-                    <button
-                      type="button"
-                      className="dc-pin-archive"
-                      onClick={() => setArchived(note.id, true)}
-                      aria-label="Tuck into the drawer"
-                      title="Tuck into the drawer"
+                {pinnedNotes.length === 0 ? (
+                  <p className="dc-cork-empty">
+                    No notes pinned yet — use “✎ Pin a note” below.
+                  </p>
+                ) : (
+                  pinnedNotes.map((note, i) => (
+                    <article
+                      key={note.id}
+                      className={"dc-pin pin-" + (i % 2)}
+                      style={{ backgroundImage: `url(/garden/note-${(i % 2) + 1}.png)` }}
                     >
-                      ⤓
-                    </button>
-                    <h3>{note.title}</h3>
-                    <p>{note.body}</p>
-                  </article>
-                ))}
+                      <button
+                        type="button"
+                        className="dc-pin-archive"
+                        onClick={() => setArchived(note.id, true)}
+                        aria-label="Tuck into the drawer"
+                        title="Tuck into the drawer"
+                      >
+                        ⤓
+                      </button>
+                      <div className="dc-pin-text">
+                        <h3>{note.title}</h3>
+                        <p>{note.body}</p>
+                      </div>
+                    </article>
+                  ))
+                )}
               </div>
 
               {/* tappable center drawer → opens the archived notes */}
