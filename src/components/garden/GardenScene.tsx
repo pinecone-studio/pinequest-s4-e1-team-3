@@ -134,12 +134,7 @@ export function GardenScene({
     error,
   } = useFetchJson<FlowerSummary[]>("/api/flowers");
   const [activeFilter, setActiveFilter] = useState("all");
-<<<<<<< Updated upstream
-  const [timeIndex, setTimeIndex] = useState(0);
-  const time = TIME_PRESETS[timeIndex];
-=======
   const time = nightMode ? TIME_PRESETS[1] : TIME_PRESETS[0];
->>>>>>> Stashed changes
 
   // DOM refs
   const vpRef = useRef<HTMLDivElement>(null); // the viewport element
@@ -308,14 +303,6 @@ export function GardenScene({
           style={{ objectFit: "cover", filter: time.filter }}
         />
 
-<<<<<<< Updated upstream
-      <button
-        type="button"
-        className="garden-tree-hotspot"
-        onClick={onOpenMemoryTree}
-        aria-label="Open the Memory Tree"
-        title="Open the Memory Tree"
-=======
         {nightMode &&
           FIREFLIES.map((f, i) => (
             <div
@@ -370,7 +357,6 @@ export function GardenScene({
           background: time.tint,
           pointerEvents: "none",
         }}
->>>>>>> Stashed changes
       />
 
       {/* Layer 2 — flowers + tree hotspot (same fx = 1, locked to the painting) */}
