@@ -330,7 +330,7 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
             )}
           </header>
 
-          <div className="dc-body">
+          <div className={"dc-body" + (messages.length === 0 ? " dc-body-empty" : "")}>
             {topic && (
               <div className="dc-topic">
                 {topic}
@@ -467,7 +467,7 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
               >
                 Close drawer
               </button>
-            </>
+            </div>
           ) : (
             <>
               <div className="dc-corkboard">

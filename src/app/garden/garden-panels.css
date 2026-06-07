@@ -408,6 +408,8 @@
   position: absolute;
   inset: 0;
   z-index: 40;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   display: flex;
   box-sizing: border-box;
@@ -522,7 +524,9 @@
   color: var(--g-ivory, #f7f1e4);
   background: var(--g-sage, #7c8a5a);
   box-shadow: 0 6px 16px rgba(60, 70, 40, 0.28);
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 .dc-end:hover:not(:disabled) {
   transform: translateY(-1px);
@@ -554,6 +558,11 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+/* Before any messages exist, center the topic pill + greeting as a group
+   in the middle of the pane instead of leaving them stranded near the top. */
+.dc-body-empty {
+  justify-content: center;
 }
 .dc-topic {
   align-self: center;
@@ -760,7 +769,9 @@
   color: #4a4334;
   filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.32));
   transform-origin: center;
-  transition: transform 0.22s ease, filter 0.22s ease;
+  transition:
+    transform 0.22s ease,
+    filter 0.22s ease;
 }
 .dc-pin.pin-0 {
   transform: rotate(-3deg);
@@ -945,7 +956,9 @@
   background: rgba(255, 255, 255, 0.7);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   opacity: 0.7; /* always visible so it's discoverable + clickable */
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 .dc-pin:hover .dc-pin-archive {
   opacity: 1;
