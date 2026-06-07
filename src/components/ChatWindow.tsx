@@ -142,7 +142,11 @@ export function ChatWindow({
               }`}
             >
               {m.content || (
-                <span className="opacity-50 animate-pulse">●●●</span>
+                <span className="inline-flex items-center gap-1 py-1" aria-label="thinking">
+                  <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50 animate-bounce [animation-delay:0ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50 animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50 animate-bounce [animation-delay:300ms]" />
+                </span>
               )}
             </div>
           </div>

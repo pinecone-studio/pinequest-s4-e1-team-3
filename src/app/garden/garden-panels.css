@@ -599,17 +599,38 @@
   color: var(--g-ivory);
   border-bottom-right-radius: 6px;
 }
+/* "Sage is thinking" — three soft dots that bounce in sequence while
+   the reply streams in. Gentler / sweeter than a static blinking ●●●. */
 .dc-typing {
-  opacity: 0.6;
-  animation: dc-pulse 1s ease-in-out infinite;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 2px;
 }
-@keyframes dc-pulse {
+.dc-typing span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--g-sage, #7c8a5a);
+  opacity: 0.55;
+  animation: dc-bounce 1.3s ease-in-out infinite;
+}
+.dc-typing span:nth-child(2) {
+  animation-delay: 0.18s;
+}
+.dc-typing span:nth-child(3) {
+  animation-delay: 0.36s;
+}
+@keyframes dc-bounce {
   0%,
+  80%,
   100% {
-    opacity: 0.3;
+    transform: translateY(0) scale(0.85);
+    opacity: 0.45;
   }
-  50% {
-    opacity: 0.7;
+  40% {
+    transform: translateY(-5px) scale(1);
+    opacity: 0.9;
   }
 }
 
@@ -703,53 +724,102 @@
 /* pinned notes tacked to the corkboard */
 .dc-corkboard {
   position: absolute;
-  top: 9%;
+  top: 11%;
   left: 8%;
   right: 8%;
   z-index: 2;
   display: flex;
-  gap: 6%;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 20px 6%;
   justify-content: center;
+  /* visible (not scroll) so a hover-zoomed note is never clipped by the
+     corkboard edge. Pinned notes are few; old ones live in the drawer. */
+  overflow: visible;
 }
+.dc-cork-empty {
+  margin: 18px auto 0;
+  font-size: 13px;
+  font-style: italic;
+  color: #4a4334;
+  background: rgba(243, 236, 216, 0.8);
+  padding: 10px 16px;
+  border-radius: 10px;
+}
+/* Each pinned note is a painted paper sprite (public/garden/note-1.png /
+   note-2.png, alternating). The pin is already drawn in the art, so there's
+   no CSS pin dot or cream card — the text just sits in the paper's face. */
 .dc-pin {
   position: relative;
-  width: 200px;
-  background: #f3ecd8;
-  padding: 26px 22px 30px;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+  width: 210px;
+  aspect-ratio: 385 / 257;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
   font-family: "Cormorant Garamond", Georgia, serif;
   color: #4a4334;
-}
-.dc-pin::before {
-  content: "";
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #7fa0c4, #3a567a 70%);
-  box-shadow: 0 4px 7px rgba(0, 0, 0, 0.35);
+  filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.32));
+  transform-origin: center;
+  transition: transform 0.22s ease, filter 0.22s ease;
 }
 .dc-pin.pin-0 {
   transform: rotate(-3deg);
 }
 .dc-pin.pin-1 {
   transform: rotate(2.5deg);
-  margin-top: 42px;
+}
+/* Hover-zoom: a note with lots of text is clipped at rest, so on hover it
+   straightens, scales up, and its text un-clamps so the whole note is
+   readable. Long bodies scroll inside the enlarged paper face. */
+.dc-pin:hover {
+  transform: scale(1.9) rotate(0deg);
+  z-index: 60;
+  filter: drop-shadow(0 24px 36px rgba(0, 0, 0, 0.42));
+}
+.dc-pin:hover .dc-pin-text {
+  left: 23%;
+  right: 23%;
+  top: 18%;
+  bottom: 11%;
+  overflow-y: auto;
+}
+.dc-pin:hover .dc-pin-text h3,
+.dc-pin:hover .dc-pin-text p {
+  -webkit-line-clamp: unset;
+}
+/* the writable face of the paper, inset from the torn edges + the pin */
+.dc-pin-text {
+  position: absolute;
+  left: 26%;
+  right: 26%;
+  top: 24%;
+  bottom: 17%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  pointer-events: none; /* never swallow clicks meant for the ⤓ / action buttons */
 }
 .dc-pin h3 {
-  font-size: 19px;
+  font-size: 15px;
   font-weight: 600;
   font-style: italic;
-  margin: 0 0 10px;
+  margin: 0 0 4px;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .dc-pin p {
-  font-size: 14.5px;
-  line-height: 1.55;
+  font-size: 11.5px;
+  line-height: 1.4;
   margin: 0;
   white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* bottom action row on the desk: pin-a-note + drawer */
@@ -860,23 +930,26 @@
 /* small "tuck into drawer" control on each pinned note */
 .dc-pin-archive {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 24px;
-  height: 24px;
+  z-index: 3;
+  top: 20%;
+  right: 23%;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
-  color: #6a6250;
-  background: rgba(0, 0, 0, 0.06);
-  opacity: 0;
-  transition: opacity 0.15s ease;
+  color: #5a5341;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  opacity: 0.7; /* always visible so it's discoverable + clickable */
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 .dc-pin:hover .dc-pin-archive {
   opacity: 1;
+  transform: scale(1.1);
 }
 .dc-pin-archive:hover {
   background: rgba(0, 0, 0, 0.14);
@@ -897,64 +970,97 @@
 }
 
 /* pulled-open drawer: list of archived ("old") notes */
+/* The archived notes lie INSIDE the painted open drawer (opened-drawer.png),
+   not on a floating card in front of it. These bounds frame the wooden
+   drawer-box opening; the subtle inset shadow makes the notes read as
+   resting down inside the drawer rather than hovering over the desk. */
 .dc-drawer-open {
   position: absolute;
   z-index: 3;
-  left: 7%;
-  right: 7%;
-  bottom: 6%;
-  max-height: 56%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: rgba(58, 42, 27, 0.66);
-  backdrop-filter: blur(2px);
-  border-radius: 14px;
-  padding: 16px 18px;
-  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.42);
-}
-.dc-drawer-notes {
-  overflow-y: auto;
+  left: 10%;
+  right: 10%;
+  top: 39%;
+  bottom: 26%;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  background: rgba(70, 48, 26, 0.18);
+  border-radius: 6px;
+  padding: 10px 12px;
+  box-shadow: inset 0 10px 26px rgba(30, 18, 8, 0.4);
 }
-.dc-drawer-note {
+/* Archived notes lie in the drawer as the SAME painted paper sprites as
+   the corkboard (note-1 / note-2, alternating), just smaller. Restore /
+   Delete fade in over the paper face on hover. */
+.dc-drawer-notes {
+  width: 100%;
+  /* visible (not scroll) so a hover-zoomed note isn't clipped by the drawer */
+  overflow: visible;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  background: rgba(247, 241, 228, 0.95);
-  border-radius: 11px;
-  padding: 11px 13px;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  justify-content: center;
+  gap: 2px 3%;
+  padding: 2px;
 }
-.dc-drawer-note > div {
-  flex: 1;
-  min-width: 0;
+.dc-drawer-pin {
+  width: 150px;
+  cursor: default;
 }
-.dc-drawer-note h4 {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--g-ink);
-  margin: 0;
+.dc-drawer-pin .dc-pin-text {
+  transition: opacity 0.15s ease;
 }
-.dc-drawer-note p {
-  font-size: 12.5px;
-  color: var(--g-ink-soft);
-  margin: 3px 0 0;
-  line-height: 1.5;
-  white-space: pre-wrap;
+.dc-drawer-pin .dc-pin-text h3 {
+  font-size: 12px;
 }
-.dc-drawer-note button {
-  flex: 0 0 auto;
+.dc-drawer-pin .dc-pin-text p {
+  font-size: 10px;
+  -webkit-line-clamp: 3;
+}
+/* Same hover-zoom as the corkboard: an archived note enlarges so its full
+   text is readable, and Restore / Delete sit in a strip across the bottom
+   of the enlarged paper. */
+.dc-drawer-pin:hover {
+  transform: scale(1.7) rotate(0deg);
+  z-index: 40;
+}
+.dc-drawer-pin:hover .dc-pin-text {
+  opacity: 1;
+  bottom: 27%; /* leave a strip below the text for the action buttons */
+}
+.dc-drawer-pin-actions {
+  position: absolute;
+  left: 16%;
+  right: 16%;
+  bottom: 13%;
+  z-index: 5;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.dc-drawer-pin:hover .dc-drawer-pin-actions {
+  opacity: 1;
+}
+.dc-drawer-pin-actions button {
   background: var(--g-moss);
   color: var(--g-ivory);
-  font-weight: 600;
-  font-size: 12px;
-  padding: 7px 14px;
+  font-weight: 700;
+  font-size: 7.5px;
+  padding: 3px 9px;
+  border: none;
   border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.28);
 }
-.dc-drawer-note button:hover {
-  filter: brightness(1.06);
+.dc-drawer-pin-actions button:hover {
+  filter: brightness(1.08);
+}
+.dc-drawer-pin-actions button.danger {
+  background: rgba(247, 241, 228, 0.94);
+  color: #b0673f;
 }
 .dc-drawer-empty {
   color: var(--g-on-forest-soft);
@@ -963,13 +1069,18 @@
   padding: 18px 0;
 }
 .dc-drawer-close {
-  align-self: center;
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: 5%;
+  transform: translateX(-50%);
   background: rgba(247, 241, 228, 0.92);
   color: var(--g-ink);
   font-weight: 600;
   font-size: 13px;
   padding: 9px 20px;
   border-radius: 999px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 .dc-drawer-close:hover {
   background: var(--g-ivory);
