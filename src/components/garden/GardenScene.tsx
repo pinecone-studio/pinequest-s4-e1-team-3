@@ -134,7 +134,18 @@ export function GardenScene({
     error,
   } = useFetchJson<FlowerSummary[]>("/api/flowers");
   const [activeFilter, setActiveFilter] = useState("all");
-  const time = nightMode ? TIME_PRESETS[1] : TIME_PRESETS[0];
+  const [timeIndex, setTimeIndex] = useState(0);
+  const [pondHovered, setPondHovered] = useState(false);
+  const time = TIME_PRESETS[timeIndex];
+
+  // Horizontal scrub through the garden illustration: 0 = its left edge,
+  // 100 = its right edge. The painting is wider than its frame, so
+  // object-position simply slides the visible window across it — the
+  // browser already accounts for how much overflow there is at the
+  // current viewport size, which is exactly the "based on desktop size"
+  // range we want without measuring anything ourselves.
+  const [panX, setPanX] = useState(50);
+  const sceneTrackRef = useRef<HTMLSpanElement>(null);
 
   // DOM refs
   const vpRef = useRef<HTMLDivElement>(null); // the viewport element
