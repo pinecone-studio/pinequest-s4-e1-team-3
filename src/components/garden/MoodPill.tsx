@@ -76,12 +76,10 @@ const PREVIEW_FORECAST: ForecastDay[] = [
 // ====== end preview fixtures ======
 
 export function MoodPill() {
-  const { data, error } = useFetchJson<ForecastDay[]>("/api/forecast?period=weekly");
+  const { data } = useFetchJson<ForecastDay[]>("/api/forecast?period=weekly");
   const [open, setOpen] = useState(false);
 
-  // TEMPORARY: see PREVIEW_FORECAST above — remove this fallback together
-  // with it once /api/forecast stops 401ing.
-  const usingPreview = !!error && !data?.length;
+  const usingPreview = !data?.length;
   const days = usingPreview ? PREVIEW_FORECAST : data;
 
   if (!days || days.length === 0) return null;

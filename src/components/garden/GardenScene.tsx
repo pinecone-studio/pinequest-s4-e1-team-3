@@ -304,14 +304,17 @@ export function GardenScene({
       onPointerCancel={onPointerUp}
     >
       {/* Layer 1 — painted background + birds (fx = 1) */}
-      <div ref={bgRef} style={worldLayer}>
+      <div
+        ref={bgRef}
+        style={{ ...worldLayer, filter: time.filter, transition: "filter 1.2s ease" }}
+      >
         <Image
           src="/garden/garden-bg.png"
           alt=""
           fill
           priority
           sizes={`${WORLD_RATIO * 100}vh`}
-          style={{ objectFit: "cover", filter: time.filter }}
+          style={{ objectFit: "cover" }}
         />
 
         {nightMode &&

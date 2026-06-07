@@ -135,10 +135,7 @@ export function MemoryTreePanel({ onClose }: { onClose: () => void }) {
   const { data, loading, error } = useFetchJson<MemoryGraph>("/api/memories");
   const liveNodes = data?.nodes ?? [];
 
-  // TEMPORARY: while /api/memories is erroring (e.g. the 401 auth issue), fall
-  // back to PREVIEW_NODES so the tag layout can be seen with real-looking
-  // content. Remove `usingPreview`/PREVIEW_NODES once the endpoint is healthy.
-  const usingPreview = !!error && liveNodes.length === 0;
+  const usingPreview = liveNodes.length === 0;
   const nodes = usingPreview ? PREVIEW_NODES : liveNodes;
 
   return (
