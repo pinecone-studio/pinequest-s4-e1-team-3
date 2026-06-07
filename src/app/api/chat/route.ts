@@ -94,9 +94,10 @@ export async function POST(req: NextRequest) {
   }));
 
   const result = streamText({
-    model: openai("gpt-4o-mini"),
+    model: openai("gpt-5.4-mini-2026-03-17"),
     system: systemPrompt,
     messages: [...history, { role: "user", content: message }],
+    temperature: 0.5,
     async onFinish({ text }) {
       await prisma.message.create({
         data: { conversationId, role: "assistant", content: text },
