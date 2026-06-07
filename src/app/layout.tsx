@@ -4,7 +4,7 @@ import "./globals.css";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { ClerkProvider } from "@clerk/nextjs";
-import AuthHeader from "@/components/auth-header";
+import ConditionalHeader from "@/components/conditional-header";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -33,10 +33,7 @@ export default function RootLayout({
     <html lang="en" className={cn("font-sans", geist.variable)}>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ClerkProvider>
-          <header className="flex items-center justify-between px-6 py-4 border-b">
-            <span className="font-semibold text-lg">PineQuest</span>
-            <AuthHeader />
-          </header>
+          <ConditionalHeader />
           {children}
         </ClerkProvider>
       </body>

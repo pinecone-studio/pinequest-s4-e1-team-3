@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/getUser";
 import { computeGrowthStage } from "@/lib/memoryPipeline";
+import { getRandomGrassPosition } from "@/lib/gardenGrid";
 
 // ============================================
 //  GET /api/flowers
@@ -130,11 +131,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Species not found" }, { status: 404 });
   }
 
-  // Generate a random garden position (percentage-based, 0–100 grid).
-  // We keep a 10% margin on each edge so flowers don't appear at the very border.
-  // Frontend scales these percentages to actual canvas pixels.
-  const posX = Math.round(Math.random() * 80 + 10); // 10–90
-  const posY = Math.round(Math.random() * 80 + 10); // 10–90
+  // Pick a grass tile from the garden grid, avoiding spots already occupied
+  const occupied = await prisma.flower.findMany({
+    where: { userId: user.id },
+    select: { posX: true, posY: true },
+  });
+  const { posX, posY } = getRandomGrassPosition(occupied);
 
   // Create flower and conversation atomically so we never have a flower without a chat
   const flower = await prisma.flower.create({

@@ -18,19 +18,30 @@ import { GardenTopNav } from "./GardenTopNav";
 import { GardenScene } from "./GardenScene";
 import { PondPanel } from "./PondPanel";
 import { MemoryTreePanel } from "./MemoryTreePanel";
-import { NotesPanel } from "./NotesPanel";
+import { DeskChatPanel } from "./DeskChatPanel";
 import { WorkshopPanel } from "./WorkshopPanel";
 
 export type PanelKey = "garden" | "workshop" | "pond" | "memory" | "notes";
 
 export function GardenShell({ userName }: { userName: string }) {
   const [panel, setPanel] = useState<PanelKey>("garden");
+  const [nightMode, setNightMode] = useState(false);
   const close = () => setPanel("garden");
 
   return (
     <div className="garden-root">
-      <GardenScene onOpenWorkshop={() => setPanel("workshop")} userName={userName} />
-      <GardenTopNav active={panel} onSelect={setPanel} userName={userName} />
+      <GardenScene
+        onOpenWorkshop={() => setPanel("workshop")}
+        onOpenMemoryTree={() => setPanel("memory")}
+        userName={userName}
+        nightMode={nightMode}
+      />
+      <GardenTopNav
+        active={panel}
+        onSelect={setPanel}
+        nightMode={nightMode}
+        onToggleNight={() => setNightMode((n) => !n)}
+      />
 
       {panel === "workshop" && (
         <WorkshopPanel
@@ -40,7 +51,7 @@ export function GardenShell({ userName }: { userName: string }) {
       )}
       {panel === "pond" && <PondPanel onClose={close} />}
       {panel === "memory" && <MemoryTreePanel onClose={close} />}
-      {panel === "notes" && <NotesPanel onClose={close} />}
+      {panel === "notes" && <DeskChatPanel onClose={close} />}
     </div>
   );
 }

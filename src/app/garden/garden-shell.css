@@ -29,9 +29,8 @@
   --g-line: rgba(216, 194, 122, 0.14);
 
   position: relative;
-  /* 100vh minus the app's top <header> (see layout.tsx) so the
-     garden fills the rest of the viewport without a page scrollbar */
-  height: calc(100vh - 61px);
+  /* fills the whole viewport now that the global header is gone */
+  height: 100vh;
   width: 100%;
   background: var(--g-forest);
   color: var(--g-ink);
@@ -39,10 +38,13 @@
   overflow: hidden;
 }
 
-/* ---- main scene: full-bleed painted illustration ---- */
+/* ---- main scene: pannable wide-world viewport ---- */
 .garden-scene {
   position: absolute;
   inset: 0;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .garden-scene-bg {
   z-index: 0;
@@ -161,6 +163,7 @@
 .garden-avatar {
   width: 44px;
   height: 44px;
+  border: none;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -171,6 +174,58 @@
   font-weight: 700;
   font-size: 18px;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.garden-avatar:hover {
+  filter: brightness(1.1);
+}
+
+/* account dropdown — opens downward off the avatar, right-aligned under the topbar */
+.garden-account-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 31;
+  width: 160px;
+  background: var(--g-ivory);
+  border-radius: 16px;
+  padding: 8px;
+  box-shadow: 0 30px 80px rgba(20, 18, 8, 0.28);
+  animation: garden-fade 0.15s ease;
+}
+.garden-account-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--g-ink);
+  text-align: left;
+}
+.garden-account-row:hover {
+  background: rgba(154, 168, 127, 0.14);
+}
+
+/* ---- invisible hotspot over the painted tree — opens the Memory Tree ---- */
+.garden-tree-hotspot {
+  position: absolute;
+  z-index: 3;
+  left: 17%;
+  top: 16%;
+  width: 27%;
+  height: 56%;
+  border-radius: 50% 50% 38% 38% / 60% 60% 40% 40%;
+  background: transparent;
+  cursor: pointer;
+}
+.garden-tree-hotspot:hover,
+.garden-tree-hotspot:focus-visible {
+  background: radial-gradient(ellipse 60% 55% at 50% 38%, rgba(255, 246, 214, 0.16), transparent 72%);
+  outline: none;
 }
 
 /* ---- floating welcome label (top-left, above the scene) ---- */
@@ -184,103 +239,6 @@
   font-style: italic;
   font-size: 20px;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
-}
-
-/* ---- weather stack (top-right): "today feels like" + week strip ---- */
-.garden-weather-stack {
-  position: absolute;
-  top: 92px;
-  right: 28px;
-  z-index: 24;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
-  width: 270px;
-}
-.garden-weather-pill {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  background: rgba(247, 241, 228, 0.85);
-  backdrop-filter: blur(14px);
-  border-radius: 999px;
-  padding: 11px 16px 11px 18px;
-  box-shadow: 0 16px 40px rgba(40, 34, 18, 0.16);
-}
-.garden-weather-pill .label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.garden-weather-pill .icon {
-  font-size: 17px;
-}
-.garden-weather-pill .eyebrow {
-  display: block;
-  font-size: 9.5px;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  font-weight: 800;
-  color: var(--g-ink-soft);
-}
-.garden-weather-pill .value {
-  font-family: "Cormorant Garamond", Georgia, serif;
-  font-weight: 600;
-  font-size: 15.5px;
-  color: var(--g-ink);
-}
-.garden-weather-pill .chevron {
-  color: var(--g-ink-soft);
-  font-size: 12px;
-}
-.garden-forecast-card {
-  background: rgba(247, 241, 228, 0.85);
-  backdrop-filter: blur(16px);
-  border-radius: 22px;
-  padding: 18px 20px 16px;
-  box-shadow: 0 20px 60px rgba(40, 34, 18, 0.18);
-}
-.garden-forecast-eyebrow {
-  font-size: 10px;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  font-weight: 800;
-  color: var(--g-ink-soft);
-  margin: 0 0 16px;
-}
-.garden-forecast-days {
-  display: flex;
-  justify-content: space-between;
-  gap: 4px;
-}
-.garden-forecast-day {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-}
-.garden-forecast-day .icon {
-  font-size: 16px;
-  line-height: 1;
-}
-.garden-forecast-day .dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-}
-.garden-forecast-day .name {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--g-ink-soft);
-}
-.garden-forecast-caption {
-  margin: 14px 0 0;
-  font-family: "Cormorant Garamond", Georgia, serif;
-  font-style: italic;
-  font-size: 13px;
-  color: var(--g-ink-soft);
 }
 
 /* ---- bottom floating control row ---- */
@@ -303,6 +261,12 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  gap: 10px;
+}
+.garden-scrubber-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 10px;
 }
 .garden-pill-btn {
@@ -339,11 +303,12 @@
   flex: 0 0 9px;
 }
 
-/* mood dropdown */
+/* mood dropdown — opens upward off the trigger, right-aligned since the
+   pill sits near the screen's right edge above the scrubber */
 .garden-mood-dropdown {
   position: absolute;
   bottom: calc(100% + 12px);
-  left: 0;
+  right: 0;
   width: 230px;
   background: var(--g-ivory);
   border-radius: 18px;
@@ -354,19 +319,42 @@
   gap: 2px;
   animation: garden-fade 0.15s ease;
 }
+.garden-mood-dropdown-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--g-ink-soft);
+  margin: 4px 8px 6px;
+}
 .garden-mood-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 9px 10px;
+  gap: 10px;
+  padding: 8px 10px;
   border-radius: 12px;
-  font-size: 13.5px;
+  font-size: 13px;
   color: var(--g-ink);
   text-align: left;
   width: 100%;
 }
 .garden-mood-row:hover {
   background: rgba(154, 168, 127, 0.14);
+}
+.garden-mood-row .icon {
+  font-size: 15px;
+}
+.garden-mood-row .name {
+  width: 34px;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--g-ink-soft);
+}
+.garden-mood-row .mood {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 600;
+  font-size: 14.5px;
 }
 .garden-mood-row .heart {
   margin-left: auto;
@@ -412,8 +400,8 @@
   flex: 0 0 9px;
 }
 
-/* pagination control (bottom-right) */
-.garden-pagination {
+/* horizontal scrubber that pans the garden illustration left/right (bottom-right) */
+.garden-scrubber {
   display: inline-flex;
   align-items: center;
   gap: 12px;
@@ -424,7 +412,7 @@
   color: var(--g-on-forest);
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
 }
-.garden-pagination button {
+.garden-scrubber button {
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -435,25 +423,53 @@
   font-size: 13px;
   transition: background 0.15s;
 }
-.garden-pagination button:hover {
+.garden-scrubber button:hover {
   background: rgba(255, 255, 255, 0.1);
 }
-.garden-pagination .track {
+.garden-scrubber button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.garden-scrubber .track {
   position: relative;
   display: block;
-  width: 56px;
+  width: 80px;
+  height: 14px;
+  cursor: grab;
+  touch-action: none;
+}
+.garden-scrubber .track:active {
+  cursor: grabbing;
+}
+.garden-scrubber .track-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
   height: 5px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-50%);
   overflow: hidden;
+  pointer-events: none;
 }
-.garden-pagination .track-fill {
+.garden-scrubber .track-fill {
   position: absolute;
   inset: 0 auto 0 0;
   height: 100%;
   border-radius: 999px;
   background: var(--g-gold);
-  transition: width 0.25s ease;
+}
+.garden-scrubber .track-thumb {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--g-ivory);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 
 /* generic hint pill (loading / empty states over the scene) */
@@ -491,32 +507,6 @@
   0%   { transform: translate(0, 0) scale(1);                                           opacity: 1; }
   50%  { transform: translate(calc(var(--end-dx) * 0.5), calc(var(--end-dy) * 0.5 - 30px)) scale(0.6); opacity: 1; }
   100% { transform: translate(var(--end-dx), var(--end-dy)) scale(0.2);                 opacity: 0; }
-} .garden-panel-backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: 38;
-  background: rgba(20, 18, 10, 0.48);
-  backdrop-filter: blur(5px);
-  animation: garden-fade 0.22s ease;
-}
-
-.garden-panel-modal {
-  position: absolute;
-  z-index: 40;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(840px, calc(100% - 80px));
-  height: min(588px, calc(100% - 80px));
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55);
-  animation: garden-modal-in 0.25s ease;
-}
-
-@keyframes garden-modal-in {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
-  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
 @keyframes garden-fade {
