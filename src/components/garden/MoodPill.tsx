@@ -59,31 +59,13 @@ function moodPhrase(mood: string) {
   return MOOD_PHRASES[mood] ?? mood.charAt(0).toUpperCase() + mood.slice(1);
 }
 
-// ====== TEMPORARY preview fixtures ======
-// Stand-in week of forecast data shown only when /api/forecast errors out
-// (e.g. while the 401 auth issue is being sorted), so this chip isn't
-// blank while judging the UI. Delete PREVIEW_FORECAST + the fallback
-// below once the endpoint is reachable again.
-const PREVIEW_FORECAST: ForecastDay[] = [
-  { date: "2026-06-01", mood: "calm", weather: "partly_cloudy", rippleColor: "#9FA8DA", stoneCount: 2 },
-  { date: "2026-06-02", mood: "happy", weather: "sunny", rippleColor: "#F9A825", stoneCount: 3 },
-  { date: "2026-06-03", mood: "reflective", weather: "cloudy", rippleColor: "#9b8ec4", stoneCount: 1 },
-  { date: "2026-06-04", mood: "grateful", weather: "clear_sky", rippleColor: "#81C784", stoneCount: 4 },
-  { date: "2026-06-05", mood: "motivated", weather: "sunny", rippleColor: "#F4A261", stoneCount: 2 },
-  { date: "2026-06-06", mood: "anxious", weather: "windy", rippleColor: "#9FA8DA", stoneCount: 1 },
-  { date: "2026-06-07", mood: "calm", weather: "partly_cloudy", rippleColor: "#CE93D8", stoneCount: 3 },
-];
-// ====== end preview fixtures ======
-
 export function MoodPill() {
   const { data } = useFetchJson<ForecastDay[]>("/api/forecast?period=weekly");
   const [open, setOpen] = useState(false);
 
-  const usingPreview = !data?.length;
-  const days = usingPreview ? PREVIEW_FORECAST : data;
+  if (!data || data.length === 0) return null;
 
-  if (!days || days.length === 0) return null;
-
+  const days = data;
   const today = days[days.length - 1];
 
   return (

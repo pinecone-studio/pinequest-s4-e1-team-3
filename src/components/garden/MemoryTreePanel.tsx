@@ -46,55 +46,6 @@ function tagLayout(node: MemoryNode, index: number, total: number) {
   };
 }
 
-// ====== TEMPORARY preview fixtures ======
-// Stand-in memories shown only when /api/memories errors out (e.g. while the
-// 401 auth issue is being sorted), so the tag layout/labels/cards can be seen
-// and judged without live data. Delete PREVIEW_NODES + the fallback below
-// once the endpoint is reachable again.
-const PREVIEW_NODES: MemoryNode[] = [
-  {
-    id: "preview-1",
-    content: "Found the courage to share my creative ideas in the meeting today",
-    type: "lesson",
-    createdAt: "2026-05-28",
-    conversationId: "preview",
-    conversation: { flower: { species: { name: "Rose", color: "#E57373" } } },
-  },
-  {
-    id: "preview-2",
-    content: "Thinking about Mom's garden and how peaceful it always felt to sit there",
-    type: "reflection",
-    createdAt: "2026-05-30",
-    conversationId: "preview",
-    conversation: { flower: { species: { name: "Lavender", color: "#9FA8DA" } } },
-  },
-  {
-    id: "preview-3",
-    content: "I am enough, just as I am — I don't need to prove that to anyone",
-    type: "value",
-    createdAt: "2026-06-01",
-    conversationId: "preview",
-    conversation: { flower: { species: { name: "Sunflower", color: "#F9A825" } } },
-  },
-  {
-    id: "preview-4",
-    content: "Watched the morning light through the window and felt grateful for the quiet",
-    type: "reflection",
-    createdAt: "2026-06-03",
-    conversationId: "preview",
-    conversation: { flower: { species: { name: "Lotus", color: "#CE93D8" } } },
-  },
-  {
-    id: "preview-5",
-    content: "Took a long walk by the river and let my thoughts settle for a while",
-    type: "habit",
-    createdAt: "2026-06-05",
-    conversationId: "preview",
-    conversation: { flower: { species: { name: "Cherry Blossom", color: "#F48FB1" } } },
-  },
-];
-// ====== end preview fixtures ======
-
 function MemoryTag({ node, index, total }: { node: MemoryNode; index: number; total: number }) {
   const [open, setOpen] = useState(false);
   const { left, top } = tagLayout(node, index, total);
@@ -133,10 +84,7 @@ function MemoryTag({ node, index, total }: { node: MemoryNode; index: number; to
 
 export function MemoryTreePanel({ onClose }: { onClose: () => void }) {
   const { data, loading, error } = useFetchJson<MemoryGraph>("/api/memories");
-  const liveNodes = data?.nodes ?? [];
-
-  const usingPreview = liveNodes.length === 0;
-  const nodes = usingPreview ? PREVIEW_NODES : liveNodes;
+  const nodes = data?.nodes ?? [];
 
   return (
     <PanelShell
@@ -145,8 +93,8 @@ export function MemoryTreePanel({ onClose }: { onClose: () => void }) {
       note="Birds carry your memories here — each tag is a moment."
       onClose={onClose}
       loading={loading}
-      error={usingPreview ? "" : error}
-      empty={!usingPreview && nodes.length === 0}
+      error={error}
+      empty={nodes.length === 0}
       emptyLabel="No memories yet — they grow once a conversation finishes."
       overlay={
         <>
