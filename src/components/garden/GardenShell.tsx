@@ -33,6 +33,7 @@ export function GardenShell({ userName }: { userName: string }) {
       <GardenScene
         onOpenWorkshop={() => setPanel("workshop")}
         onOpenMemoryTree={() => setPanel("memory")}
+        onOpenPond={() => setPanel("pond")}
         userName={userName}
         nightMode={nightMode}
       />

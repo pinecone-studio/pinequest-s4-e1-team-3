@@ -56,8 +56,8 @@ const TIME_PRESETS = [
     key: "evening",
     label: "Evening",
     icon: "🌙",
-    filter: "brightness(0.55) saturate(0.7) hue-rotate(215deg)",
-    tint: "rgba(64, 52, 110, 0.32)",
+    filter: "brightness(0.72) saturate(0.8) hue-rotate(200deg)",
+    tint: "rgba(64, 52, 110, 0.18)",
   },
 ];
 
@@ -73,10 +73,16 @@ const BIRDS = [
 ];
 
 // Fireflies — positions as % of world width / scene height, with per-fly timing
-const FIREFLIES: Array<{ x: number; y: number; delay: string; dur: string; size: number }> = [
-  { x: 3,  y: 58, delay: "0s",   dur: "3.2s", size: 5 },
-  { x: 7,  y: 65, delay: "1.2s", dur: "4.5s", size: 4 },
-  { x: 1,  y: 72, delay: "2.8s", dur: "3.8s", size: 6 },
+const FIREFLIES: Array<{
+  x: number;
+  y: number;
+  delay: string;
+  dur: string;
+  size: number;
+}> = [
+  { x: 3, y: 58, delay: "0s", dur: "3.2s", size: 5 },
+  { x: 7, y: 65, delay: "1.2s", dur: "4.5s", size: 4 },
+  { x: 1, y: 72, delay: "2.8s", dur: "3.8s", size: 6 },
   { x: 11, y: 57, delay: "0.5s", dur: "4.1s", size: 4 },
   { x: 15, y: 66, delay: "1.9s", dur: "3.5s", size: 5 },
   { x: 19, y: 74, delay: "3.1s", dur: "4.8s", size: 4 },
@@ -103,7 +109,7 @@ const FIREFLIES: Array<{ x: number; y: number; delay: string; dur: string; size:
   { x: 91, y: 60, delay: "2.0s", dur: "3.2s", size: 4 },
   { x: 95, y: 55, delay: "1.7s", dur: "4.1s", size: 5 },
   { x: 98, y: 69, delay: "3.3s", dur: "3.7s", size: 4 },
-  { x: 5,  y: 82, delay: "1.0s", dur: "4.6s", size: 3 },
+  { x: 5, y: 82, delay: "1.0s", dur: "4.6s", size: 3 },
   { x: 20, y: 84, delay: "2.6s", dur: "3.3s", size: 4 },
   { x: 88, y: 81, delay: "0.2s", dur: "4.0s", size: 3 },
   { x: 96, y: 78, delay: "3.9s", dur: "5.1s", size: 4 },
@@ -119,11 +125,13 @@ function clampX(x: number, worldPx: number, vpW: number): number {
 export function GardenScene({
   onOpenWorkshop,
   onOpenMemoryTree,
+  onOpenPond,
   userName,
   nightMode = false,
 }: {
   onOpenWorkshop: () => void;
   onOpenMemoryTree: () => void;
+  onOpenPond: () => void;
   userName: string;
   nightMode?: boolean;
 }) {
@@ -134,18 +142,7 @@ export function GardenScene({
     error,
   } = useFetchJson<FlowerSummary[]>("/api/flowers");
   const [activeFilter, setActiveFilter] = useState("all");
-  const [timeIndex, setTimeIndex] = useState(0);
-  const [pondHovered, setPondHovered] = useState(false);
-  const time = TIME_PRESETS[timeIndex];
-
-  // Horizontal scrub through the garden illustration: 0 = its left edge,
-  // 100 = its right edge. The painting is wider than its frame, so
-  // object-position simply slides the visible window across it — the
-  // browser already accounts for how much overflow there is at the
-  // current viewport size, which is exactly the "based on desktop size"
-  // range we want without measuring anything ourselves.
-  const [panX, setPanX] = useState(50);
-  const sceneTrackRef = useRef<HTMLSpanElement>(null);
+  const time = nightMode ? TIME_PRESETS[1] : TIME_PRESETS[0];
 
   // DOM refs
   const vpRef = useRef<HTMLDivElement>(null); // the viewport element
@@ -306,7 +303,11 @@ export function GardenScene({
       {/* Layer 1 — painted background + birds (fx = 1) */}
       <div
         ref={bgRef}
-        style={{ ...worldLayer, filter: time.filter, transition: "filter 1.2s ease" }}
+        style={{
+          ...worldLayer,
+          filter: time.filter,
+          transition: "filter 1.2s ease",
+        }}
       >
         <Image
           src="/garden/garden-bg.png"
@@ -317,8 +318,7 @@ export function GardenScene({
           style={{ objectFit: "cover" }}
         />
 
-        {nightMode &&
-          FIREFLIES.map((f, i) => (
+        {FIREFLIES.map((f, i) => (
             <div
               key={i}
               style={{
@@ -385,6 +385,26 @@ export function GardenScene({
           title="Open the Memory Tree"
         />
 
+        {/* Invisible clickable region over the Greenhouse */}
+        <button
+          type="button"
+          className="garden-tree-hotspot"
+          style={{ left: "74%", top: "10%", width: "20%", height: "72%" }}
+          onClick={onOpenWorkshop}
+          aria-label="Open the Greenhouse"
+          title="Open the Greenhouse"
+        />
+
+        {/* Invisible clickable region over the Pond */}
+        <button
+          type="button"
+          className="garden-tree-hotspot"
+          style={{ left: "50%", top: "68%", width: "50%", height: "30%" }}
+          onClick={onOpenPond}
+          aria-label="Open the Pond"
+          title="Open the Pond"
+        />
+
         {(flowers ?? []).map((flower) => {
           const category = SPECIES_CATEGORY[flower.species.key] ?? "";
           const dimmed = activeFilter !== "all" && category !== activeFilter;
@@ -405,7 +425,6 @@ export function GardenScene({
       <p className="garden-welcome">
         {userName ? `Welcome back, ${userName}` : "Your garden"}
       </p>
-
 
       {loading && <p className="garden-hint">Loading your garden…</p>}
       {error && (
