@@ -473,6 +473,52 @@
   white-space: nowrap;
 }
 
+/* bird flies left→right across the full world width (250vh) */
+@keyframes garden-bird-fly {
+  from { transform: translateX(-100px); }
+  to   { transform: translateX(calc(250vh + 100px)); }
+}
+
+/* firefly twinkling in night mode */
+@keyframes firefly-twinkle {
+  0%, 100% { opacity: 0.1;  transform: scale(0.7); }
+  45%       { opacity: 0.9;  transform: scale(1.3); }
+  60%       { opacity: 1;    transform: scale(1.5); }
+}
+
+/* bird lifts off a hovered flower and shrinks toward the Memory Tree nav */
+@keyframes hover-bird-fly {
+  0%   { transform: translate(0, 0) scale(1);                                           opacity: 1; }
+  50%  { transform: translate(calc(var(--end-dx) * 0.5), calc(var(--end-dy) * 0.5 - 30px)) scale(0.6); opacity: 1; }
+  100% { transform: translate(var(--end-dx), var(--end-dy)) scale(0.2);                 opacity: 0; }
+} .garden-panel-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 38;
+  background: rgba(20, 18, 10, 0.48);
+  backdrop-filter: blur(5px);
+  animation: garden-fade 0.22s ease;
+}
+
+.garden-panel-modal {
+  position: absolute;
+  z-index: 40;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(840px, calc(100% - 80px));
+  height: min(588px, calc(100% - 80px));
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55);
+  animation: garden-modal-in 0.25s ease;
+}
+
+@keyframes garden-modal-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
 @keyframes garden-fade {
   from {
     opacity: 0;

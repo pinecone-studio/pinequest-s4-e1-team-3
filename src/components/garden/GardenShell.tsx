@@ -32,7 +32,12 @@ export function GardenShell({ userName }: { userName: string }) {
       <GardenScene onOpenWorkshop={() => setPanel("workshop")} userName={userName} />
       <GardenTopNav active={panel} onSelect={setPanel} userName={userName} />
 
-      {panel === "workshop" && <WorkshopPanel onClose={close} />}
+      {panel === "workshop" && (
+        <WorkshopPanel
+          onClose={close}
+          onPlanted={() => setPanel("notes")}
+        />
+      )}
       {panel === "pond" && <PondPanel onClose={close} />}
       {panel === "memory" && <MemoryTreePanel onClose={close} />}
       {panel === "notes" && <NotesPanel onClose={close} />}

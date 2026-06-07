@@ -3,6 +3,11 @@
 //
 //  Seeds the FlowerSpecies table with the 5 flower types
 //  available in the Workshop.
+//  Seeds the FlowerSpecies table with the 4 flower types:
+//    daisy     → career & purpose
+//    rose      → relationships & connection
+//    iris      → self-reflection & inner peace
+//    lavender  → stress & emotional relief
 //
 //  Each species has:
 //    key          → used by frontend to load the correct SVG from /public/flowers/
