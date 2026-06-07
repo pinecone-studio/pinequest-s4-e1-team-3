@@ -91,16 +91,36 @@
 }
 
 /* ---- overlay panels (PanelShell.tsx) ----
-   Each panel is its own full-bleed painted scene with the back
-   button + title floating top-left, an optional pinned-note
-   caption top-right, and a translucent paper sheet docked to the
-   bottom edge holding the actual list content. */
-.garden-scene-panel {
+   Each panel is a contained, dialog-like card floating over a dimmed
+   backdrop — its own painted scene with the back button + title over
+   it, an optional pinned-note caption, and a translucent paper sheet
+   docked to its bottom edge holding the actual list content. The
+   garden scene stays visible (dimmed) around its edges. */
+.garden-scene-panel-backdrop {
   position: absolute;
   inset: 0;
-  z-index: 40;
-  overflow: hidden;
+  z-index: 39;
+  background: rgba(22, 19, 11, 0.52);
   animation: garden-fade 0.2s ease;
+  cursor: pointer;
+  /* a flat tint reads just as "dimmed" as a blur here, without the
+     full-viewport repaint cost that made the bottom-right controls
+     stutter into place when the panel mounted */
+  will-change: opacity;
+}
+.garden-scene-panel {
+  position: absolute;
+  z-index: 40;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(820px, 90vw);
+  height: min(600px, 86vh);
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: 0 50px 130px rgba(20, 16, 8, 0.5);
+  animation: garden-panel-pop 0.22s ease;
+  will-change: transform, opacity;
 }
 .garden-scene-panel-scrim {
   position: absolute;
@@ -178,6 +198,115 @@
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
 }
 
+/* free-floating content placed directly over a panel's banner art (e.g. memory tags on the tree) */
+.garden-scene-panel-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* ---- memory tags scattered across the Memory Tree banner (MemoryTreePanel.tsx) ---- */
+.garden-memory-tag {
+  position: absolute;
+  z-index: 1;
+  width: 84px;
+  height: 84px;
+  transform-origin: 50% 0%;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+.garden-memory-tag:hover,
+.garden-memory-tag:focus-visible {
+  z-index: 5;
+  filter: brightness(1.08);
+}
+.garden-memory-tag-art {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- bottom-left caption over the panel banner (e.g. Memory Tree's "the heart of your garden") ---- */
+.garden-scene-panel-caption {
+  position: absolute;
+  left: 36px;
+  bottom: 30px;
+  z-index: 2;
+  max-width: 380px;
+}
+.garden-scene-panel-caption h3 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 23px;
+  color: var(--g-ivory);
+  margin: 0 0 6px;
+  text-shadow: 0 4px 22px rgba(0, 0, 0, 0.4);
+}
+.garden-scene-panel-caption p {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--g-on-forest-soft);
+  margin: 0;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.45);
+}
+
+.garden-memory-card {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  z-index: 6;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 230px;
+  background: rgba(247, 241, 228, 0.96);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 14px 18px 14px 14px;
+  box-shadow: 0 22px 50px rgba(40, 34, 18, 0.24);
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.garden-memory-card.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.garden-memory-card-dot {
+  width: 11px;
+  height: 11px;
+  margin-top: 4px;
+  border-radius: 50%;
+  flex: 0 0 11px;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.55);
+}
+.garden-memory-card .eyebrow {
+  display: block;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--g-ink-soft);
+}
+.garden-memory-card .content {
+  display: block;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--g-ink);
+  margin: 3px 0;
+}
+.garden-memory-card .date {
+  display: block;
+  font-size: 10.5px;
+  color: var(--g-ink-soft);
+}
+
 /* bottom "paper sheet" holding the panel's actual content */
 .garden-scene-panel-sheet {
   position: absolute;
@@ -216,4 +345,14 @@
 @keyframes garden-fade {
   from { opacity: 0; transform: scale(0.98); }
   to { opacity: 1; transform: scale(1); }
+}
+
+/* Like garden-fade, but keeps the panel's centering translate(-50%, -50%)
+   intact throughout — garden-fade's bare `scale()` would overwrite it and
+   make the dialog render anchored at its top-left corner (bottom-right of
+   center) until the animation finished and the stylesheet's transform
+   reasserted itself, producing a visible snap into place. */
+@keyframes garden-panel-pop {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.98); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }

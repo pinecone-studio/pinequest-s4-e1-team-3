@@ -15,6 +15,8 @@
 
 "use client";
 
+import { useState } from "react";
+import { SignOutButton } from "@clerk/nextjs";
 import type { PanelKey } from "./GardenShell";
 
 const NAV_ITEMS: { key: PanelKey; label: string }[] = [
@@ -35,6 +37,7 @@ export function GardenTopNav({
   userName: string;
 }) {
   const initial = userName ? userName.trim().charAt(0).toUpperCase() : "B";
+  const [accountOpen, setAccountOpen] = useState(false);
 
   return (
     <header className="garden-topbar">
@@ -64,9 +67,28 @@ export function GardenTopNav({
         <span className="garden-icon-pill" aria-hidden>
           🍃
         </span>
-        <span className="garden-avatar" title={userName || "Your garden"}>
-          {initial}
-        </span>
+        <div style={{ position: "relative" }}>
+          <button
+            type="button"
+            className="garden-avatar"
+            onClick={() => setAccountOpen((o) => !o)}
+            aria-expanded={accountOpen}
+            aria-label="Account menu"
+            title={userName || "Your garden"}
+          >
+            {initial}
+          </button>
+
+          {accountOpen && (
+            <div className="garden-account-dropdown">
+              <SignOutButton redirectUrl="/sign-in">
+                <button type="button" className="garden-account-row">
+                  <span aria-hidden>↪</span> Log out
+                </button>
+              </SignOutButton>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
