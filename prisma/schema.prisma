@@ -138,16 +138,21 @@ enum GrowthStage {
 //
 //  flowerId is unique — one flower = one conversation, always.
 //  isCompleted / completedAt: set by POST /api/conversations/:id/complete
-//    which also triggers the memory extraction pipeline.
+//    which also triggers the full memory extraction pipeline.
+//  lastMemoryCheckpoint: how many messages had been processed the last
+//    time runMemoryCheckpoint ran a lighter, mid-conversation extraction
+//    pass (see src/lib/memoryPipeline.ts) — keeps memories flowing into
+//    the tree even for conversations the user never explicitly ends.
 // ============================================
 model Conversation {
-  id          String   @id @default(cuid())
-  flowerId    String   @unique
-  title       String?
-  isCompleted Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  completedAt DateTime?
+  id                   String   @id @default(cuid())
+  flowerId             String   @unique
+  title                String?
+  isCompleted          Boolean  @default(false)
+  lastMemoryCheckpoint Int      @default(0) // message count at the last mid-conversation memory extraction (see runMemoryCheckpoint)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  completedAt          DateTime?
 
   flower    Flower      @relation(fields: [flowerId], references: [id], onDelete: Cascade)
   messages  Message[]

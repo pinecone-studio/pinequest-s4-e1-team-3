@@ -39,6 +39,7 @@ import { type NextRequest } from "next/server";
 import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
 import { buildSystemPrompt } from "@/lib/buildSystemPrompt";
+import { runMemoryCheckpoint, MEMORY_CHECKPOINT_INTERVAL } from "@/lib/memoryPipeline";
 
 const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -157,6 +158,18 @@ export async function POST(req: NextRequest) {
       await prisma.message.create({
         data: { conversationId, role: "assistant", content: text },
       });
+
+      // Every MEMORY_CHECKPOINT_INTERVAL messages, take a lightweight pass
+      // over what's new and bank any memories worth keeping — independent
+      // of the user ever explicitly ending the conversation. `conversation`
+      // was loaded before this turn's user + assistant messages were saved,
+      // so its true count is +2.
+      const messageCount = conversation.messages.length + 2;
+      if (messageCount - conversation.lastMemoryCheckpoint >= MEMORY_CHECKPOINT_INTERVAL) {
+        runMemoryCheckpoint(conversationId).catch((err) => {
+          console.error(`[chat] Memory checkpoint failed for ${conversationId}:`, err);
+        });
+      }
     },
   });
 
