@@ -31,11 +31,15 @@ export function GardenTopNav({
   onSelect,
   nightMode,
   onToggleNight,
+  onOpenBirds,
+  birdDot = false,
 }: {
   active: PanelKey;
   onSelect: (key: PanelKey) => void;
   nightMode: boolean;
   onToggleNight: () => void;
+  onOpenBirds: () => void;
+  birdDot?: boolean;
 }) {
   return (
     <header className="garden-topbar">
@@ -68,12 +72,34 @@ export function GardenTopNav({
           className="garden-icon-pill"
           onClick={onToggleNight}
           aria-label={nightMode ? "Switch to day" : "Switch to night"}
+          style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.04em", padding: "0 14px" }}
         >
-          {nightMode ? "☀️" : "🌙"}
+          {nightMode ? "Day" : "Night"}
         </button>
-        <span className="garden-icon-pill" aria-hidden>
-          🍃
-        </span>
+        <button
+          type="button"
+          className="garden-icon-pill"
+          onClick={onOpenBirds}
+          aria-label="Bird messages"
+          style={{ position: "relative" }}
+        >
+          🪶
+          {birdDot && (
+            <span
+              aria-hidden
+              style={{
+                position: "absolute",
+                top: 4,
+                right: 4,
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "#e05c5c",
+                border: "1.5px solid #fff",
+              }}
+            />
+          )}
+        </button>
         <UserButton />
       </div>
     </header>

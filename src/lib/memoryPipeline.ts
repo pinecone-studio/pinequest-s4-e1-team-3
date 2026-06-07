@@ -28,6 +28,7 @@
 import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
 import { getRippleColor, getWeather, getIntensity, VALID_MOODS, DEFAULT_MOOD } from "@/lib/moodMapping";
+import { getAblyRest, gardenChannel } from "@/lib/ably";
 import { GrowthStage } from "@prisma/client";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -206,7 +207,7 @@ Respond only with the JSON object.`,
   await embedAndSaveMemories(extracted.memories ?? [], userId, conversationId, "pipeline");
 
   // --- Step 4: Update flower with extracted data ---
-  await prisma.flower.update({
+  const updatedFlower = await prisma.flower.update({
     where: { id: flower.id },
     data: {
       summary: extracted.summary,
@@ -215,7 +216,23 @@ Respond only with the JSON object.`,
       growthStage: GrowthStage.BLOOMING,
       completedAt: new Date(),
     },
+    include: { species: { select: { name: true } } },
   });
+
+  // Notify the client in real time so BirdMessagesPanel refreshes immediately.
+  // Use flower.user.clerkId to match the channel name the browser subscribes to.
+  try {
+    await getAblyRest().channels
+      .get(gardenChannel(flower.user.clerkId))
+      .publish("garden-update", {
+        type: "bloom",
+        flowerId: flower.id,
+        flowerName: updatedFlower.species.name,
+        memoryCount: (extracted.memories ?? []).length,
+      });
+  } catch (err) {
+    console.error("[pipeline] Ably publish error:", err);
+  }
 
   // --- Step 5: Create MoodEntry (the pond stone) ---
   // Only create if one doesn't already exist for this conversation.

@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/getUser";
 import { computeGrowthStage } from "@/lib/memoryPipeline";
 import { getRandomGrassPosition } from "@/lib/gardenGrid";
+import { getAblyRest, gardenChannel } from "@/lib/ably";
 
 // ============================================
 //  GET /api/flowers
@@ -154,6 +155,20 @@ export async function POST(req: Request) {
       species: { select: { key: true, name: true, color: true, svgPath: true } },
     },
   });
+
+  // Notify the client immediately so the bird messages dot appears
+  // as soon as the flower is planted (no need to wait for pipeline).
+  try {
+    await getAblyRest().channels
+      .get(gardenChannel(user.clerkId))
+      .publish("garden-update", {
+        type: "planted",
+        flowerId: flower.id,
+        flowerName: flower.species.name,
+      });
+  } catch {
+    // Ably key not set or network error — non-fatal, continue
+  }
 
   return NextResponse.json(
     {
