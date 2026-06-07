@@ -18,7 +18,7 @@ import { GardenTopNav } from "./GardenTopNav";
 import { GardenScene } from "./GardenScene";
 import { PondPanel } from "./PondPanel";
 import { MemoryTreePanel } from "./MemoryTreePanel";
-import { NotesPanel } from "./NotesPanel";
+import { DeskChatPanel } from "./DeskChatPanel";
 import { WorkshopPanel } from "./WorkshopPanel";
 
 export type PanelKey = "garden" | "workshop" | "pond" | "memory" | "notes";
@@ -29,13 +29,17 @@ export function GardenShell({ userName }: { userName: string }) {
 
   return (
     <div className="garden-root">
-      <GardenScene onOpenWorkshop={() => setPanel("workshop")} onOpenPond={() => setPanel("pond")} userName={userName} />
+      <GardenScene
+        onOpenWorkshop={() => setPanel("workshop")}
+        onOpenMemoryTree={() => setPanel("memory")}
+        userName={userName}
+      />
       <GardenTopNav active={panel} onSelect={setPanel} userName={userName} />
 
       {panel === "workshop" && <WorkshopPanel onClose={close} />}
       {panel === "pond" && <PondPanel onClose={close} />}
       {panel === "memory" && <MemoryTreePanel onClose={close} />}
-      {panel === "notes" && <NotesPanel onClose={close} />}
+      {panel === "notes" && <DeskChatPanel onClose={close} />}
     </div>
   );
 }

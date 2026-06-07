@@ -31,6 +31,7 @@ export function PanelShell({
   emptyLabel,
   children,
   headerExtra,
+  overlay,
 }: {
   title: string;
   subtitle?: string;
@@ -43,13 +44,22 @@ export function PanelShell({
   error?: string;
   empty?: boolean;
   emptyLabel?: string;
-  children: ReactNode;
+  children?: ReactNode;
   headerExtra?: ReactNode;
+  /** Free-floating content placed directly over the banner art (e.g. tags scattered on a tree), instead of the bottom paper sheet */
+  overlay?: ReactNode;
 }) {
+  const hasSheetContent = loading || error || empty || children;
   return (
-    <div className="garden-scene-panel">
-      <Image src={banner} alt="" fill priority sizes="100vw" style={{ objectFit: "cover" }} />
+    <>
+      <div className="garden-scene-panel-backdrop" onClick={onClose} aria-hidden />
+      <div className="garden-scene-panel" role="dialog" aria-label={title}>
+      <Image src={banner} alt="" fill priority sizes="(max-width: 900px) 100vw, 880px" style={{ objectFit: "cover" }} />
       <div className="garden-scene-panel-scrim" />
+
+      {overlay && !loading && !error && !empty && (
+        <div className="garden-scene-panel-overlay">{overlay}</div>
+      )}
 
       <div className="garden-scene-panel-back">
         <button type="button" className="garden-scene-panel-back-btn" onClick={onClose} aria-label="Back to garden">
@@ -68,13 +78,16 @@ export function PanelShell({
         </p>
       )}
 
-      <div className="garden-scene-panel-sheet">
-        {headerExtra}
-        {loading && <p className="garden-empty">Loading…</p>}
-        {error && <p className="garden-empty">Something went wrong — {error}</p>}
-        {!loading && !error && empty && <p className="garden-empty">{emptyLabel}</p>}
-        {!loading && !error && !empty && children}
+      {(hasSheetContent || !overlay) && (
+        <div className="garden-scene-panel-sheet">
+          {headerExtra}
+          {loading && <p className="garden-empty">Loading…</p>}
+          {error && <p className="garden-empty">Something went wrong — {error}</p>}
+          {!loading && !error && empty && <p className="garden-empty">{emptyLabel}</p>}
+          {!loading && !error && !empty && children}
+        </div>
+      )}
       </div>
-    </div>
+    </>
   );
 }
