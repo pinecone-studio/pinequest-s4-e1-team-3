@@ -2,18 +2,45 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { useFetchJson } from "@/hooks/useFetchJson";
+import type { Stone, ForecastDay } from "./types";
 
 const SETTLED_TRANSFORM = "translate(-50%, 8.5vw) scale(0.32)";
 
+const WEATHER_EMOJI: Record<string, string> = {
+  sunny: "☀️", partly_cloudy: "🌤️", clear_sky: "🌞",
+  rainy: "🌧️", windy: "💨", foggy: "🌫️", cloudy: "☁️", stormy: "⛈️",
+};
+
+const MOOD_PHRASES: Record<string, string> = {
+  calm: "Calm & Hopeful", happy: "Bright", grateful: "Grateful",
+  sad: "A little heavy", reflective: "Tender", anxious: "Restless",
+  motivated: "Driven", confused: "Hazy", angry: "Fiery",
+};
+
 type Phase = "idle" | "falling" | "settled" | "sinking";
+
+function playSplash() {
+  try {
+    const audio = new Audio("/garden/Water Splash Sound Effect  Free Clip Sounds  Ambient Sounds.mp3");
+    audio.volume = 0.6;
+    audio.currentTime = 2;
+    audio.play();
+  } catch {}
+}
 
 export function PondPanel({ onClose }: { onClose: () => void }) {
   const [phase, setPhase] = useState<Phase>("idle");
+  const { data: stones } = useFetchJson<Stone[]>("/api/mood?limit=1");
+  const { data: forecast } = useFetchJson<ForecastDay[]>("/api/forecast?period=daily");
+  const rippleColor = stones?.[0]?.rippleColor ?? "#42A5F5";
+  const today = forecast?.[forecast.length - 1];
 
   function handleDrop() {
     if (phase !== "idle") return;
     setPhase("falling");
     setTimeout(() => {
+      playSplash();
       setPhase("sinking");
       setTimeout(() => {
         setPhase("idle");
@@ -53,6 +80,11 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
           0%   { transform: ${SETTLED_TRANSFORM}; opacity: 1; }
           100% { transform: translate(-50%, 14vw) scale(0.18); opacity: 0; }
         }
+        @keyframes drop-spray {
+          0%   { transform: translateY(0) scale(1); opacity: 1; }
+          35%  { transform: translateY(var(--peak, -60px)) scale(0.8); opacity: 0.9; }
+          100% { transform: translateY(22px) scale(0.05); opacity: 0; }
+        }
         @keyframes ripple-expand {
           0%   { transform: translate(-50%, -50%) scale(0.02); opacity: 0.75; }
           60%  { opacity: 0.45; }
@@ -81,6 +113,84 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
         </button>
         <h2 className="garden-scene-panel-title">Mood Pond</h2>
       </div>
+
+      {today && (
+        <div style={{
+          position: "absolute",
+          top: 28,
+          right: 28,
+          zIndex: 3,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          background: "rgba(247,241,228,0.18)",
+          backdropFilter: "blur(10px)",
+          borderRadius: 999,
+          padding: "7px 14px",
+          pointerEvents: "none",
+        }}>
+          <span style={{ fontSize: 18 }}>{WEATHER_EMOJI[today.weather] ?? "🌥️"}</span>
+          <div>
+            <div style={{ fontSize: 11, color: "rgba(240,237,232,0.65)", letterSpacing: 0.3, lineHeight: 1 }}>
+              Today
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--g-ivory)", lineHeight: 1.3 }}>
+              {MOOD_PHRASES[today.mood] ?? today.mood}
+            </div>
+          </div>
+          <span style={{
+            width: 8, height: 8, borderRadius: "50%",
+            background: today.rippleColor, flexShrink: 0,
+          }} />
+        </div>
+      )}
+
+      {phase === "sinking" && (
+        <>
+          {[
+            { angle: -2,   peak: -105, size: 9,  delay: 0,   dur: 0.95, w: 6  },
+            { angle: 3,    peak: -95,  size: 8,  delay: 15,  dur: 0.9,  w: 5  },
+            { angle: -18,  peak: -85,  size: 7,  delay: 10,  dur: 0.85, w: 5  },
+            { angle: 20,   peak: -80,  size: 7,  delay: 20,  dur: 0.82, w: 4  },
+            { angle: -38,  peak: -65,  size: 6,  delay: 5,   dur: 0.75, w: 4  },
+            { angle: 40,   peak: -60,  size: 6,  delay: 25,  dur: 0.72, w: 4  },
+            { angle: -60,  peak: -45,  size: 5,  delay: 15,  dur: 0.65, w: 3  },
+            { angle: 62,   peak: -42,  size: 5,  delay: 30,  dur: 0.63, w: 3  },
+            { angle: -80,  peak: -30,  size: 4,  delay: 20,  dur: 0.58, w: 3  },
+            { angle: 82,   peak: -28,  size: 4,  delay: 35,  dur: 0.55, w: 2  },
+            { angle: -100, peak: -18,  size: 3,  delay: 40,  dur: 0.5,  w: 2  },
+            { angle: 102,  peak: -16,  size: 3,  delay: 45,  dur: 0.48, w: 2  },
+            { angle: -28,  peak: -50,  size: 3,  delay: 55,  dur: 0.6,  w: 2  },
+            { angle: 30,   peak: -48,  size: 3,  delay: 60,  dur: 0.58, w: 2  },
+            { angle: 10,   peak: -70,  size: 4,  delay: 35,  dur: 0.78, w: 3  },
+          ].map(({ angle, peak, size, delay, dur, w }) => { const s = 2.2; return (
+            <span
+              key={`${angle}-${delay}`}
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "calc(12% + 8.5vw)",
+                width: 0,
+                height: 0,
+                transform: `translate(-50%, -50%) rotate(${angle}deg)`,
+                zIndex: 11,
+                pointerEvents: "none",
+              }}
+            >
+              <span style={{
+                position: "absolute",
+                width: Math.round(w * s),
+                height: Math.round(size * s),
+                borderRadius: "50% 50% 50% 50% / 60% 60% 40% 40%",
+                background: rippleColor + "ee",
+                ["--peak" as string]: `${peak}px`,
+                animation: `drop-spray ${dur}s cubic-bezier(0.25,0.8,0.5,1) ${delay}ms both`,
+                boxShadow: "0 0 3px rgba(150,210,240,0.5)",
+              } as React.CSSProperties} />
+            </span>
+          ); })}
+        </>
+      )}
 
       <div
         style={{
@@ -136,7 +246,7 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
                   width: 850,
                   height: 350,
                   borderRadius: "50%",
-                  border: `3px solid hsla(0, 90%, 55%, 0.85)`,
+                  border: `3px solid ${rippleColor}cc`,
                   zIndex: 9,
                   pointerEvents: "none",
                   animation: `ripple-expand 2.4s ease-out ${delay}ms both`,

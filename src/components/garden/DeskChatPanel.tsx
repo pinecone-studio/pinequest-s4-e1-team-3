@@ -39,37 +39,38 @@ const TOPIC_BY_SPECIES: Record<string, string> = {
   "cherry-blossom": "Self-Reflection",
 };
 
-export function DeskChatPanel({ onClose }: { onClose: () => void }) {
+export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flowerId?: string }) {
   const { data: flowers, refetch: refetchFlowers } =
     useFetchJson<FlowerSummary[]>("/api/flowers");
   const { data: speciesList } = useFetchJson<Species[]>("/api/species");
 
-  // Pick the flower to talk to: the most recently planted one that's
-  // still growing and has a chat, falling back to the most recent
-  // flower that has a conversation at all.
+  // If a specific flower was clicked in the garden, show that one.
+  // Otherwise pick the most recently planted growing flower.
   const activeFlower = useMemo(() => {
     const withChat = (flowers ?? []).filter((f) => f.conversationId);
     if (withChat.length === 0) return null;
+    if (flowerId) return withChat.find((f) => f.id === flowerId) ?? null;
     const growing = withChat.filter((f) => !f.completedAt);
     const pool = growing.length ? growing : withChat;
     return pool.reduce((a, b) => (a.plantedAt > b.plantedAt ? a : b));
-  }, [flowers]);
+  }, [flowers, flowerId]);
 
   // A conversation started right here in the desk chat (when the user had
   // no flower yet). Once flowers refetch, activeFlower converges to the same
   // conversation, so the two ids agree.
-  const [createdConversationId, setCreatedConversationId] = useState<string | null>(null);
+  const [createdConversationId, setCreatedConversationId] = useState<
+    string | null
+  >(null);
 
   const conversationId = activeFlower?.conversationId ?? createdConversationId;
   const species = activeFlower?.species;
-  const topic = species ? TOPIC_BY_SPECIES[species.key] ?? "Companion" : "";
+  const topic = species ? (TOPIC_BY_SPECIES[species.key] ?? "Companion") : "";
 
-  // Notes pinned to the corkboard (all non-archived) + the drawer (archived).
-  // We show every pinned note — none are hidden — and only the ones the user
-  // tucks away with ⤓ move into the drawer.
-  const { data: pinned, refetch: refetchNotes } = useFetchJson<Note[]>("/api/notes");
+  // Notes for the corkboard (newest two) + the drawer (archived).
+  const { data: pinned, refetch: refetchNotes } =
+    useFetchJson<Note[]>("/api/notes");
   const { data: archived, refetch: refetchArchived } = useFetchJson<Note[]>(
-    "/api/notes?archived=true"
+    "/api/notes?archived=true",
   );
   const pinnedNotes = pinned ?? [];
   const archivedNotes = archived ?? [];
@@ -91,7 +92,10 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
       await fetch("/api/notes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: noteTitle.trim(), body: noteBody.trim() }),
+        body: JSON.stringify({
+          title: noteTitle.trim(),
+          body: noteBody.trim(),
+        }),
       });
       setNoteTitle("");
       setNoteBody("");
@@ -144,10 +148,12 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
       .then((data) => {
         if (cancelled || !data) return;
         setMessages(
-          (data.messages ?? []).map((m: { role: Message["role"]; content: string }) => ({
-            role: m.role,
-            content: m.content,
-          }))
+          (data.messages ?? []).map(
+            (m: { role: Message["role"]; content: string }) => ({
+              role: m.role,
+              content: m.content,
+            }),
+          ),
         );
       })
       .catch(() => {});
@@ -167,8 +173,7 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
     if (conversationId) return conversationId;
 
     const list = speciesList ?? [];
-    const picked =
-      list.find((s) => s.key === DEFAULT_SPECIES_KEY) ?? list[0];
+    const picked = list.find((s) => s.key === DEFAULT_SPECIES_KEY) ?? list[0];
     if (!picked) return null;
 
     try {
@@ -289,7 +294,12 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
         {/* ---- LEFT: chat with the companion ---- */}
         <section className="desk-chat-left">
           <header className="dc-head">
-            <button type="button" className="dc-back" onClick={onClose} aria-label="Back to garden">
+            <button
+              type="button"
+              className="dc-back"
+              onClick={onClose}
+              aria-label="Back to garden"
+            >
               ‹
             </button>
             <span className="dc-avatar" aria-hidden>
@@ -335,7 +345,10 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
             )}
 
             {messages.map((m, i) => (
-              <div key={i} className={"dc-msg " + (m.role === "user" ? "me" : "them")}>
+              <div
+                key={i}
+                className={"dc-msg " + (m.role === "user" ? "me" : "them")}
+              >
                 <div className="dc-bubble">
                   {m.content || (
                     <span className="dc-typing" aria-label="Sage is thinking">
@@ -353,7 +366,8 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
           {error && <p className="dc-error">{error}</p>}
           {completed && (
             <p className="dc-saved-note">
-              This reflection is saved — your flower is blooming in the garden 🌸
+              This reflection is saved — your flower is blooming in the garden
+              🌸
             </p>
           )}
 
@@ -362,7 +376,9 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
-              placeholder={completed ? "This reflection is saved" : "Write your message…"}
+              placeholder={
+                completed ? "This reflection is saved" : "Write your message…"
+              }
               disabled={loading || completed}
             />
             <span className="dc-mic" aria-hidden>
@@ -420,41 +436,35 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
           </header>
 
           {drawerOpen ? (
-            /* ---- open drawer: the archived ("old") notes, resting inside ---- */
-            <>
-              <div className="dc-drawer-open">
-                {archivedCount === 0 ? (
-                  <p className="dc-drawer-empty">The drawer is empty — tuck a note away to keep it here.</p>
-                ) : (
-                  <div className="dc-drawer-notes">
-                    {archivedNotes.map((note, i) => (
-                      <article
-                        key={note.id}
-                        className={"dc-pin dc-drawer-pin pin-" + (i % 2)}
-                        style={{ backgroundImage: `url(/garden/note-${(i % 2) + 1}.png)` }}
+            /* ---- open drawer: the archived ("old") notes ---- */
+            <div className="dc-drawer-open">
+              {archivedCount === 0 ? (
+                <p className="dc-drawer-empty">
+                  The drawer is empty — tuck a note away to keep it here.
+                </p>
+              ) : (
+                <div className="dc-drawer-notes">
+                  {archivedNotes.map((note) => (
+                    <article key={note.id} className="dc-drawer-note">
+                      <div>
+                        <h4>{note.title}</h4>
+                        <p>{note.body}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setArchived(note.id, false)}
                       >
-                        <div className="dc-pin-text">
-                          <h3>{note.title}</h3>
-                          <p>{note.body}</p>
-                        </div>
-                        <div className="dc-drawer-pin-actions">
-                          <button type="button" onClick={() => setArchived(note.id, false)}>
-                            Restore
-                          </button>
-                          <button
-                            type="button"
-                            className="danger"
-                            onClick={() => deleteNote(note.id)}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button type="button" className="dc-drawer-close" onClick={() => setDrawerOpen(false)}>
+                        Restore
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              )}
+              <button
+                type="button"
+                className="dc-drawer-close"
+                onClick={() => setDrawerOpen(false)}
+              >
                 Close drawer
               </button>
             </>
@@ -499,11 +509,20 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
               />
 
               <div className="dc-desk-actions">
-                <button type="button" className="dc-add-note" onClick={() => setComposing((c) => !c)}>
+                <button
+                  type="button"
+                  className="dc-add-note"
+                  onClick={() => setComposing((c) => !c)}
+                >
                   ✎ Pin a note
                 </button>
-                <button type="button" className="dc-drawer" onClick={() => setDrawerOpen(true)}>
-                  The drawer · {archivedCount} old {archivedCount === 1 ? "note" : "notes"}
+                <button
+                  type="button"
+                  className="dc-drawer"
+                  onClick={() => setDrawerOpen(true)}
+                >
+                  The drawer · {archivedCount} old{" "}
+                  {archivedCount === 1 ? "note" : "notes"}
                 </button>
               </div>
 
@@ -522,13 +541,19 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
                     rows={3}
                   />
                   <div className="dc-note-form-actions">
-                    <button type="button" className="ghost" onClick={() => setComposing(false)}>
+                    <button
+                      type="button"
+                      className="ghost"
+                      onClick={() => setComposing(false)}
+                    >
                       Cancel
                     </button>
                     <button
                       type="button"
                       onClick={saveNote}
-                      disabled={savingNote || !noteTitle.trim() || !noteBody.trim()}
+                      disabled={
+                        savingNote || !noteTitle.trim() || !noteBody.trim()
+                      }
                     >
                       {savingNote ? "Pinning…" : "Pin to desk"}
                     </button>

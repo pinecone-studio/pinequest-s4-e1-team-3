@@ -28,6 +28,7 @@
 import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
 import { getRippleColor, getWeather, getIntensity, VALID_MOODS, DEFAULT_MOOD } from "@/lib/moodMapping";
+import { getAblyRest, gardenChannel } from "@/lib/ably";
 import { GrowthStage } from "@prisma/client";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -178,6 +179,7 @@ Analyze the following conversation and return a JSON object with:
   ]
 }
 Extract 2-5 meaningful memories. Only include memories that reveal something real about the user.
+Write "summary", "tags", and each memory's "content" in the SAME language the user writes in — e.g. if the conversation is in Mongolian, write those fields in Mongolian. Never translate them to English; the example phrasing above only illustrates the form (concise, first person), not the language. "mood" and "category" must stay exactly as the fixed English values listed above — those are never translated.
 Respond only with the JSON object.`,
         },
         {
@@ -205,7 +207,7 @@ Respond only with the JSON object.`,
   await embedAndSaveMemories(extracted.memories ?? [], userId, conversationId, "pipeline");
 
   // --- Step 4: Update flower with extracted data ---
-  await prisma.flower.update({
+  const updatedFlower = await prisma.flower.update({
     where: { id: flower.id },
     data: {
       summary: extracted.summary,
@@ -214,7 +216,23 @@ Respond only with the JSON object.`,
       growthStage: GrowthStage.BLOOMING,
       completedAt: new Date(),
     },
+    include: { species: { select: { name: true } } },
   });
+
+  // Notify the client in real time so BirdMessagesPanel refreshes immediately.
+  // Use flower.user.clerkId to match the channel name the browser subscribes to.
+  try {
+    await getAblyRest().channels
+      .get(gardenChannel(flower.user.clerkId))
+      .publish("garden-update", {
+        type: "bloom",
+        flowerId: flower.id,
+        flowerName: updatedFlower.species.name,
+        memoryCount: (extracted.memories ?? []).length,
+      });
+  } catch (err) {
+    console.error("[pipeline] Ably publish error:", err);
+  }
 
   // --- Step 5: Create MoodEntry (the pond stone) ---
   // Only create if one doesn't already exist for this conversation.
@@ -325,6 +343,7 @@ Read this excerpt from the MIDDLE of an ongoing conversation (it is not the end 
   ]
 }
 Only include memories that reveal something real and lasting about the user — skip small talk and anything tied only to this moment. Return an empty list if nothing stands out.
+Write each memory's "content" in the SAME language the user writes in — e.g. if the conversation is in Mongolian, write it in Mongolian. Never translate it to English; the example phrasing above only illustrates the form (concise, first person), not the language. "category" must stay exactly as one of the fixed English values listed above — that is never translated.
 Respond only with the JSON object.`,
         },
         {
