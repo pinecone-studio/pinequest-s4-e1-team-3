@@ -46,6 +46,7 @@ export default async function ChatPage({
       conversationId={conversationId}
       companionName={conversation.flower.species.name}
       initialMessages={initialMessages}
+      isCompleted={conversation.isCompleted}
     />
   );
 }
