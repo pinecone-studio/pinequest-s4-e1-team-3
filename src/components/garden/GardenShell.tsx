@@ -25,6 +25,7 @@ export type PanelKey = "garden" | "workshop" | "pond" | "memory" | "notes";
 
 export function GardenShell({ userName }: { userName: string }) {
   const [panel, setPanel] = useState<PanelKey>("garden");
+  const [nightMode, setNightMode] = useState(false);
   const close = () => setPanel("garden");
 
   return (
@@ -33,8 +34,14 @@ export function GardenShell({ userName }: { userName: string }) {
         onOpenWorkshop={() => setPanel("workshop")}
         onOpenMemoryTree={() => setPanel("memory")}
         userName={userName}
+        nightMode={nightMode}
       />
-      <GardenTopNav active={panel} onSelect={setPanel} userName={userName} />
+      <GardenTopNav
+        active={panel}
+        onSelect={setPanel}
+        nightMode={nightMode}
+        onToggleNight={() => setNightMode((n) => !n)}
+      />
 
       {panel === "workshop" && <WorkshopPanel onClose={close} />}
       {panel === "pond" && <PondPanel onClose={close} />}

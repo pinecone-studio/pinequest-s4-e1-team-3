@@ -15,30 +15,28 @@
 
 "use client";
 
-import { useState } from "react";
-import { SignOutButton } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
 import type { PanelKey } from "./GardenShell";
 
 const NAV_ITEMS: { key: PanelKey; label: string }[] = [
   { key: "garden", label: "Garden" },
+  { key: "notes", label: "Chat" },
   { key: "pond", label: "Pond" },
   { key: "workshop", label: "Greenhouse" },
   { key: "memory", label: "Memory Tree" },
-  { key: "notes", label: "Chat" },
 ];
 
 export function GardenTopNav({
   active,
   onSelect,
-  userName,
+  nightMode,
+  onToggleNight,
 }: {
   active: PanelKey;
   onSelect: (key: PanelKey) => void;
-  userName: string;
+  nightMode: boolean;
+  onToggleNight: () => void;
 }) {
-  const initial = userName ? userName.trim().charAt(0).toUpperCase() : "B";
-  const [accountOpen, setAccountOpen] = useState(false);
-
   return (
     <header className="garden-topbar">
       <span className="garden-brand">
@@ -53,6 +51,7 @@ export function GardenTopNav({
           <button
             key={item.key}
             type="button"
+            data-nav={item.key}
             className={"garden-nav-pill" + (active === item.key ? " active" : "")}
             onClick={() => onSelect(item.key)}
           >
@@ -64,31 +63,18 @@ export function GardenTopNav({
       <span className="garden-topbar-spacer" />
 
       <div className="garden-topbar-right">
+        <button
+          type="button"
+          className="garden-icon-pill"
+          onClick={onToggleNight}
+          aria-label={nightMode ? "Switch to day" : "Switch to night"}
+        >
+          {nightMode ? "☀️" : "🌙"}
+        </button>
         <span className="garden-icon-pill" aria-hidden>
           🍃
         </span>
-        <div style={{ position: "relative" }}>
-          <button
-            type="button"
-            className="garden-avatar"
-            onClick={() => setAccountOpen((o) => !o)}
-            aria-expanded={accountOpen}
-            aria-label="Account menu"
-            title={userName || "Your garden"}
-          >
-            {initial}
-          </button>
-
-          {accountOpen && (
-            <div className="garden-account-dropdown">
-              <SignOutButton redirectUrl="/sign-in">
-                <button type="button" className="garden-account-row">
-                  <span aria-hidden>↪</span> Log out
-                </button>
-              </SignOutButton>
-            </div>
-          )}
-        </div>
+        <UserButton />
       </div>
     </header>
   );
