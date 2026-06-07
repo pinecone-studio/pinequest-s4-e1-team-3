@@ -22,7 +22,7 @@ const NAV_ITEMS: { key: PanelKey; label: string }[] = [
   { key: "pond", label: "Pond" },
   { key: "workshop", label: "Greenhouse" },
   { key: "memory", label: "Memory Tree" },
-  { key: "notes", label: "Botanist's Desk" },
+  { key: "notes", label: "Chat" },
 ];
 
 export function GardenTopNav({

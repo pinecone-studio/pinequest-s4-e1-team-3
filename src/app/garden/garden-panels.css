@@ -217,3 +217,473 @@
   from { opacity: 0; transform: scale(0.98); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* ---- Botanist's Desk chat (DeskChatPanel.tsx) ----
+   Two-pane companion view: the chat docked on the left and the
+   painted desk scene with pinned notes on the right, floating over
+   a blurred garden background. */
+.desk-chat {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  display: flex;
+  box-sizing: border-box;
+  padding: 18px;
+  animation: garden-fade 0.2s ease;
+}
+.desk-chat-bg {
+  filter: blur(18px) brightness(0.82);
+  transform: scale(1.1);
+}
+.desk-chat-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(40, 48, 34, 0.55);
+}
+.desk-chat-frame {
+  position: relative;
+  z-index: 2;
+  margin: auto;
+  width: 100%;
+  height: 100%;
+  max-width: 1700px;
+  display: flex;
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.5);
+}
+
+/* left — chat column */
+.desk-chat-left {
+  flex: 0 0 41%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--g-paper);
+}
+.dc-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 22px;
+  border-bottom: 1px solid rgba(58, 58, 44, 0.08);
+}
+.dc-back {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--g-ink-soft);
+  background: rgba(154, 168, 127, 0.16);
+}
+.dc-back:hover { background: rgba(154, 168, 127, 0.28); }
+.dc-back.light { background: rgba(247, 241, 228, 0.32); color: var(--g-ivory); }
+.dc-back.light:hover { background: rgba(247, 241, 228, 0.48); }
+.dc-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  flex: 0 0 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--g-ivory);
+  background: var(--g-sage);
+}
+.dc-head-text { flex: 1; min-width: 0; }
+.dc-head-text h2 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--g-ink);
+  margin: 0;
+}
+.dc-head-text p { font-size: 13px; color: var(--g-ink-soft); margin: 1px 0 0; }
+.dc-leaf {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(154, 168, 127, 0.16);
+}
+
+.dc-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 26px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.dc-topic {
+  align-self: center;
+  background: rgba(154, 168, 127, 0.2);
+  color: var(--g-ink-soft);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 999px;
+  margin-bottom: 4px;
+}
+.dc-empty {
+  text-align: center;
+  color: var(--g-ink-soft);
+  font-size: 14px;
+  margin-top: 24px;
+}
+.dc-msg { display: flex; }
+.dc-msg.me { justify-content: flex-end; }
+.dc-msg.them { justify-content: flex-start; }
+.dc-bubble {
+  max-width: 78%;
+  padding: 14px 18px;
+  border-radius: 20px;
+  font-size: 15px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.dc-msg.them .dc-bubble {
+  background: #fff;
+  color: var(--g-ink);
+  border-bottom-left-radius: 6px;
+  box-shadow: 0 6px 18px rgba(40, 34, 18, 0.06);
+}
+.dc-msg.me .dc-bubble {
+  background: var(--g-sage);
+  color: var(--g-ivory);
+  border-bottom-right-radius: 6px;
+}
+.dc-typing { opacity: 0.6; animation: dc-pulse 1s ease-in-out infinite; }
+@keyframes dc-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
+
+.dc-error { text-align: center; color: #b4534f; font-size: 13px; padding: 0 0 8px; }
+
+.dc-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 22px 22px;
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 8px 8px 22px;
+  box-shadow: 0 10px 30px rgba(40, 34, 18, 0.08);
+}
+.dc-input input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  color: var(--g-ink);
+}
+.dc-input input::placeholder { color: var(--g-ink-soft); }
+.dc-mic { color: var(--g-ink-soft); font-size: 16px; }
+.dc-send {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  flex: 0 0 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--g-moss);
+  color: var(--g-ivory);
+  font-size: 16px;
+}
+.dc-send:disabled { opacity: 0.5; }
+
+/* right — painted desk column */
+.desk-chat-right { position: relative; flex: 1; overflow: hidden; }
+.dc-desk-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(30, 28, 18, 0.4) 0%, rgba(30, 28, 18, 0) 30%);
+}
+.dc-desk-head {
+  position: absolute;
+  top: 26px;
+  left: 30px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.dc-desk-head h2 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--g-ivory);
+  margin: 0;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+.dc-desk-head p {
+  font-size: 12.5px;
+  color: var(--g-on-forest-soft);
+  margin: 3px 0 0;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* pinned notes tacked to the corkboard */
+.dc-corkboard {
+  position: absolute;
+  top: 9%;
+  left: 8%;
+  right: 8%;
+  z-index: 2;
+  display: flex;
+  gap: 6%;
+  justify-content: center;
+}
+.dc-pin {
+  position: relative;
+  width: 200px;
+  background: #f3ecd8;
+  padding: 26px 22px 30px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+  font-family: "Cormorant Garamond", Georgia, serif;
+  color: #4a4334;
+}
+.dc-pin::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #7fa0c4, #3a567a 70%);
+  box-shadow: 0 4px 7px rgba(0, 0, 0, 0.35);
+}
+.dc-pin.pin-0 { transform: rotate(-3deg); }
+.dc-pin.pin-1 { transform: rotate(2.5deg); margin-top: 42px; }
+.dc-pin h3 {
+  font-size: 19px;
+  font-weight: 600;
+  font-style: italic;
+  margin: 0 0 10px;
+}
+.dc-pin p {
+  font-size: 14.5px;
+  line-height: 1.55;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* bottom action row on the desk: pin-a-note + drawer */
+.dc-desk-actions {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dc-add-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(247, 241, 228, 0.92);
+  color: var(--g-ink);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 13px 22px;
+  border-radius: 999px;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.26);
+}
+.dc-add-note:hover { background: var(--g-ivory); }
+.dc-drawer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(155deg, var(--g-terracotta), #a9714a);
+  color: var(--g-ivory);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 13px 26px;
+  border-radius: 999px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+}
+.dc-drawer::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f0e4c8, #d8c27a 70%);
+}
+.dc-drawer:hover { filter: brightness(1.05); }
+
+/* inline note composer card */
+.dc-note-form {
+  position: absolute;
+  bottom: 88px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  width: min(360px, 80%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--g-ivory);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.4);
+}
+.dc-note-form input,
+.dc-note-form textarea {
+  border: 1px solid rgba(58, 58, 44, 0.16);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--g-ink);
+  background: #fff;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+}
+.dc-note-form input:focus,
+.dc-note-form textarea:focus { border-color: var(--g-sage); }
+.dc-note-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.dc-note-form-actions button {
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: var(--g-moss);
+  color: var(--g-ivory);
+}
+.dc-note-form-actions button:disabled { opacity: 0.5; }
+.dc-note-form-actions button.ghost {
+  background: transparent;
+  color: var(--g-ink-soft);
+}
+.dc-note-form-actions button.ghost:hover { background: rgba(58, 58, 44, 0.07); }
+
+/* small "tuck into drawer" control on each pinned note */
+.dc-pin-archive {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  color: #6a6250;
+  background: rgba(0, 0, 0, 0.06);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.dc-pin:hover .dc-pin-archive { opacity: 1; }
+.dc-pin-archive:hover { background: rgba(0, 0, 0, 0.14); }
+
+/* invisible tap target over the desk's center drawer.
+   Stays fully transparent — no visible box in the closed state; the
+   only container that appears is the open-drawer panel on tap. */
+.dc-drawer-hotspot {
+  position: absolute;
+  z-index: 2;
+  left: 22%;
+  right: 22%;
+  bottom: 0;
+  height: 34%;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* pulled-open drawer: list of archived ("old") notes */
+.dc-drawer-open {
+  position: absolute;
+  z-index: 3;
+  left: 7%;
+  right: 7%;
+  bottom: 6%;
+  max-height: 56%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(58, 42, 27, 0.66);
+  backdrop-filter: blur(2px);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.42);
+}
+.dc-drawer-notes {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dc-drawer-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(247, 241, 228, 0.95);
+  border-radius: 11px;
+  padding: 11px 13px;
+}
+.dc-drawer-note > div { flex: 1; min-width: 0; }
+.dc-drawer-note h4 {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--g-ink);
+  margin: 0;
+}
+.dc-drawer-note p {
+  font-size: 12.5px;
+  color: var(--g-ink-soft);
+  margin: 3px 0 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.dc-drawer-note button {
+  flex: 0 0 auto;
+  background: var(--g-moss);
+  color: var(--g-ivory);
+  font-weight: 600;
+  font-size: 12px;
+  padding: 7px 14px;
+  border-radius: 999px;
+}
+.dc-drawer-note button:hover { filter: brightness(1.06); }
+.dc-drawer-empty {
+  color: var(--g-on-forest-soft);
+  font-size: 13px;
+  text-align: center;
+  padding: 18px 0;
+}
+.dc-drawer-close {
+  align-self: center;
+  background: rgba(247, 241, 228, 0.92);
+  color: var(--g-ink);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 9px 20px;
+  border-radius: 999px;
+}
+.dc-drawer-close:hover { background: var(--g-ivory); }
+
+/* narrow screens: stack the two panes */
+@media (max-width: 900px) {
+  .desk-chat-frame { flex-direction: column; height: 96vh; }
+  .desk-chat-left { flex: 1 1 55%; }
+  .desk-chat-right { flex: 1 1 45%; }
+}
