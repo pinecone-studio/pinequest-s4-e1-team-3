@@ -178,6 +178,7 @@ Analyze the following conversation and return a JSON object with:
   ]
 }
 Extract 2-5 meaningful memories. Only include memories that reveal something real about the user.
+Write "summary", "tags", and each memory's "content" in the SAME language the user writes in — e.g. if the conversation is in Mongolian, write those fields in Mongolian. Never translate them to English; the example phrasing above only illustrates the form (concise, first person), not the language. "mood" and "category" must stay exactly as the fixed English values listed above — those are never translated.
 Respond only with the JSON object.`,
         },
         {
@@ -325,6 +326,7 @@ Read this excerpt from the MIDDLE of an ongoing conversation (it is not the end 
   ]
 }
 Only include memories that reveal something real and lasting about the user — skip small talk and anything tied only to this moment. Return an empty list if nothing stands out.
+Write each memory's "content" in the SAME language the user writes in — e.g. if the conversation is in Mongolian, write it in Mongolian. Never translate it to English; the example phrasing above only illustrates the form (concise, first person), not the language. "category" must stay exactly as one of the fixed English values listed above — that is never translated.
 Respond only with the JSON object.`,
         },
         {
