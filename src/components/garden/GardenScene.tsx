@@ -51,15 +51,18 @@ const TIME_PRESETS = [
 
 export function GardenScene({
   onOpenWorkshop,
+  onOpenPond,
   userName,
 }: {
   onOpenWorkshop: () => void;
+  onOpenPond: () => void;
   userName: string;
 }) {
   const router = useRouter();
   const { data: flowers, loading, error } = useFetchJson<FlowerSummary[]>("/api/flowers");
   const [activeFilter, setActiveFilter] = useState("all");
   const [timeIndex, setTimeIndex] = useState(0);
+  const [pondHovered, setPondHovered] = useState(false);
   const time = TIME_PRESETS[timeIndex];
 
   function selectFlower(flower: FlowerSummary) {
@@ -82,6 +85,53 @@ export function GardenScene({
         className="garden-scene-bg"
       />
       <div style={{ position: "absolute", inset: 0, zIndex: 1, background: time.tint, pointerEvents: "none" }} />
+
+      <button
+        type="button"
+        aria-label="Open Mood Pond"
+        onClick={onOpenPond}
+        onMouseEnter={() => setPondHovered(true)}
+        onMouseLeave={() => setPondHovered(false)}
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "70%",
+          width: "40%",
+          height: "25%",
+          zIndex: 2,
+          background: pondHovered ? "rgba(255,255,255,0.18)" : "transparent",
+          border: "none",
+          cursor: "pointer",
+          borderRadius: "38% 62% 58% 42% / 52% 48% 52% 48%",
+          transition: "background 0.25s ease",
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "center",
+          paddingBottom: "6%",
+        }}
+      >
+        {pondHovered && (
+          <span style={{
+            background: "rgba(30,28,26,0.82)",
+            color: "#f0ede8",
+            fontSize: 14,
+            fontWeight: 500,
+            borderRadius: 999,
+            padding: "5px 14px",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            letterSpacing: 0.2,
+            pointerEvents: "none",
+          }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ opacity: 0.85 }}>
+              <circle cx="7" cy="7" r="6" stroke="#f0ede8" strokeWidth="1.4" />
+              <circle cx="7" cy="7" r="2.5" fill="#f0ede8" />
+            </svg>
+            Mood Pond
+          </span>
+        )}
+      </button>
 
       <p className="garden-welcome">{userName ? `Welcome back, ${userName}` : "Your garden"}</p>
 

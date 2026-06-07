@@ -29,7 +29,7 @@ export function GardenShell({ userName }: { userName: string }) {
 
   return (
     <div className="garden-root">
-      <GardenScene onOpenWorkshop={() => setPanel("workshop")} userName={userName} />
+      <GardenScene onOpenWorkshop={() => setPanel("workshop")} onOpenPond={() => setPanel("pond")} userName={userName} />
       <GardenTopNav active={panel} onSelect={setPanel} userName={userName} />
 
       {panel === "workshop" && <WorkshopPanel onClose={close} />}
