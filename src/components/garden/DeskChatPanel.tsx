@@ -19,11 +19,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useFetchJson } from "@/hooks/useFetchJson";
-import type { FlowerSummary, Note } from "./types";
+import type { FlowerSummary, Note, Species } from "./types";
 
 type Message = { role: "user" | "assistant"; content: string };
 
 const COMPANION_NAME = "Sage";
+
+// When the user has no flower yet, the desk chat starts a conversation
+// automatically on their first message using this species as the default
+// companion (matches "Sage"). Falls back to the first available species.
+const DEFAULT_SPECIES_KEY = "lavender";
 
 // species.key → the conversation topic shown in the chat header pill
 const TOPIC_BY_SPECIES: Record<string, string> = {
@@ -35,7 +40,9 @@ const TOPIC_BY_SPECIES: Record<string, string> = {
 };
 
 export function DeskChatPanel({ onClose }: { onClose: () => void }) {
-  const { data: flowers } = useFetchJson<FlowerSummary[]>("/api/flowers");
+  const { data: flowers, refetch: refetchFlowers } =
+    useFetchJson<FlowerSummary[]>("/api/flowers");
+  const { data: speciesList } = useFetchJson<Species[]>("/api/species");
 
   // Pick the flower to talk to: the most recently planted one that's
   // still growing and has a chat, falling back to the most recent
@@ -48,7 +55,12 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
     return pool.reduce((a, b) => (a.plantedAt > b.plantedAt ? a : b));
   }, [flowers]);
 
-  const conversationId = activeFlower?.conversationId ?? null;
+  // A conversation started right here in the desk chat (when the user had
+  // no flower yet). Once flowers refetch, activeFlower converges to the same
+  // conversation, so the two ids agree.
+  const [createdConversationId, setCreatedConversationId] = useState<string | null>(null);
+
+  const conversationId = activeFlower?.conversationId ?? createdConversationId;
   const species = activeFlower?.species;
   const topic = species ? TOPIC_BY_SPECIES[species.key] ?? "Companion" : "";
 
@@ -104,11 +116,20 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [completing, setCompleting] = useState(false);
+  const [completed, setCompleted] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Load history once the conversation resolves.
+  // Reset the "saved" state whenever we switch to a different conversation.
   useEffect(() => {
-    if (!conversationId) return;
+    setCompleted(false);
+  }, [conversationId]);
+
+  // Load history once the conversation resolves. Skip conversations we
+  // started right here — their messages already live in local state, and
+  // refetching the (initially empty) history would wipe the optimistic ones.
+  useEffect(() => {
+    if (!conversationId || conversationId === createdConversationId) return;
     let cancelled = false;
     fetch(`/api/conversations/${conversationId}`)
       .then((r) => (r.ok ? r.json() : null))
@@ -125,25 +146,63 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, [conversationId]);
+  }, [conversationId, createdConversationId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Start a flower + conversation on the fly when the user has none yet,
+  // so the desk chat is always usable. Returns the new conversation id,
+  // or null if it couldn't be created.
+  async function ensureConversation(): Promise<string | null> {
+    if (conversationId) return conversationId;
+
+    const list = speciesList ?? [];
+    const picked =
+      list.find((s) => s.key === DEFAULT_SPECIES_KEY) ?? list[0];
+    if (!picked) return null;
+
+    try {
+      const res = await fetch("/api/flowers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ speciesId: picked.id }),
+      });
+      if (!res.ok) return null;
+      const flower = (await res.json()) as { conversationId: string };
+      setCreatedConversationId(flower.conversationId);
+      refetchFlowers();
+      return flower.conversationId;
+    } catch {
+      return null;
+    }
+  }
+
   async function send() {
     const text = input.trim();
-    if (!text || loading || !conversationId) return;
+    if (!text || loading) return;
 
     setInput("");
     setError("");
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
     setLoading(true);
+
+    // If there's no conversation yet, plant a default flower first so the
+    // user can chat immediately without visiting the Greenhouse.
+    const convId = await ensureConversation();
+    if (!convId) {
+      setError("Couldn't start a conversation — please try again.");
+      setInput(text); // restore what they typed so it isn't lost
+      setLoading(false);
+      return;
+    }
+
+    setMessages((prev) => [...prev, { role: "user", content: text }]);
 
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ conversationId, message: text }),
+      body: JSON.stringify({ conversationId: convId, message: text }),
     });
 
     if (!res.ok || !res.body) {
@@ -181,6 +240,30 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
     }
   }
 
+  // Save & end the conversation: kicks off the memory pipeline on the server
+  // (extracts a summary, mood, tags and memories, then blooms the flower).
+  // The pipeline runs in the background, so we just confirm it started.
+  async function endConversation() {
+    if (!conversationId || completing || completed) return;
+    setCompleting(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/conversations/${conversationId}/complete`, {
+        method: "POST",
+      });
+      if (!res.ok && res.status !== 400) {
+        throw new Error("complete failed");
+      }
+      // 400 = already completed — treat as success (idempotent).
+      setCompleted(true);
+      refetchFlowers();
+    } catch {
+      setError("Couldn't save this conversation — please try again.");
+    } finally {
+      setCompleting(false);
+    }
+  }
+
   return (
     <div className="desk-chat">
       <Image
@@ -208,9 +291,25 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
               <h2>{COMPANION_NAME}</h2>
               <p>Your companion{species ? ` · by the ${species.name}` : ""}</p>
             </div>
-            <span className="dc-leaf" aria-hidden>
-              🍃
-            </span>
+            {completed ? (
+              <span className="dc-saved" aria-live="polite">
+                Saved 🌸
+              </span>
+            ) : conversationId && messages.length > 0 ? (
+              <button
+                type="button"
+                className="dc-end"
+                onClick={endConversation}
+                disabled={completing}
+                title="Save this conversation — its memories grow your flower"
+              >
+                {completing ? "Saving…" : "End & save"}
+              </button>
+            ) : (
+              <span className="dc-leaf" aria-hidden>
+                🍃
+              </span>
+            )}
           </header>
 
           <div className="dc-body">
@@ -223,9 +322,7 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
 
             {messages.length === 0 && (
               <p className="dc-empty">
-                {conversationId
-                  ? "Let’s breathe — what’s been weighing on you?"
-                  : "Plant a flower in the Greenhouse to start a conversation."}
+                Let’s breathe — what’s been weighing on you?
               </p>
             )}
 
@@ -240,14 +337,19 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
           </div>
 
           {error && <p className="dc-error">{error}</p>}
+          {completed && (
+            <p className="dc-saved-note">
+              This reflection is saved — your flower is blooming in the garden 🌸
+            </p>
+          )}
 
           <div className="dc-input">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
-              placeholder="Write your message…"
-              disabled={loading || !conversationId}
+              placeholder={completed ? "This reflection is saved" : "Write your message…"}
+              disabled={loading || completed}
             />
             <span className="dc-mic" aria-hidden>
               🎙
@@ -256,7 +358,7 @@ export function DeskChatPanel({ onClose }: { onClose: () => void }) {
               type="button"
               className="dc-send"
               onClick={send}
-              disabled={loading || !input.trim() || !conversationId}
+              disabled={loading || !input.trim() || completed}
               aria-label="Send message"
             >
               ➤

@@ -37,8 +37,6 @@ const SPECIES_ART: Record<string, string> = {
   rose: "/garden/rose.png",
   iris: "/garden/Iris.png",
   lavender: "/garden/lavender.png",
-  iris: "/garden/Iris.png",
-  daisy: "/garden/daisy.png",
 };
 
 const ART_SCALE: Record<GrowthStage, number> = {
@@ -151,6 +149,9 @@ export function FlowerSprite({
           <span className="date">
             {new Date(flower.plantedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
           </span>
+          {flower.summary && (
+            <span className="summary">{flower.summary}</span>
+          )}
         </span>
       </span>
     </button>

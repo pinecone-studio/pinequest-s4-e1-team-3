@@ -9,7 +9,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"]!,
-    directUrl: process.env["DIRECT_URL"]!,
+    // Migrate/introspect use a direct (session-mode) connection.
+    // The runtime client connects via the pooler through PrismaPg (see src/lib/prisma.ts).
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"]!,
   },
 });
