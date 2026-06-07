@@ -23,7 +23,6 @@
 
 import { useRef, useEffect, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useFetchJson } from "@/hooks/useFetchJson";
 import { FlowerSprite } from "./FlowerSprite";
 import { MoodPill } from "./MoodPill";
@@ -126,16 +125,17 @@ export function GardenScene({
   onOpenWorkshop,
   onOpenMemoryTree,
   onOpenPond,
+  onOpenFlowerChat,
   userName,
   nightMode = false,
 }: {
   onOpenWorkshop: () => void;
   onOpenMemoryTree: () => void;
   onOpenPond: () => void;
+  onOpenFlowerChat: (flowerId: string) => void;
   userName: string;
   nightMode?: boolean;
 }) {
-  const router = useRouter();
   const {
     data: flowers,
     loading,
@@ -259,7 +259,7 @@ export function GardenScene({
 
   function selectFlower(flower: FlowerSummary) {
     if (drag.current.moved) return; // panning, not clicking
-    if (flower.conversationId) router.push(`/chat/${flower.conversationId}`);
+    onOpenFlowerChat(flower.id);
   }
 
   function handleFlowerHover(flower: FlowerSummary) {
