@@ -149,6 +149,9 @@ export function FlowerSprite({
           <span className="date">
             {new Date(flower.plantedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
           </span>
+          {flower.summary && (
+            <span className="summary">{flower.summary}</span>
+          )}
         </span>
       </span>
     </button>

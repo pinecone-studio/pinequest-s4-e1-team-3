@@ -152,7 +152,6 @@ export async function POST(req: NextRequest) {
     model: openai("gpt-5.4-mini-2026-03-17"),
     system: systemPrompt,
     messages: [...history, { role: "user", content: message }],
-    temperature: 0.5,
     async onFinish({ text }) {
       // Save the AI's response after the full stream completes
       await prisma.message.create({
