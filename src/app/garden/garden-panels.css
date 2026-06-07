@@ -42,17 +42,21 @@
   text-align: left;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 .garden-flower-card.visible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
 .garden-flower-card-icon {
-  width: 32px;
-  height: 32px;
+  position: relative;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  flex: 0 0 32px;
+  flex: 0 0 48px;
+  overflow: hidden;
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
 }
 .garden-flower-card .eyebrow {
@@ -125,7 +129,13 @@
 .garden-scene-panel-scrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(30, 28, 18, 0.34) 0%, rgba(30, 28, 18, 0.06) 28%, rgba(30, 28, 18, 0.1) 55%, rgba(24, 22, 15, 0.7) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(30, 28, 18, 0.34) 0%,
+    rgba(30, 28, 18, 0.06) 28%,
+    rgba(30, 28, 18, 0.1) 55%,
+    rgba(24, 22, 15, 0.7) 100%
+  );
 }
 .garden-scene-panel-back {
   position: absolute;
@@ -213,7 +223,9 @@
   height: 84px;
   transform-origin: 50% 0%;
   cursor: pointer;
-  transition: transform 0.2s ease, filter 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
 }
 .garden-memory-tag:hover,
 .garden-memory-tag:focus-visible {
@@ -271,7 +283,9 @@
   white-space: normal;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 .garden-memory-card.visible {
   opacity: 1;
@@ -316,7 +330,12 @@
   z-index: 2;
   max-height: 56%;
   overflow-y: auto;
-  background: linear-gradient(180deg, rgba(247, 241, 228, 0) 0%, rgba(247, 241, 228, 0.94) 32%, var(--g-ivory) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(247, 241, 228, 0) 0%,
+    rgba(247, 241, 228, 0.94) 32%,
+    var(--g-ivory) 100%
+  );
   padding: 70px 36px 26px;
 }
 .garden-row {
@@ -343,8 +362,14 @@
 }
 
 @keyframes garden-fade {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Like garden-fade, but keeps the panel's centering translate(-50%, -50%)
@@ -353,12 +378,19 @@
    center) until the animation finished and the stylesheet's transform
    reasserted itself, producing a visible snap into place. */
 @keyframes garden-panel-pop {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.98); }
-  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-/* ---- Botanist's Desk chat (DeskChatPanel.tsx) ----
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  /* ---- Botanist's Desk chat (DeskChatPanel.tsx) ----
    Two-pane companion view: the chat docked on the left and the
    painted desk scene with pinned notes on the right, floating over
    a blurred garden background. */
+}
 .desk-chat {
   position: absolute;
   inset: 0;
@@ -418,9 +450,16 @@
   color: var(--g-ink-soft);
   background: rgba(154, 168, 127, 0.16);
 }
-.dc-back:hover { background: rgba(154, 168, 127, 0.28); }
-.dc-back.light { background: rgba(247, 241, 228, 0.32); color: var(--g-ivory); }
-.dc-back.light:hover { background: rgba(247, 241, 228, 0.48); }
+.dc-back:hover {
+  background: rgba(154, 168, 127, 0.28);
+}
+.dc-back.light {
+  background: rgba(247, 241, 228, 0.32);
+  color: var(--g-ivory);
+}
+.dc-back.light:hover {
+  background: rgba(247, 241, 228, 0.48);
+}
 .dc-avatar {
   width: 44px;
   height: 44px;
@@ -433,7 +472,10 @@
   color: var(--g-ivory);
   background: var(--g-sage);
 }
-.dc-head-text { flex: 1; min-width: 0; }
+.dc-head-text {
+  flex: 1;
+  min-width: 0;
+}
 .dc-head-text h2 {
   font-family: "Cormorant Garamond", Georgia, serif;
   font-size: 24px;
@@ -441,7 +483,11 @@
   color: var(--g-ink);
   margin: 0;
 }
-.dc-head-text p { font-size: 13px; color: var(--g-ink-soft); margin: 1px 0 0; }
+.dc-head-text p {
+  font-size: 13px;
+  color: var(--g-ink-soft);
+  margin: 1px 0 0;
+}
 .dc-leaf {
   width: 40px;
   height: 40px;
@@ -477,9 +523,15 @@
   font-size: 14px;
   margin-top: 24px;
 }
-.dc-msg { display: flex; }
-.dc-msg.me { justify-content: flex-end; }
-.dc-msg.them { justify-content: flex-start; }
+.dc-msg {
+  display: flex;
+}
+.dc-msg.me {
+  justify-content: flex-end;
+}
+.dc-msg.them {
+  justify-content: flex-start;
+}
 .dc-bubble {
   max-width: 78%;
   padding: 14px 18px;
@@ -499,10 +551,26 @@
   color: var(--g-ivory);
   border-bottom-right-radius: 6px;
 }
-.dc-typing { opacity: 0.6; animation: dc-pulse 1s ease-in-out infinite; }
-@keyframes dc-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
+.dc-typing {
+  opacity: 0.6;
+  animation: dc-pulse 1s ease-in-out infinite;
+}
+@keyframes dc-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
 
-.dc-error { text-align: center; color: #b4534f; font-size: 13px; padding: 0 0 8px; }
+.dc-error {
+  text-align: center;
+  color: #b4534f;
+  font-size: 13px;
+  padding: 0 0 8px;
+}
 
 .dc-input {
   display: flex;
@@ -522,8 +590,13 @@
   font-size: 15px;
   color: var(--g-ink);
 }
-.dc-input input::placeholder { color: var(--g-ink-soft); }
-.dc-mic { color: var(--g-ink-soft); font-size: 16px; }
+.dc-input input::placeholder {
+  color: var(--g-ink-soft);
+}
+.dc-mic {
+  color: var(--g-ink-soft);
+  font-size: 16px;
+}
 .dc-send {
   width: 44px;
   height: 44px;
@@ -536,14 +609,24 @@
   color: var(--g-ivory);
   font-size: 16px;
 }
-.dc-send:disabled { opacity: 0.5; }
+.dc-send:disabled {
+  opacity: 0.5;
+}
 
 /* right — painted desk column */
-.desk-chat-right { position: relative; flex: 1; overflow: hidden; }
+.desk-chat-right {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
 .dc-desk-scrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(30, 28, 18, 0.4) 0%, rgba(30, 28, 18, 0) 30%);
+  background: linear-gradient(
+    180deg,
+    rgba(30, 28, 18, 0.4) 0%,
+    rgba(30, 28, 18, 0) 30%
+  );
 }
 .dc-desk-head {
   position: absolute;
@@ -601,8 +684,13 @@
   background: radial-gradient(circle at 35% 30%, #7fa0c4, #3a567a 70%);
   box-shadow: 0 4px 7px rgba(0, 0, 0, 0.35);
 }
-.dc-pin.pin-0 { transform: rotate(-3deg); }
-.dc-pin.pin-1 { transform: rotate(2.5deg); margin-top: 42px; }
+.dc-pin.pin-0 {
+  transform: rotate(-3deg);
+}
+.dc-pin.pin-1 {
+  transform: rotate(2.5deg);
+  margin-top: 42px;
+}
 .dc-pin h3 {
   font-size: 19px;
   font-weight: 600;
@@ -639,7 +727,9 @@
   border-radius: 999px;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.26);
 }
-.dc-add-note:hover { background: var(--g-ivory); }
+.dc-add-note:hover {
+  background: var(--g-ivory);
+}
 .dc-drawer {
   display: flex;
   align-items: center;
@@ -659,7 +749,9 @@
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #f0e4c8, #d8c27a 70%);
 }
-.dc-drawer:hover { filter: brightness(1.05); }
+.dc-drawer:hover {
+  filter: brightness(1.05);
+}
 
 /* inline note composer card */
 .dc-note-form {
@@ -690,7 +782,9 @@
   font-family: inherit;
 }
 .dc-note-form input:focus,
-.dc-note-form textarea:focus { border-color: var(--g-sage); }
+.dc-note-form textarea:focus {
+  border-color: var(--g-sage);
+}
 .dc-note-form-actions {
   display: flex;
   justify-content: flex-end;
@@ -704,12 +798,16 @@
   background: var(--g-moss);
   color: var(--g-ivory);
 }
-.dc-note-form-actions button:disabled { opacity: 0.5; }
+.dc-note-form-actions button:disabled {
+  opacity: 0.5;
+}
 .dc-note-form-actions button.ghost {
   background: transparent;
   color: var(--g-ink-soft);
 }
-.dc-note-form-actions button.ghost:hover { background: rgba(58, 58, 44, 0.07); }
+.dc-note-form-actions button.ghost:hover {
+  background: rgba(58, 58, 44, 0.07);
+}
 
 /* small "tuck into drawer" control on each pinned note */
 .dc-pin-archive {
@@ -729,8 +827,12 @@
   opacity: 0;
   transition: opacity 0.15s ease;
 }
-.dc-pin:hover .dc-pin-archive { opacity: 1; }
-.dc-pin-archive:hover { background: rgba(0, 0, 0, 0.14); }
+.dc-pin:hover .dc-pin-archive {
+  opacity: 1;
+}
+.dc-pin-archive:hover {
+  background: rgba(0, 0, 0, 0.14);
+}
 
 /* invisible tap target over the desk's center drawer.
    Stays fully transparent — no visible box in the closed state; the
@@ -777,7 +879,10 @@
   border-radius: 11px;
   padding: 11px 13px;
 }
-.dc-drawer-note > div { flex: 1; min-width: 0; }
+.dc-drawer-note > div {
+  flex: 1;
+  min-width: 0;
+}
 .dc-drawer-note h4 {
   font-size: 13.5px;
   font-weight: 700;
@@ -800,7 +905,9 @@
   padding: 7px 14px;
   border-radius: 999px;
 }
-.dc-drawer-note button:hover { filter: brightness(1.06); }
+.dc-drawer-note button:hover {
+  filter: brightness(1.06);
+}
 .dc-drawer-empty {
   color: var(--g-on-forest-soft);
   font-size: 13px;
@@ -816,11 +923,20 @@
   padding: 9px 20px;
   border-radius: 999px;
 }
-.dc-drawer-close:hover { background: var(--g-ivory); }
+.dc-drawer-close:hover {
+  background: var(--g-ivory);
+}
 
 /* narrow screens: stack the two panes */
 @media (max-width: 900px) {
-  .desk-chat-frame { flex-direction: column; height: 96vh; }
-  .desk-chat-left { flex: 1 1 55%; }
-  .desk-chat-right { flex: 1 1 45%; }
+  .desk-chat-frame {
+    flex-direction: column;
+    height: 96vh;
+  }
+  .desk-chat-left {
+    flex: 1 1 55%;
+  }
+  .desk-chat-right {
+    flex: 1 1 45%;
+  }
 }

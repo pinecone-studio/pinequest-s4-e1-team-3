@@ -38,10 +38,13 @@
   overflow: hidden;
 }
 
-/* ---- main scene: full-bleed painted illustration ---- */
+/* ---- main scene: pannable wide-world viewport ---- */
 .garden-scene {
   position: absolute;
   inset: 0;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .garden-scene-bg {
   z-index: 0;
@@ -484,6 +487,26 @@
   padding: 9px 18px;
   border-radius: 999px;
   white-space: nowrap;
+}
+
+/* bird flies left→right across the full world width (250vh) */
+@keyframes garden-bird-fly {
+  from { transform: translateX(-100px); }
+  to   { transform: translateX(calc(250vh + 100px)); }
+}
+
+/* firefly twinkling in night mode */
+@keyframes firefly-twinkle {
+  0%, 100% { opacity: 0.1;  transform: scale(0.7); }
+  45%       { opacity: 0.9;  transform: scale(1.3); }
+  60%       { opacity: 1;    transform: scale(1.5); }
+}
+
+/* bird lifts off a hovered flower and shrinks toward the Memory Tree nav */
+@keyframes hover-bird-fly {
+  0%   { transform: translate(0, 0) scale(1);                                           opacity: 1; }
+  50%  { transform: translate(calc(var(--end-dx) * 0.5), calc(var(--end-dy) * 0.5 - 30px)) scale(0.6); opacity: 1; }
+  100% { transform: translate(var(--end-dx), var(--end-dy)) scale(0.2);                 opacity: 0; }
 }
 
 @keyframes garden-fade {
