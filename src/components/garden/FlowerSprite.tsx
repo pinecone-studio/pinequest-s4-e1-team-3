@@ -37,8 +37,6 @@ const SPECIES_ART: Record<string, string> = {
   rose: "/garden/rose.png",
   iris: "/garden/Iris.png",
   lavender: "/garden/lavender.png",
-  iris: "/garden/Iris.png",
-  daisy: "/garden/daisy.png",
 };
 
 const ART_SCALE: Record<GrowthStage, number> = {
