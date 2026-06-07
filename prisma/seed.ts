@@ -1,6 +1,13 @@
 // ============================================
 //  prisma/seed.ts
 //
+//  Seeds the FlowerSpecies table with the 5 flower types
+//  available in the Workshop.
+//  Seeds the FlowerSpecies table with the 4 flower types:
+//    daisy     → career & purpose
+//    rose      → relationships & connection
+//    iris      → self-reflection & inner peace
+//    lavender  → stress & emotional relief
 //  Seeds the FlowerSpecies table with the 4 flower types:
 //    daisy          → career & purpose
 //    rose           → relationships & connection

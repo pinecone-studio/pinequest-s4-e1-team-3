@@ -155,13 +155,13 @@
   align-items: center;
   justify-content: center;
   font-size: 19px;
-  background: rgba(247, 241, 228, 0.32);
+  background: rgba(247, 241, 228, 0.72);
   backdrop-filter: blur(10px);
-  color: var(--g-ivory);
+  color: var(--g-ink);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
 }
 .garden-scene-panel-back-btn:hover {
-  background: rgba(247, 241, 228, 0.48);
+  background: rgba(247, 241, 228, 0.9);
 }
 .garden-scene-panel-title {
   font-family: "Cormorant Garamond", Georgia, serif;
@@ -179,18 +179,18 @@
 }
 .garden-scene-panel-note {
   position: absolute;
-  top: 34px;
-  right: 40px;
+  top: 26px;
+  right: 24px;
   z-index: 2;
-  max-width: 230px;
-  background: var(--g-ivory);
+  width: 148px;
+  background: rgba(253, 248, 238, 0.78);
   color: var(--g-ink);
   font-family: "Cormorant Garamond", Georgia, serif;
   font-style: italic;
-  font-size: 14.5px;
-  line-height: 1.5;
+  font-size: 15.5px;
+  line-height: 1.55;
   text-align: center;
-  padding: 20px 20px 16px;
+  padding: 22px 16px 18px;
   margin: 0;
   border-radius: 3px;
   transform: rotate(2deg);
@@ -204,8 +204,8 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #d8d2c4, #8b8674 70%);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  background: radial-gradient(circle at 35% 35%, #e05555, #a81c1c 70%);
+  box-shadow: 0 3px 8px rgba(140, 20, 20, 0.45);
 }
 
 /* free-floating content placed directly over a panel's banner art (e.g. memory tags on the tree) */

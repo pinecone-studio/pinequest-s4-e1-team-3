@@ -43,7 +43,12 @@ export function GardenShell({ userName }: { userName: string }) {
         onToggleNight={() => setNightMode((n) => !n)}
       />
 
-      {panel === "workshop" && <WorkshopPanel onClose={close} />}
+      {panel === "workshop" && (
+        <WorkshopPanel
+          onClose={close}
+          onPlanted={() => setPanel("notes")}
+        />
+      )}
       {panel === "pond" && <PondPanel onClose={close} />}
       {panel === "memory" && <MemoryTreePanel onClose={close} />}
       {panel === "notes" && <DeskChatPanel onClose={close} />}
