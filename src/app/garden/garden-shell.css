@@ -1,0 +1,485 @@
+/* ============================================
+   garden-shell.css
+   The outer frame of the Garden experience: the warm "forest &
+   paper" palette (as CSS custom properties on .garden-root), the
+   floating top navigation, the full-bleed painted scene, and the
+   floating controls that sit along its edges (mood, weather,
+   filters, pagination). Split from garden-panels.css so each
+   stylesheet covers one layer of the UI (frame vs. content-on-top
+   -of-the-frame) and stays easy to scan on its own.
+   ============================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Mulish:wght@400;600;700;800&display=swap");
+
+.garden-root {
+  --g-paper: #efe7d6;
+  --g-ivory: #f7f1e4;
+  --g-ink: #3a3a2c;
+  --g-ink-soft: #5f5c49;
+  --g-moss: #6b7c5a;
+  --g-sage: #9aa87f;
+  --g-terracotta: #c98a5e;
+  --g-gold: #d8c27a;
+  --g-lotus: #cf8aa0;
+  --g-lavender: #b6a8cf;
+  --g-forest: #23271b;
+  --g-forest-2: #2b3022;
+  --g-on-forest: #e9e6d4;
+  --g-on-forest-soft: #b4b59a;
+  --g-line: rgba(216, 194, 122, 0.14);
+
+  position: relative;
+  /* 100vh minus the app's top <header> (see layout.tsx) so the
+     garden fills the rest of the viewport without a page scrollbar */
+  height: calc(100vh - 61px);
+  width: 100%;
+  background: var(--g-forest);
+  color: var(--g-ink);
+  font-family: "Mulish", system-ui, sans-serif;
+  overflow: hidden;
+}
+
+/* ---- main scene: full-bleed painted illustration ---- */
+.garden-scene {
+  position: absolute;
+  inset: 0;
+}
+.garden-scene-bg {
+  z-index: 0;
+}
+.garden-scene::after {
+  /* gentle vignette so floating chrome stays readable on bright art */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(35, 39, 27, 0.32) 0%, rgba(35, 39, 27, 0) 22%, rgba(35, 39, 27, 0) 70%, rgba(35, 39, 27, 0.4) 100%);
+  pointer-events: none;
+}
+
+/* ---- floating top bar: brand + nav pills + account ---- */
+.garden-topbar {
+  position: absolute;
+  top: 24px;
+  left: 28px;
+  right: 28px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.garden-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--g-forest);
+  color: var(--g-on-forest);
+  border-radius: 999px;
+  padding: 9px 20px 9px 12px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 19px;
+  white-space: nowrap;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+}
+.garden-brand-mark {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--g-sage);
+  font-size: 13px;
+}
+.garden-nav {
+  display: inline-flex;
+  gap: 4px;
+  background: rgba(247, 241, 228, 0.55);
+  backdrop-filter: blur(16px);
+  border-radius: 999px;
+  padding: 6px;
+  box-shadow: 0 14px 34px rgba(40, 34, 18, 0.14);
+}
+.garden-nav-pill {
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--g-ink-soft);
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.garden-nav-pill:hover {
+  color: var(--g-ink);
+}
+.garden-nav-pill.active {
+  background: var(--g-ivory);
+  color: var(--g-moss);
+  box-shadow: 0 8px 20px rgba(40, 34, 18, 0.14);
+}
+.garden-topbar-spacer {
+  flex: 1;
+}
+.garden-topbar-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.garden-icon-pill {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(35, 39, 27, 0.5);
+  backdrop-filter: blur(12px);
+  color: var(--g-on-forest);
+  font-size: 16px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
+}
+.garden-icon-pill .badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--g-terracotta);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.garden-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(155deg, var(--g-terracotta), #a9714a);
+  color: #fff7ec;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 700;
+  font-size: 18px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+}
+
+/* ---- floating welcome label (top-left, above the scene) ---- */
+.garden-welcome {
+  position: absolute;
+  top: 92px;
+  left: 28px;
+  z-index: 22;
+  color: var(--g-on-forest);
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-size: 20px;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* ---- weather stack (top-right): "today feels like" + week strip ---- */
+.garden-weather-stack {
+  position: absolute;
+  top: 92px;
+  right: 28px;
+  z-index: 24;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: 270px;
+}
+.garden-weather-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(247, 241, 228, 0.85);
+  backdrop-filter: blur(14px);
+  border-radius: 999px;
+  padding: 11px 16px 11px 18px;
+  box-shadow: 0 16px 40px rgba(40, 34, 18, 0.16);
+}
+.garden-weather-pill .label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.garden-weather-pill .icon {
+  font-size: 17px;
+}
+.garden-weather-pill .eyebrow {
+  display: block;
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--g-ink-soft);
+}
+.garden-weather-pill .value {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 600;
+  font-size: 15.5px;
+  color: var(--g-ink);
+}
+.garden-weather-pill .chevron {
+  color: var(--g-ink-soft);
+  font-size: 12px;
+}
+.garden-forecast-card {
+  background: rgba(247, 241, 228, 0.85);
+  backdrop-filter: blur(16px);
+  border-radius: 22px;
+  padding: 18px 20px 16px;
+  box-shadow: 0 20px 60px rgba(40, 34, 18, 0.18);
+}
+.garden-forecast-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--g-ink-soft);
+  margin: 0 0 16px;
+}
+.garden-forecast-days {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+.garden-forecast-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+.garden-forecast-day .icon {
+  font-size: 16px;
+  line-height: 1;
+}
+.garden-forecast-day .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.garden-forecast-day .name {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--g-ink-soft);
+}
+.garden-forecast-caption {
+  margin: 14px 0 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--g-ink-soft);
+}
+
+/* ---- bottom floating control row ---- */
+.garden-bottom-row {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: 26px;
+  z-index: 26;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  pointer-events: none;
+}
+.garden-bottom-row > * {
+  pointer-events: auto;
+}
+.garden-bottom-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.garden-pill-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(247, 241, 228, 0.82);
+  backdrop-filter: blur(14px);
+  border-radius: 999px;
+  padding: 11px 18px;
+  box-shadow: 0 14px 36px rgba(40, 34, 18, 0.16);
+  font-size: 13px;
+  color: var(--g-ink);
+  white-space: nowrap;
+}
+.garden-pill-btn .eyebrow {
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--g-ink-soft);
+  margin-right: 2px;
+}
+.garden-pill-btn .value {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 600;
+  font-size: 15px;
+}
+.garden-pill-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 9px;
+}
+
+/* mood dropdown */
+.garden-mood-dropdown {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  width: 230px;
+  background: var(--g-ivory);
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: 0 30px 80px rgba(20, 18, 8, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: garden-fade 0.15s ease;
+}
+.garden-mood-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  color: var(--g-ink);
+  text-align: left;
+  width: 100%;
+}
+.garden-mood-row:hover {
+  background: rgba(154, 168, 127, 0.14);
+}
+.garden-mood-row .heart {
+  margin-left: auto;
+  color: var(--g-moss);
+  font-size: 13px;
+}
+
+/* category filter bar (bottom-center) */
+.garden-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(247, 241, 228, 0.78);
+  backdrop-filter: blur(14px);
+  border-radius: 999px;
+  padding: 7px;
+  box-shadow: 0 14px 36px rgba(40, 34, 18, 0.16);
+}
+.garden-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 17px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--g-ink-soft);
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.garden-filter-pill:hover {
+  color: var(--g-ink);
+}
+.garden-filter-pill.active {
+  background: var(--g-ivory);
+  color: var(--g-ink);
+  box-shadow: 0 8px 20px rgba(40, 34, 18, 0.12);
+}
+.garden-filter-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 9px;
+}
+
+/* pagination control (bottom-right) */
+.garden-pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(35, 39, 27, 0.6);
+  backdrop-filter: blur(12px);
+  border-radius: 999px;
+  padding: 9px 16px;
+  color: var(--g-on-forest);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
+}
+.garden-pagination button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+.garden-pagination button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.garden-pagination .track {
+  position: relative;
+  display: block;
+  width: 56px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+.garden-pagination .track-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--g-gold);
+  transition: width 0.25s ease;
+}
+
+/* generic hint pill (loading / empty states over the scene) */
+.garden-hint {
+  position: absolute;
+  z-index: 22;
+  left: 50%;
+  bottom: 96px;
+  transform: translateX(-50%);
+  background: rgba(35, 39, 27, 0.7);
+  backdrop-filter: blur(8px);
+  color: var(--g-on-forest);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+@keyframes garden-fade {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
