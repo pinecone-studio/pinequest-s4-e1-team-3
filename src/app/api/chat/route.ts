@@ -21,8 +21,10 @@
 //     are injected — a greeting like "hi" won't surface random memories.
 //     If no memories pass the threshold, this section is empty.
 //
-//  Both sources are passed to buildSystemPrompt() which weaves them
-//  into the AI's system prompt naturally (not recited, just known).
+//  Both sources — plus the user's relationshipStage (SPROUT/BLOOMING/ROOTED,
+//  recomputed in src/lib/relationship.ts as shared history accumulates) —
+//  are passed to buildSystemPrompt() which weaves them into the AI's
+//  system prompt naturally (not recited, just known).
 //
 //  Streaming: uses Vercel AI SDK streamText + toTextStreamResponse().
 //  The frontend reads the stream incrementally to render text as it arrives.
@@ -39,7 +41,10 @@ import { type NextRequest } from "next/server";
 import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
 import { buildSystemPrompt } from "@/lib/buildSystemPrompt";
-import { runMemoryCheckpoint, MEMORY_CHECKPOINT_INTERVAL } from "@/lib/memoryPipeline";
+import {
+  runMemoryCheckpoint,
+  MEMORY_CHECKPOINT_INTERVAL,
+} from "@/lib/memoryPipeline";
 
 const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -52,7 +57,9 @@ export async function POST(req: NextRequest) {
   const { conversationId, message } = await req.json();
 
   if (!conversationId || !message) {
-    return new Response("conversationId and message are required", { status: 400 });
+    return new Response("conversationId and message are required", {
+      status: 400,
+    });
   }
 
   const conversation = await prisma.conversation.findUnique({
@@ -82,58 +89,68 @@ export async function POST(req: NextRequest) {
   const { flower } = conversation;
   const { species, user } = flower;
 
-  // Save the user's message immediately before making the AI call
-  await prisma.message.create({
-    data: { conversationId, role: "user", content: message },
-  });
+  // The three lookups below are independent of each other (none reads the
+  // others' results), so run them concurrently instead of one-at-a-time —
+  // total wait becomes "the slowest of the three" rather than their sum,
+  // which matters because this all happens before the AI can start replying.
+  const [, profileMemories, retrievedMemories] = await Promise.all([
+    // Save the user's message immediately before making the AI call
+    prisma.message.create({
+      data: { conversationId, role: "user", content: message },
+    }),
 
-  // --- Memory Source 1: Profile memories (always injected) ---
-  // Load the most recent goals, values, concerns, and lessons across all conversations.
-  // These give the AI a stable "who this person is" context on every message.
-  const profileMemories = await prisma.memory.findMany({
-    where: {
-      userId: user.id,
-      type: { in: ["goal", "value", "concern", "lesson"] },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 12,
-  });
+    // --- Memory Source 1: Profile memories (always injected) ---
+    // Load the most recent goals, values, concerns, and lessons across all conversations.
+    // These give the AI a stable "who this person is" context on every message.
+    prisma.memory.findMany({
+      where: {
+        userId: user.id,
+        type: { in: ["goal", "value", "concern", "lesson"] },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+    }),
+
+    // --- Memory Source 2: Semantic retrieval (relevance-based) ---
+    // Embed the current message and find past memories that are semantically close.
+    // Only memories above MEMORY_SIMILARITY_THRESHOLD are injected.
+    // This prevents irrelevant memories from confusing the AI on simple messages.
+    (async () => {
+      try {
+        const embeddingRes = await openaiClient.embeddings.create({
+          model: "text-embedding-3-small",
+          input: message,
+        });
+        const embeddingStr = `[${embeddingRes.data[0].embedding.join(",")}]`;
+
+        // pgvector cosine similarity: 1 - (embedding <=> query) gives similarity score
+        // We filter to only return memories above the threshold
+        const similar = await prisma.$queryRaw<
+          { content: string; score: number }[]
+        >(
+          Prisma.sql`
+            SELECT content, 1 - (embedding <=> ${embeddingStr}::vector) AS score
+            FROM "Memory"
+            WHERE "userId" = ${user.id}
+              AND embedding IS NOT NULL
+              AND 1 - (embedding <=> ${embeddingStr}::vector) > ${MEMORY_SIMILARITY_THRESHOLD}
+            ORDER BY score DESC
+            LIMIT 3
+          `,
+        );
+
+        return similar.map((m) => m.content).join("\n");
+      } catch {
+        // Vector search failed — continue without retrieved memories.
+        // This can happen if no memories exist yet (new user) or pgvector is unavailable.
+        return "";
+      }
+    })(),
+  ]);
 
   const userProfile = profileMemories
     .map((m) => `[${m.type}] ${m.content}`)
     .join("\n");
-
-  // --- Memory Source 2: Semantic retrieval (relevance-based) ---
-  // Embed the current message and find past memories that are semantically close.
-  // Only memories above MEMORY_SIMILARITY_THRESHOLD are injected.
-  // This prevents irrelevant memories from confusing the AI on simple messages.
-  let retrievedMemories = "";
-  try {
-    const embeddingRes = await openaiClient.embeddings.create({
-      model: "text-embedding-3-small",
-      input: message,
-    });
-    const embeddingStr = `[${embeddingRes.data[0].embedding.join(",")}]`;
-
-    // pgvector cosine similarity: 1 - (embedding <=> query) gives similarity score
-    // We filter to only return memories above the threshold
-    const similar = await prisma.$queryRaw<{ content: string; score: number }[]>(
-      Prisma.sql`
-        SELECT content, 1 - (embedding <=> ${embeddingStr}::vector) AS score
-        FROM "Memory"
-        WHERE "userId" = ${user.id}
-          AND embedding IS NOT NULL
-          AND 1 - (embedding <=> ${embeddingStr}::vector) > ${MEMORY_SIMILARITY_THRESHOLD}
-        ORDER BY score DESC
-        LIMIT 3
-      `
-    );
-
-    retrievedMemories = similar.map((m) => m.content).join("\n");
-  } catch {
-    // Vector search failed — continue without retrieved memories.
-    // This can happen if no memories exist yet (new user) or pgvector is unavailable.
-  }
 
   const systemPrompt = buildSystemPrompt({
     companionName: species.name,
@@ -141,6 +158,7 @@ export async function POST(req: NextRequest) {
     userName: user.name ?? "",
     userProfile,
     retrievedMemories,
+    relationshipStage: user.relationshipStage,
   });
 
   const history = conversation.messages.map((m) => ({
@@ -149,8 +167,11 @@ export async function POST(req: NextRequest) {
   }));
 
   const result = streamText({
-    model: openai("gpt-5.4-mini-2026-03-17"),
+    model: openai("gpt-5.4-2026-03-05"),
     system: systemPrompt,
+    // Lower than the model default (1.0) so replies stay warm but more
+    // consistent and grounded — less prone to wandering or over-the-top reactions.
+    temperature: 0.3,
     messages: [...history, { role: "user", content: message }],
     async onFinish({ text }) {
       // Save the AI's response after the full stream completes
@@ -164,9 +185,15 @@ export async function POST(req: NextRequest) {
       // was loaded before this turn's user + assistant messages were saved,
       // so its true count is +2.
       const messageCount = conversation.messages.length + 2;
-      if (messageCount - conversation.lastMemoryCheckpoint >= MEMORY_CHECKPOINT_INTERVAL) {
+      if (
+        messageCount - conversation.lastMemoryCheckpoint >=
+        MEMORY_CHECKPOINT_INTERVAL
+      ) {
         runMemoryCheckpoint(conversationId).catch((err) => {
-          console.error(`[chat] Memory checkpoint failed for ${conversationId}:`, err);
+          console.error(
+            `[chat] Memory checkpoint failed for ${conversationId}:`,
+            err,
+          );
         });
       }
     },
