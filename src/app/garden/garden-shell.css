@@ -303,12 +303,14 @@
   flex: 0 0 9px;
 }
 
-/* mood dropdown — opens upward off the trigger, right-aligned since the
-   pill sits near the screen's right edge above the scrubber */
+/* mood dropdown — opens upward off the trigger. The pill sits in the
+   bottom-left stack, so anchor the dropdown's left edge to the button's
+   left edge and let it grow rightward, where the screen has room
+   (right-alignment and centering both clipped it off the left edge here) */
 .garden-mood-dropdown {
   position: absolute;
   bottom: calc(100% + 12px);
-  right: 0;
+  left: 0;
   width: 230px;
   background: var(--g-ivory);
   border-radius: 18px;

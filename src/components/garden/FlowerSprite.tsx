@@ -12,7 +12,7 @@
 //    SEED → tiny bud · SPROUT/YOUNG/MATURE → fuller bloom · BLOOMING → largest
 //
 //  Hovering reveals a small painted info card (name + planted date +
-//  its first topic tag, if the AI has extracted one yet) — mirroring
+//  its topic tags/keywords, if the AI has extracted any yet) — mirroring
 //  the "label on hover" affordance from the original glyph but with
 //  the richer card treatment from the reference design.
 // ============================================
@@ -149,8 +149,8 @@ export function FlowerSprite({
           <span className="date">
             {new Date(flower.plantedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
           </span>
-          {flower.summary && (
-            <span className="summary">{flower.summary}</span>
+          {flower.tags.length > 0 && (
+            <span className="summary">{flower.tags.join(" · ")}</span>
           )}
         </span>
       </span>
