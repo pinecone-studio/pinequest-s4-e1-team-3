@@ -79,3 +79,33 @@ export async function GET(
     messages: conversation.messages,
   });
 }
+
+// DELETE /api/conversations/:id
+// Deletes the flower (which cascades to the conversation, messages, memories).
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+
+  const conversation = await prisma.conversation.findUnique({
+    where: { id },
+    select: { flower: { select: { id: true, userId: true } } },
+  });
+
+  if (!conversation) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (conversation.flower.userId !== user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  await prisma.flower.delete({ where: { id: conversation.flower.id } });
+
+  return NextResponse.json({ ok: true });
+}

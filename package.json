@@ -28,6 +28,7 @@
     "next": "^16.2.7",
     "npm": "^11.16.0",
     "openai": "^6.42.0",
+    "pinequest-s4-e1-team-3": ".",
     "radix-ui": "^1.4.3",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
