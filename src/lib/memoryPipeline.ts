@@ -11,13 +11,12 @@
 //    1. Load all messages from the conversation
 //    2. Build a transcript string
 //    3. Call OpenAI to extract:
-//         - summary (short description of what was discussed)
 //         - mood    (dominant emotional tone)
 //         - tags    (topic keywords, e.g. ["career", "startup"])
 //         - memories[] (structured insights with category)
 //    4. Generate embeddings for each memory (text-embedding-3-small)
 //    5. Save Memory records to DB (with vectors for semantic search)
-//    6. Update Flower: summary, mood, tags, growthStage=BLOOMING, completedAt
+//    6. Update Flower: tags, mood, growthStage=BLOOMING, completedAt
 //    7. Create MoodEntry (the pond stone) from the detected mood
 //    8. Mark Conversation as completed
 //
@@ -70,7 +69,6 @@ interface ExtractedMemory {
 }
 
 interface ExtractionResult {
-  summary: string;
   mood: string;
   tags: string[];
   memories: ExtractedMemory[];
@@ -169,7 +167,6 @@ export async function runMemoryPipeline(conversationId: string): Promise<void> {
           content: `You are a memory extraction system for a personal reflection app.
 Analyze the following conversation and return a JSON object with:
 {
-  "summary": "2-3 sentence summary of what was discussed and how the user felt",
   "mood": "one of: happy, calm, sad, anxious, motivated, reflective, confused, angry, grateful",
   "tags": ["3-5 short topic keywords, e.g. career, family, startup"],
   "memories": [
@@ -179,9 +176,14 @@ Analyze the following conversation and return a JSON object with:
     }
   ]
 }
-Extract 2-5 meaningful memories. Only include memories that reveal something real about the user.
+Extract 2-5 meaningful memories — the kind of thing a close friend would actually remember and bring up again weeks later, not something that fades by tomorrow. A memory earns its place if it does at least one of these:
+  - Shows a stable trait: a value, fear, goal, coping style, or pattern that keeps showing up for them
+  - Marks a real turning point: a decision, realization, or shift — and what it MEANT to them, not just what happened
+  - Carries genuine emotional weight: something that clearly mattered, not a passing mood or polite remark
+  - Reveals something about a relationship or person that shapes their life
+Skip: small talk and logistics, generic statements that could describe almost anyone ("I want to be happier"), and anything that only matters for this one exchange and won't matter next week. When in doubt, prefer fewer, sharper memories over padding out to 5.
 Keep each memory's "content" to a single short sentence (roughly 8-12 words) — they're displayed in small hover cards on the garden's memory tree, and anything longer overflows the card and looks broken. Summarize the insight; don't narrate the conversation.
-Write "summary", "tags", and each memory's "content" in the SAME language the user writes in — e.g. if the conversation is in Mongolian, write those fields in Mongolian. Never translate them to English; the example phrasing above only illustrates the form (concise, first person), not the language. "mood" and "category" must stay exactly as the fixed English values listed above — those are never translated.
+Write "tags" and each memory's "content" in the SAME language the user writes in — e.g. if the conversation is in Mongolian, write those fields in Mongolian. Never translate them to English; the example phrasing above only illustrates the form (concise, first person), not the language. "mood" and "category" must stay exactly as the fixed English values listed above — those are never translated.
 Respond only with the JSON object.`,
         },
         {
@@ -212,7 +214,6 @@ Respond only with the JSON object.`,
   const updatedFlower = await prisma.flower.update({
     where: { id: flower.id },
     data: {
-      summary: extracted.summary,
       tags: extracted.tags ?? [],
       mood,
       growthStage: GrowthStage.BLOOMING,
@@ -353,7 +354,12 @@ Read this excerpt from the MIDDLE of an ongoing conversation (it is not the end 
     }
   ]
 }
-Only include memories that reveal something real and lasting about the user — skip small talk and anything tied only to this moment. Return an empty list if nothing stands out.
+Only include memories that a close friend would actually remember weeks later — not things that fade by tomorrow. A memory earns its place if it does at least one of these:
+  - Shows a stable trait: a value, fear, goal, coping style, or pattern that keeps showing up for them
+  - Marks a real turning point: a decision, realization, or shift — and what it MEANT to them, not just what happened
+  - Carries genuine emotional weight: something that clearly mattered, not a passing mood or polite remark
+  - Reveals something about a relationship or person that shapes their life
+Skip: small talk and logistics, generic statements that could describe almost anyone ("I want to be happier"), and anything tied only to this moment that won't matter next week. Return an empty list if nothing truly stands out — an empty list is a good, honest result here.
 Keep each memory's "content" to a single short sentence (roughly 8-12 words) — they're displayed in small hover cards on the garden's memory tree, and anything longer overflows the card and looks broken. Summarize the insight; don't narrate the conversation.
 Write each memory's "content" in the SAME language the user writes in — e.g. if the conversation is in Mongolian, write it in Mongolian. Never translate it to English; the example phrasing above only illustrates the form (concise, first person), not the language. "category" must stay exactly as one of the fixed English values listed above — that is never translated.
 Respond only with the JSON object.`,
