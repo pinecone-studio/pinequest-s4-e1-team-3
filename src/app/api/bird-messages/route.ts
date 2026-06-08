@@ -31,6 +31,15 @@ type BirdMessage = {
 };
 
 export async function GET() {
+  try {
+    return await buildMessages();
+  } catch (err) {
+    console.error("[bird-messages] unhandled error:", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
+async function buildMessages() {
   const user = await getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

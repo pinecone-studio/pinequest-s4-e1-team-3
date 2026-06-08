@@ -50,14 +50,14 @@ export function tileCenter(col: number, row: number): [number, number] {
   return [posX, posY];
 }
 
-// Hardcoded safe grass zones — far enough from path, pond, and tree.
-// Left bank: cols 0-4, rows 6-9.  Right meadow: cols 22-24, rows 6-9.
+// Safe grass zones — all G tiles reachable without crossing path/water/tree.
+// Left bank: cols 0-4, rows 5-9.  Right meadow: cols 18-24, rows 5-9.
 export const GRASS_TILES: [number, number][] = [
   ...[0, 1, 2, 3, 4].flatMap((c) =>
-    [6, 7, 8, 9].map((r) => [c, r] as [number, number])
+    [5, 6, 7, 8, 9].map((r) => [c, r] as [number, number])
   ),
-  ...[22, 23, 24].flatMap((c) =>
-    [6, 7, 8, 9].map((r) => [c, r] as [number, number])
+  ...[18, 19, 20, 21, 22, 23, 24].flatMap((c) =>
+    [5, 6, 7, 8, 9].map((r) => [c, r] as [number, number])
   ),
 ];
 
