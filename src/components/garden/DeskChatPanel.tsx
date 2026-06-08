@@ -23,6 +23,16 @@ import type { FlowerSummary, Note, Species } from "./types";
 
 type Message = { role: "user" | "assistant"; content: string };
 
+type ConvItem = {
+  id: string;
+  isCompleted: boolean;
+  createdAt: string;
+  summary: string | null;
+  mood: string | null;
+  flower: { id: string; species: { key: string; name: string; color: string } };
+  firstMessage: string | null;
+};
+
 const COMPANION_NAME = "Sage";
 
 // When the user has no flower yet, the desk chat starts a conversation
@@ -61,8 +71,11 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
   const [createdConversationId, setCreatedConversationId] = useState<
     string | null
   >(null);
+  // Which conversation to show — overrideConvId when the user jumps to a
+  // historic one from the History panel, otherwise the active flower's conv.
+  const [overrideConvId, setOverrideConvId] = useState<string | null>(null);
 
-  const conversationId = activeFlower?.conversationId ?? createdConversationId;
+  const conversationId = overrideConvId ?? activeFlower?.conversationId ?? createdConversationId;
   const species = activeFlower?.species;
   const topic = species ? (TOPIC_BY_SPECIES[species.key] ?? "Companion") : "";
 
@@ -132,6 +145,13 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
   const [completed, setCompleted] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // History panel
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyConvs, setHistoryConvs] = useState<ConvItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
   // Reset the "saved" state whenever we switch to a different conversation.
   useEffect(() => {
     setCompleted(false);
@@ -155,6 +175,7 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
             }),
           ),
         );
+        setCompleted(data.isCompleted ?? false);
       })
       .catch(() => {});
     return () => {
@@ -269,12 +290,45 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
       }
       // 400 = already completed — treat as success (idempotent).
       setCompleted(true);
+      setHistoryLoaded(false);
       refetchFlowers();
     } catch {
       setError("Couldn't save this conversation — please try again.");
     } finally {
       setCompleting(false);
     }
+  }
+
+  async function openHistory() {
+    const next = !showHistory;
+    setShowHistory(next);
+    if (!next || historyLoaded) return;
+    setHistoryLoading(true);
+    try {
+      const r = await fetch("/api/conversations");
+      if (r.ok) setHistoryConvs(await r.json());
+      setHistoryLoaded(true);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  function switchToConversation(conv: ConvItem) {
+    setOverrideConvId(conv.id);
+    setMessages([]);
+    setShowHistory(false);
+  }
+
+  async function confirmDelete(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    await fetch(`/api/conversations/${id}`, { method: "DELETE" });
+    setPendingDeleteId(null);
+    setHistoryConvs((prev) => prev.filter((c) => c.id !== id));
+    if (overrideConvId === id) {
+      setOverrideConvId(null);
+      setMessages([]);
+    }
+    refetchFlowers();
   }
 
   return (
@@ -309,6 +363,14 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
               <h2>{COMPANION_NAME}</h2>
               <p>Your companion{species ? ` · by the ${species.name}` : ""}</p>
             </div>
+            <button
+              type="button"
+              className={"dc-history-btn" + (showHistory ? " active" : "")}
+              onClick={openHistory}
+              title="View past conversations"
+            >
+              {showHistory ? "← Chat" : "History"}
+            </button>
             {completed ? (
               <span className="dc-saved" aria-live="polite">
                 Saved 🌸
@@ -330,38 +392,126 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
             )}
           </header>
 
-          <div className={"dc-body" + (messages.length === 0 ? " dc-body-empty" : "")}>
-            {topic && (
-              <div className="dc-topic">
-                {topic}
-                {species ? ` · ${species.name}` : ""}
-              </div>
-            )}
-
-            {messages.length === 0 && (
-              <p className="dc-empty">
-                Let’s breathe — what’s been weighing on you?
-              </p>
-            )}
-
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                className={"dc-msg " + (m.role === "user" ? "me" : "them")}
-              >
-                <div className="dc-bubble">
-                  {m.content || (
-                    <span className="dc-typing" aria-label="Sage is thinking">
-                      <span />
-                      <span />
-                      <span />
-                    </span>
-                  )}
+          {showHistory ? (
+            <div className="dc-history">
+              <p className="dc-history-head">Past conversations</p>
+              {historyLoading ? (
+                <div className="dc-history-empty">
+                  <span className="dc-typing" aria-label="Loading">
+                    <span />
+                    <span />
+                    <span />
+                  </span>
                 </div>
-              </div>
-            ))}
-            <div ref={bottomRef} />
-          </div>
+              ) : historyConvs.length === 0 ? (
+                <p className="dc-history-empty">No past conversations yet.</p>
+              ) : (
+                historyConvs.map((conv) => {
+                  const d = new Date(conv.createdAt);
+                  const dateStr = d.toLocaleDateString("default", {
+                    month: "short",
+                    day: "numeric",
+                  });
+                  return (
+                    <div
+                      key={conv.id}
+                      className="dc-history-item"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => switchToConversation(conv)}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && switchToConversation(conv)
+                      }
+                    >
+                      <span
+                        className="dc-history-dot"
+                        style={{ background: conv.flower.species.color }}
+                      />
+                      <div className="dc-history-body">
+                        <p className="dc-history-preview">
+                          {conv.firstMessage ?? conv.summary ?? "—"}
+                        </p>
+                        <p className="dc-history-meta">
+                          {conv.flower.species.name} · {dateStr}
+                          {conv.isCompleted ? " · 🌸" : ""}
+                        </p>
+                      </div>
+                      {pendingDeleteId === conv.id ? (
+                        <div
+                          className="dc-history-confirm"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            className="dc-history-confirm-yes"
+                            onClick={(e) => confirmDelete(conv.id, e)}
+                          >
+                            Delete
+                          </button>
+                          <button
+                            type="button"
+                            className="dc-history-confirm-no"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPendingDeleteId(null);
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="dc-history-delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPendingDeleteId(conv.id);
+                          }}
+                          title="Delete conversation"
+                          aria-label="Delete"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          ) : (
+            <div className={"dc-body" + (messages.length === 0 ? " dc-body-empty" : "")}>
+              {topic && (
+                <div className="dc-topic">
+                  {topic}
+                  {species ? ` · ${species.name}` : ""}
+                </div>
+              )}
+
+              {messages.length === 0 && (
+                <p className="dc-empty">
+                  Let’s breathe — what’s been weighing on you?
+                </p>
+              )}
+
+              {messages.map((m, i) => (
+                <div
+                  key={i}
+                  className={"dc-msg " + (m.role === "user" ? "me" : "them")}
+                >
+                  <div className="dc-bubble">
+                    {m.content || (
+                      <span className="dc-typing" aria-label="Sage is thinking">
+                        <span />
+                        <span />
+                        <span />
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <div ref={bottomRef} />
+            </div>
+          )}
 
           {error && <p className="dc-error">{error}</p>}
           {completed && (
@@ -377,9 +527,13 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder={
-                completed ? "This reflection is saved" : "Write your message…"
+                showHistory
+                  ? "Select a conversation above…"
+                  : completed
+                    ? "This reflection is saved"
+                    : "Write your message…"
               }
-              disabled={loading || completed}
+              disabled={loading || completed || showHistory}
             />
             <span className="dc-mic" aria-hidden>
               🎙
@@ -388,7 +542,7 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
               type="button"
               className="dc-send"
               onClick={send}
-              disabled={loading || !input.trim() || completed}
+              disabled={loading || !input.trim() || completed || showHistory}
               aria-label="Send message"
             >
               ➤
