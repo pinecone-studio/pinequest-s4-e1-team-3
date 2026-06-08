@@ -1,0 +1,120 @@
+/* ============================================================
+   BLOOM — design system: storybook serif · warm golden-greens · painterly
+   Variables scoped under .bloom-page to avoid Tailwind conflicts
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+.bloom-page {
+  /* core garden palette, sampled from the art */
+  --ink:        #2c2f24;
+  --ink-soft:   #54584a;
+  --ink-faint:  rgba(44,47,36,.55);
+  --parchment:  #f3ead6;
+  --parchment-2:#ece0c4;
+  --parchment-3:#e3d3b0;
+  --cream:      #faf5ea;
+  --mist:       #e9e4d6;
+  --moss:       #5d7048;
+  --moss-deep:  #465536;
+  --sage:       #8a9b6e;
+  --gold:       #d8b06a;
+  --gold-soft:  #e8d29a;
+  --blossom:    #d49ba0;
+  --pond:       #6f8a86;
+  --line:       rgba(44,47,36,.14);
+  --line-soft:  rgba(44,47,36,.08);
+
+  /* action color */
+  --accent:     #5d7048;
+  --accent-deep:#465536;
+  --accent-ink: #faf5ea;
+
+  /* type */
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body:    'EB Garamond', Georgia, serif;
+
+  /* shadows */
+  --sh-sm: 0 1px 2px rgba(54,46,28,.08), 0 2px 8px rgba(54,46,28,.06);
+  --sh-md: 0 8px 30px rgba(46,40,24,.14), 0 2px 8px rgba(46,40,24,.08);
+  --sh-lg: 0 30px 70px rgba(38,32,18,.30), 0 8px 24px rgba(38,32,18,.18);
+
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 26px;
+
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: #1d2018;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
+}
+
+.bloom-page *, .bloom-page *::before, .bloom-page *::after { box-sizing: border-box; }
+.bloom-page img { display: block; max-width: 100%; }
+.bloom-page button { font-family: inherit; }
+
+.bloom-page ::selection { background: var(--gold-soft); color: var(--ink); }
+.bloom-page :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+/* ============================================================
+   Reusable atoms
+   ============================================================ */
+.bloom-page .eyebrow {
+  font-family: var(--font-body);
+  font-size: 13px; font-weight: 500;
+  letter-spacing: .32em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.bloom-page .eyebrow.on-art { color: rgba(250,245,234,.85); }
+
+.bloom-page .display {
+  font-family: var(--font-display);
+  font-weight: 500; line-height: 1.02;
+  letter-spacing: -.01em;
+  text-wrap: balance;
+}
+
+/* buttons */
+.bloom-page .btn {
+  display: inline-flex; align-items: center; gap: .5em;
+  font-family: var(--font-body); font-size: 16px; font-weight: 500;
+  letter-spacing: .01em;
+  padding: .74em 1.5em; border-radius: 999px; border: 1px solid transparent;
+  background-color: var(--accent); color: var(--accent-ink); cursor: pointer;
+  transition: transform .25s cubic-bezier(.2,.8,.3,1), box-shadow .25s, filter .25s;
+  box-shadow: 0 1px 1px rgba(255,255,255,.25) inset, var(--sh-sm);
+  text-decoration: none; white-space: nowrap;
+}
+.bloom-page .btn:hover { transform: translateY(-2px); box-shadow: 0 1px 1px rgba(255,255,255,.25) inset, var(--sh-md); filter: brightness(1.04); }
+.bloom-page .btn:active { transform: translateY(0); }
+.bloom-page .btn.lg { font-size: 18px; padding: .85em 1.8em; }
+.bloom-page .btn.ghost {
+  background-color: rgba(250,245,234,.12); color: var(--cream);
+  border-color: rgba(250,245,234,.45); box-shadow: none;
+  backdrop-filter: blur(6px);
+}
+.bloom-page .btn.ghost:hover { background-color: rgba(250,245,234,.2); box-shadow: none; }
+.bloom-page .btn.outline {
+  background-color: transparent; color: var(--ink); border-color: var(--line);
+  box-shadow: none;
+}
+.bloom-page .btn.outline:hover { background-color: rgba(44,47,36,.04); box-shadow: none; }
+.bloom-page .btn.full { width: 100%; justify-content: center; }
+.bloom-page .btn.block { width: 100%; justify-content: center; }
+
+.bloom-page .link-quiet {
+  color: var(--ink-soft); text-decoration: none;
+  border-bottom: 1px solid var(--line); padding-bottom: 1px;
+  transition: color .2s, border-color .2s;
+}
+.bloom-page .link-quiet:hover { color: var(--ink); border-color: var(--ink-soft); }
+
+/* leaf mark */
+.bloom-page .mark { display: inline-flex; align-items: center; gap: .5em; }
+.bloom-page .mark svg { width: 1.05em; height: 1.05em; display: block; }
+.bloom-page .mark .word {
+  font-family: var(--font-display); font-weight: 600; font-size: 1.5rem;
+  letter-spacing: .005em;
+}
