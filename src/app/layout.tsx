@@ -32,7 +32,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("font-sans", geist.variable)}>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ClerkProvider>
+        <ClerkProvider
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+          signInFallbackRedirectUrl="/garden"
+          signUpFallbackRedirectUrl="/garden"
+        >
           <ConditionalHeader />
           {children}
         </ClerkProvider>

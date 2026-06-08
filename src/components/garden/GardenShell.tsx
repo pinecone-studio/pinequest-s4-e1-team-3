@@ -62,7 +62,7 @@ export function GardenShell({ userName }: { userName: string }) {
 
     return () => {
       mounted = false;
-      ablyClient?.close();
+      try { ablyClient?.close(); } catch {}
     };
   }, [user?.id]);
 
