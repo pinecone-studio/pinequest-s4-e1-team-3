@@ -598,18 +598,31 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
                 </p>
               ) : (
                 <div className="dc-drawer-notes">
-                  {archivedNotes.map((note) => (
-                    <article key={note.id} className="dc-drawer-note">
-                      <div>
-                        <h4>{note.title}</h4>
+                  {archivedNotes.map((note, i) => (
+                    <article
+                      key={note.id}
+                      className={"dc-pin dc-drawer-pin pin-" + (i % 2)}
+                      style={{ backgroundImage: `url(/garden/note-${(i % 2) + 1}.png)` }}
+                    >
+                      <div className="dc-pin-text">
+                        <h3>{note.title}</h3>
                         <p>{note.body}</p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setArchived(note.id, false)}
-                      >
-                        Restore
-                      </button>
+                      <div className="dc-drawer-pin-actions">
+                        <button
+                          type="button"
+                          onClick={() => setArchived(note.id, false)}
+                        >
+                          Restore
+                        </button>
+                        <button
+                          type="button"
+                          className="danger"
+                          onClick={() => deleteNote(note.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </article>
                   ))}
                 </div>
