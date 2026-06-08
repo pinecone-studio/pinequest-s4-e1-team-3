@@ -24,11 +24,11 @@ import Image from "next/image";
 import type { FlowerSummary, GrowthStage } from "./types";
 
 const STAGE_SCALE: Record<GrowthStage, { size: number; petals: number }> = {
-  SEED: { size: 26, petals: 5 },
-  SPROUT: { size: 36, petals: 6 },
-  YOUNG: { size: 46, petals: 7 },
-  MATURE: { size: 56, petals: 8 },
-  BLOOMING: { size: 66, petals: 10 },
+  SEED: { size: 22, petals: 5 },
+  SPROUT: { size: 30, petals: 6 },
+  YOUNG: { size: 38, petals: 7 },
+  MATURE: { size: 46, petals: 8 },
+  BLOOMING: { size: 54, petals: 10 },
 };
 
 /** Species keys we have painted illustrations for — everything else uses the generated glyph. */
@@ -40,11 +40,11 @@ const SPECIES_ART: Record<string, string> = {
 };
 
 const ART_SCALE: Record<GrowthStage, number> = {
-  SEED: 64,
-  SPROUT: 84,
-  YOUNG: 104,
-  MATURE: 124,
-  BLOOMING: 148,
+  SEED: 48,
+  SPROUT: 60,
+  YOUNG: 72,
+  MATURE: 84,
+  BLOOMING: 96,
 };
 
 export function FlowerSprite({

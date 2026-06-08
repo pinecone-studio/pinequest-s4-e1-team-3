@@ -75,9 +75,9 @@ function relativeTime(iso: string): string {
 }
 
 export function BirdMessagesPanel({ onClose, refetchSignal }: { onClose: () => void; refetchSignal?: number }) {
-  const { data, loading, refetch } = useFetchJson<BirdMessage[]>("/api/bird-messages");
-  const usingPreview = !data || data.length === 0;
-  const messages = usingPreview ? PREVIEW_MESSAGES : data!;
+  const { data, loading, error, refetch } = useFetchJson<BirdMessage[]>("/api/bird-messages");
+  const usingPreview = !error && (!data || data.length === 0);
+  const messages = usingPreview ? PREVIEW_MESSAGES : (data ?? []);
 
   const refetchRef = useRef(refetch);
   useEffect(() => { refetchRef.current = refetch; }, [refetch]);
@@ -104,6 +104,11 @@ export function BirdMessagesPanel({ onClose, refetchSignal }: { onClose: () => v
       loading={loading}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {error && (
+          <p style={{ fontSize: 12, color: "#c0392b", padding: "8px 12px", background: "rgba(192,57,43,0.08)", borderRadius: 10 }}>
+            {error}
+          </p>
+        )}
         {messages.map((msg) => (
           <div
             key={msg.id}
