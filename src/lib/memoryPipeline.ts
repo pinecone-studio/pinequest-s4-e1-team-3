@@ -29,6 +29,7 @@ import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
 import { getRippleColor, getWeather, getIntensity, VALID_MOODS, DEFAULT_MOOD } from "@/lib/moodMapping";
 import { getAblyRest, gardenChannel } from "@/lib/ably";
+import { updateRelationshipProgress } from "@/lib/relationship";
 import { GrowthStage } from "@prisma/client";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -257,6 +258,15 @@ Respond only with the JSON object.`,
   // --- Step 6: Mark conversation as completed ---
   await markCompleted(conversationId, flower.id, mood);
 
+  // --- Step 7: Recompute relationship familiarity ---
+  // Real shared history just grew (new memories + a completed reflection),
+  // so this is the natural moment to re-derive how familiar Sage should act.
+  try {
+    await updateRelationshipProgress(userId);
+  } catch (err) {
+    console.error(`[pipeline] Relationship update failed for ${conversationId}:`, err);
+  }
+
   console.log(`[pipeline] Completed for conversation ${conversationId}, mood: ${mood}`);
 }
 
@@ -370,6 +380,13 @@ Respond only with the JSON object.`,
     where: { id: conversationId },
     data: { lastMemoryCheckpoint: conversation.messages.length },
   });
+
+  // New memories just landed — re-derive how familiar Sage should act.
+  try {
+    await updateRelationshipProgress(userId);
+  } catch (err) {
+    console.error(`[checkpoint] Relationship update failed for ${conversationId}:`, err);
+  }
 
   console.log(
     `[checkpoint] Saved ${memories.length} memories for conversation ${conversationId} at message ${conversation.messages.length}`

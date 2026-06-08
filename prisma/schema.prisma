@@ -40,10 +40,35 @@ model User {
   gender    String?
   createdAt DateTime @default(now())
 
+  // Familiarity with the AI companion — grows as meaningful shared history
+  // accumulates (see src/lib/relationship.ts). Recomputed whenever memories
+  // are banked (end-of-conversation pipeline + mid-conversation checkpoint).
+  // Warmth never changes; only how familiar Sage acts is driven by this.
+  relationshipScore Int               @default(0)
+  relationshipStage RelationshipStage @default(SPROUT)
+
   flowers     Flower[]
   notes       Note[]
   memories    Memory[]
   moodEntries MoodEntry[]
+}
+
+// ============================================
+//  RELATIONSHIP STAGE — how familiar Sage acts with this user
+//
+//  SPROUT   → still getting to know each other
+//  BLOOMING → real shared history, references memories naturally
+//  ROOTED   → deep familiarity, comfortable, light affectionate teasing
+//
+//  Derived from relationshipScore via stageFromScore() in
+//  src/lib/relationship.ts and injected into the system prompt by
+//  buildSystemPrompt() — a single base prompt with a dynamically
+//  appended stage-behavior block (never three separate prompts).
+// ============================================
+enum RelationshipStage {
+  SPROUT
+  BLOOMING
+  ROOTED
 }
 
 // ============================================
