@@ -178,6 +178,25 @@ export default function SignInPage() {
                   </div>
                   <div className="divider">or with email</div>
 
+                  <button
+                    type="button"
+                    onClick={() => { setEmail("nnsae920@gmail.com"); setPassword("Nansalmaa#16"); }}
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      marginBottom: 16,
+                      background: "rgba(160,184,154,0.15)",
+                      border: "1.5px dashed rgba(160,184,154,0.5)",
+                      borderRadius: 10,
+                      color: "var(--ink-soft, #7a8c6e)",
+                      fontSize: 13.5,
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    🌿 Fill demo account
+                  </button>
+
                   <form onSubmit={handleLogin}>
                     {error && <p style={{ color: "var(--blossom)", fontSize: 14, marginBottom: 12 }}>{error}</p>}
                     <div className="field">
