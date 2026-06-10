@@ -62,10 +62,25 @@ export async function GET(req: Request) {
       intensity: true,
       date: true,
       conversationId: true,
+      note: true,
     },
     orderBy: { date: "desc" },
     ...(limit ? { take: limit } : {}),
   });
 
   return NextResponse.json(stones);
+}
+
+
+export async function DELETE(req: Request) {
+  const user = await getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+  await prisma.moodEntry.deleteMany({ where: { id, userId: user.id } });
+
+  return new Response(null, { status: 204 });
 }

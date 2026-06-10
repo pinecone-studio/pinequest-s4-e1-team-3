@@ -9,7 +9,8 @@ const SETTLED_TRANSFORM = "translate(-50%, 8.5vw) scale(0.32)";
 
 const WEATHER_EMOJI: Record<string, string> = {
   sunny: "☀️", partly_cloudy: "🌤️", clear_sky: "🌞",
-  rainy: "🌧️", windy: "💨", foggy: "🌫️", cloudy: "☁️", stormy: "⛈️",
+  rainy: "🌧️", light_rain: "🌦️", heavy_rain: "🌩️",
+  windy: "💨", foggy: "🌫️", cloudy: "☁️", stormy: "⛈️",
 };
 
 const MOOD_PHRASES: Record<string, string> = {
@@ -19,6 +20,7 @@ const MOOD_PHRASES: Record<string, string> = {
 };
 
 type Phase = "idle" | "falling" | "settled" | "sinking";
+
 
 function playSplash() {
   try {
@@ -31,20 +33,42 @@ function playSplash() {
 
 export function PondPanel({ onClose }: { onClose: () => void }) {
   const [phase, setPhase] = useState<Phase>("idle");
-  const { data: stones } = useFetchJson<Stone[]>("/api/mood?limit=1");
+  const [addingStone, setAddingStone] = useState(false);
+  const [topic, setTopic] = useState("");
+  const [stoneMessage, setStoneMessage] = useState("");
+  const [localStones, setLocalStones] = useState<{ id: string; label: string; message: string; rippleColor: string }[]>([]);
+  const [hoveredStone, setHoveredStone] = useState<string | null>(null);
+  const [selectedStoneId, setSelectedStoneId] = useState<string | null>(null);
+  const [droppedApiIds, setDroppedApiIds] = useState<Set<string>>(new Set());
+  const { data: apiStones } = useFetchJson<Stone[]>("/api/mood?limit=10");
   const { data: forecast } = useFetchJson<ForecastDay[]>("/api/forecast?period=daily");
-  const rippleColor = stones?.[0]?.rippleColor ?? "#42A5F5";
+  const rippleColor = apiStones?.[0]?.rippleColor ?? "#42A5F5";
   const today = forecast?.[forecast.length - 1];
+
+  function handleAdd() {
+    const label = topic.trim() || `Stone ${localStones.length + 1 + (apiStones?.length ?? 0)}`;
+    const id = Date.now().toString();
+    setLocalStones((prev) => [...prev, { id, label, message: stoneMessage.trim(), rippleColor }]);
+    setAddingStone(false);
+    setTopic("");
+    setStoneMessage("");
+  }
 
   function handleDrop() {
     if (phase !== "idle") return;
+    const droppingId = selectedStoneId;
+    const isApiStone = apiStones?.some((s) => s.id === droppingId);
+    setLocalStones((prev) => prev.filter((s) => s.id !== droppingId));
+    if (isApiStone && droppingId) {
+      setDroppedApiIds((prev) => new Set(prev).add(droppingId));
+      fetch(`/api/mood?id=${droppingId}`, { method: "DELETE" }).catch(() => {});
+    }
+    setSelectedStoneId(null);
     setPhase("falling");
     setTimeout(() => {
       playSplash();
       setPhase("sinking");
-      setTimeout(() => {
-        setPhase("idle");
-      }, 1400);
+      setTimeout(() => setPhase("idle"), 1400);
     }, 1100);
   }
 
@@ -58,9 +82,13 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
       zIndex: 40,
       background: "rgba(10, 12, 8, 0.52)",
       display: "flex",
+      flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
+      gap: 12,
       animation: "garden-fade 0.2s ease",
+      padding: "24px 0",
+      overflowY: "auto",
     }}>
     <div style={{
       position: "relative",
@@ -69,6 +97,7 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
       borderRadius: 20,
       overflow: "hidden",
       boxShadow: "0 32px 80px rgba(0,0,0,0.55)",
+      flexShrink: 0,
     }}>
       <style>{`
         @keyframes stone-fall {
@@ -279,18 +308,8 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
         />
       )}
 
-      <div
-        style={{
-          position: "absolute",
-          bottom: "11%",
-          left: 0,
-          right: 0,
-          display: "flex",
-          justifyContent: "center",
-          zIndex: 2,
-        }}
-      >
-        {isSettled ? (
+      <div style={{ position: "absolute", bottom: "11%", left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 2 }}>
+        {isSettled && (
           <button
             type="button"
             onClick={onClose}
@@ -310,37 +329,209 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
           >
             Stone placed
           </button>
-        ) : (
+        )}
+        {selectedStoneId && phase === "idle" && (
           <button
             type="button"
             onClick={handleDrop}
-            disabled={phase === "falling"}
             style={{
               display: "flex",
               alignItems: "center",
               gap: 10,
-              background: phase === "falling" ? "rgba(247,241,228,0.55)" : "rgba(247, 241, 228, 0.93)",
+              background: "rgba(247, 241, 228, 0.93)",
               color: "#2a2720",
               border: "none",
               borderRadius: 999,
               padding: "13px 28px",
               fontSize: 15.5,
               fontWeight: 600,
-              cursor: phase === "falling" ? "default" : "pointer",
+              cursor: "pointer",
               boxShadow: "0 10px 36px rgba(0,0,0,0.3)",
               backdropFilter: "blur(10px)",
               letterSpacing: 0.1,
-              transition: "background 0.2s",
             }}
           >
-            <Image
-              src="/garden/stone.png"
-              alt=""
-              width={36}
-              height={36}
-              style={{ height: "auto", opacity: phase === "falling" ? 0.4 : 1, mixBlendMode: "multiply" }}
-            />
-            Drop a stone
+            <Image src="/garden/stone.png" alt="" width={36} height={36} style={{ height: "auto", mixBlendMode: "multiply" }} />
+            Drop stone
+          </button>
+        )}
+      </div>
+    </div>
+
+    {/* Bottom section — form card + tab bar */}
+    <div style={{
+      width: "min(82vw, min(1100px, 85vh * 1328 / 752))",
+      display: "flex",
+      flexDirection: "column",
+      gap: 0,
+    }}>
+      {/* Form card — shown when adding a stone */}
+      {addingStone && phase === "idle" && (
+        <div style={{
+          background: "rgba(28, 24, 18, 0.82)",
+          backdropFilter: "blur(16px)",
+          borderRadius: "16px 16px 0 0",
+          padding: "18px 20px 14px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          borderBottom: "1px solid rgba(247,241,228,0.08)",
+        }}>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(240,237,232,0.5)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Topic</div>
+              <input
+                type="text"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="e.g. work, friendship…"
+                style={{
+                  width: "100%", background: "rgba(247,241,228,0.07)", border: "1px solid rgba(247,241,228,0.15)",
+                  borderRadius: 10, padding: "9px 12px", fontSize: 13.5, color: "#f0ede8",
+                  outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+                }}
+              />
+            </div>
+            <div style={{ flex: 2 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(240,237,232,0.5)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>What&apos;s on your mind</div>
+              <input
+                type="text"
+                value={stoneMessage}
+                onChange={(e) => setStoneMessage(e.target.value)}
+                placeholder="A thought, a feeling…"
+                style={{
+                  width: "100%", background: "rgba(247,241,228,0.07)", border: "1px solid rgba(247,241,228,0.15)",
+                  borderRadius: 10, padding: "9px 12px", fontSize: 13.5, color: "#f0ede8",
+                  outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab bar */}
+      <div style={{
+        background: "rgba(20, 18, 14, 0.88)",
+        backdropFilter: "blur(12px)",
+        borderRadius: addingStone ? "0 0 16px 16px" : 16,
+        padding: "10px 12px",
+        display: "flex",
+        gap: 6,
+        alignItems: "center",
+        flexWrap: "wrap",
+      }}>
+        <button
+          type="button"
+          onClick={() => { setAddingStone((v) => !v); setSelectedStoneId(null); }}
+          style={{
+            background: addingStone ? "rgba(247,241,228,0.22)" : "rgba(247,241,228,0.10)",
+            border: "1px solid rgba(247,241,228,0.25)",
+            borderRadius: 10,
+            color: "#f0ede8",
+            fontSize: 13.5,
+            fontWeight: 700,
+            padding: "8px 16px",
+            cursor: "pointer",
+            letterSpacing: 0.2,
+            transition: "background 0.15s",
+          }}
+        >
+          +Add stone
+        </button>
+        {localStones.map((s) => (
+          <div key={s.id} style={{ position: "relative" }}
+            onMouseEnter={() => setHoveredStone(s.id)}
+            onMouseLeave={() => setHoveredStone(null)}
+          >
+            {hoveredStone === s.id && s.message && (
+              <div style={{
+                position: "absolute",
+                bottom: "calc(100% + 8px)",
+                left: "50%",
+                transform: "translateX(-50%)",
+                background: "#fff",
+                color: "#222",
+                fontSize: 13,
+                borderRadius: 10,
+                padding: "8px 12px",
+                whiteSpace: "normal" as const,
+                boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+                pointerEvents: "none",
+                zIndex: 20,
+                maxWidth: 240,
+              }}>
+                {s.message}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => { setSelectedStoneId((v) => v === s.id ? null : s.id); setAddingStone(false); }}
+              style={{
+                background: selectedStoneId === s.id ? "rgba(247,241,228,0.28)" : "rgba(247,241,228,0.08)",
+                border: `1px solid ${selectedStoneId === s.id ? "rgba(247,241,228,0.5)" : "rgba(247,241,228,0.18)"}`,
+                borderRadius: 10,
+                color: selectedStoneId === s.id ? "#f0ede8" : "rgba(240,237,232,0.75)",
+                fontSize: 13,
+                fontWeight: selectedStoneId === s.id ? 600 : 500,
+                padding: "8px 14px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <Image src="/garden/stone.png" alt="" width={18} height={18} style={{ height: "auto", mixBlendMode: "screen", flexShrink: 0, filter: "invert(1)" }} />
+              {s.label}
+            </button>
+          </div>
+        ))}
+        {apiStones?.filter((s) => s.note && !droppedApiIds.has(s.id)).map((s) => {
+          const label = s.note!.split(" · ")[0] || s.note!;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => { setSelectedStoneId((v) => v === s.id ? null : s.id); setAddingStone(false); }}
+              style={{
+                background: selectedStoneId === s.id ? "rgba(247,241,228,0.28)" : "rgba(247,241,228,0.08)",
+                border: `1px solid ${selectedStoneId === s.id ? "rgba(247,241,228,0.5)" : "rgba(247,241,228,0.18)"}`,
+                borderRadius: 10,
+                color: selectedStoneId === s.id ? "#f0ede8" : "rgba(240,237,232,0.75)",
+                fontSize: 13,
+                fontWeight: selectedStoneId === s.id ? 600 : 500,
+                padding: "8px 14px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <Image src="/garden/stone.png" alt="" width={18} height={18} style={{ height: "auto", mixBlendMode: "screen", flexShrink: 0, filter: "invert(1)" }} />
+              {label}
+            </button>
+          );
+        })}
+        {addingStone && phase === "idle" && (
+          <button
+            type="button"
+            onClick={handleAdd}
+            style={{
+              marginLeft: "auto",
+              background: "rgba(247,241,228,0.90)",
+              color: "#2a2720",
+              border: "none",
+              borderRadius: 10,
+              padding: "8px 22px",
+              fontSize: 13.5,
+              fontWeight: 700,
+              cursor: "pointer",
+              letterSpacing: 0.2,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
+              transition: "background 0.15s",
+            }}
+          >
+            Add
           </button>
         )}
       </div>

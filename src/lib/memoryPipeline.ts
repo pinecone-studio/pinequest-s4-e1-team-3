@@ -26,7 +26,7 @@
 
 import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
-import { getRippleColor, getWeather, getIntensity, VALID_MOODS, DEFAULT_MOOD } from "@/lib/moodMapping";
+import { getRippleColor, getWeatherByIntensity, getIntensity, VALID_MOODS, DEFAULT_MOOD } from "@/lib/moodMapping";
 import { getAblyRest, gardenChannel } from "@/lib/ably";
 import { updateRelationshipProgress } from "@/lib/relationship";
 import { GrowthStage } from "@prisma/client";
@@ -70,6 +70,7 @@ interface ExtractedMemory {
 
 interface ExtractionResult {
   mood: string;
+  intensity: number;
   tags: string[];
   memories: ExtractedMemory[];
 }
@@ -168,6 +169,7 @@ export async function runMemoryPipeline(conversationId: string): Promise<void> {
 Analyze the following conversation and return a JSON object with:
 {
   "mood": "one of: happy, calm, sad, anxious, motivated, reflective, confused, angry, grateful",
+  "intensity": "1–5 integer — how strongly the mood was felt (1=barely noticeable, 3=clearly present, 5=overwhelming)",
   "tags": ["3-5 short topic keywords, e.g. career, family, startup"],
   "memories": [
     {
@@ -204,6 +206,9 @@ Respond only with the JSON object.`,
 
   // Validate mood — if AI returned something unexpected, fall back to default
   const mood = VALID_MOODS.includes(extracted.mood) ? extracted.mood : DEFAULT_MOOD;
+  const intensity = typeof extracted.intensity === "number" && extracted.intensity >= 1 && extracted.intensity <= 5
+    ? Math.round(extracted.intensity)
+    : getIntensity(mood);
 
   // --- Step 3: Generate embeddings and save Memory records ---
   // Each memory is embedded independently so they can be retrieved
@@ -250,8 +255,8 @@ Respond only with the JSON object.`,
         conversationId,
         mood,
         rippleColor: getRippleColor(mood),
-        weather: getWeather(mood),
-        intensity: getIntensity(mood),
+        weather: getWeatherByIntensity(mood, intensity),
+        intensity,
       },
     });
   }
