@@ -42,6 +42,10 @@ import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
 import { buildSystemPrompt } from "@/lib/buildSystemPrompt";
 import {
+  MAX_OUTPUT_TOKENS_BY_FLOWER,
+  DEFAULT_MAX_OUTPUT_TOKENS,
+} from "@/lib/flowerPrompts";
+import {
   runMemoryCheckpoint,
   MEMORY_CHECKPOINT_INTERVAL,
 } from "@/lib/memoryPipeline";
@@ -173,6 +177,10 @@ export async function POST(req: NextRequest) {
     // Lower than the model default (1.0) so replies stay warm but more
     // consistent and grounded — less prone to wandering or over-the-top reactions.
     temperature: 0.3,
+    // Per-flower cap so replies stay short by default (see REPLY LENGTH in
+    // buildSystemPrompt.ts and MAX_OUTPUT_TOKENS_BY_FLOWER in flowerPrompts.ts).
+    maxOutputTokens:
+      MAX_OUTPUT_TOKENS_BY_FLOWER[species.key] ?? DEFAULT_MAX_OUTPUT_TOKENS,
     messages: [...history, { role: "user", content: message }],
     async onFinish({ text }) {
       // Save the AI's response after the full stream completes
