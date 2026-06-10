@@ -44,6 +44,7 @@ export interface Stone {
   intensity: number;
   date: string;
   conversationId: string | null;
+  note: string | null;
 }
 
 export interface ForecastDay {

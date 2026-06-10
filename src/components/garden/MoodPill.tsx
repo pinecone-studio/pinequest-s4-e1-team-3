@@ -26,6 +26,8 @@ const WEATHER_EMOJI: Record<string, string> = {
   partly_cloudy: "🌤️",
   clear_sky: "🌞",
   rainy: "🌧️",
+  light_rain: "🌦️",
+  heavy_rain: "🌩️",
   windy: "💨",
   foggy: "🌫️",
   cloudy: "☁️",
@@ -37,6 +39,8 @@ const WEATHER_PHRASES: Record<string, string> = {
   partly_cloudy: "Calm skies",
   clear_sky: "Clear skies",
   rainy: "Soft rain",
+  light_rain: "Light drizzle",
+  heavy_rain: "Heavy rain",
   windy: "Restless winds",
   foggy: "Hazy mist",
   cloudy: "Quiet clouds",
@@ -63,16 +67,14 @@ export function MoodPill() {
   const { data } = useFetchJson<ForecastDay[]>("/api/forecast?period=weekly");
   const [open, setOpen] = useState(false);
 
-  if (!data || data.length === 0) return null;
-
-  const days = data;
-  const today = days[days.length - 1];
+  const days = data ?? [];
+  const today = days.length > 0 ? days[days.length - 1] : null;
 
   return (
     <div style={{ position: "relative" }}>
       <button type="button" className="garden-pill-btn" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        <span aria-hidden>{WEATHER_EMOJI[today.weather] ?? "🌥️"}</span>
-        <span className="value">{WEATHER_PHRASES[today.weather] ?? "Calm skies"}</span>
+        <span aria-hidden>{today ? (WEATHER_EMOJI[today.weather] ?? "🌥️") : "🌥️"}</span>
+        <span className="value">{today ? (WEATHER_PHRASES[today.weather] ?? "Calm skies") : "Calm skies"}</span>
       </button>
 
       {open && (
@@ -88,7 +90,7 @@ export function MoodPill() {
                 {new Date(day.date).toLocaleDateString(undefined, { weekday: "short" })}
               </span>
               <span className="mood">{moodPhrase(day.mood)}</span>
-              {day.date === today.date && (
+              {today && day.date === today.date && (
                 <span className="heart" aria-hidden>
                   ♥
                 </span>
