@@ -55,6 +55,7 @@ export async function GET(req: Request) {
   const now = new Date();
   let daysBack = 7;
   if (period === "daily") daysBack = 1;
+  else if (period === "biweekly") daysBack = 14;
   else if (period === "monthly") daysBack = 30;
 
   const since = new Date(now);

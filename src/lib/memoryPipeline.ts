@@ -26,7 +26,7 @@
 
 import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
-import { getRippleColor, getWeather, getIntensity, VALID_MOODS, DEFAULT_MOOD } from "@/lib/moodMapping";
+import { getRippleColor, getWeatherByIntensity, getIntensity, VALID_MOODS, DEFAULT_MOOD } from "@/lib/moodMapping";
 import { getAblyRest, gardenChannel } from "@/lib/ably";
 import { updateRelationshipProgress } from "@/lib/relationship";
 import { GrowthStage } from "@prisma/client";
@@ -55,6 +55,30 @@ export function computeGrowthStage(messageCount: number, isCompleted: boolean): 
   if (messageCount >= 10) return GrowthStage.YOUNG;
   if (messageCount >= 5)  return GrowthStage.SPROUT;
   return GrowthStage.SEED;
+}
+
+// ============================================
+//  ExtractionResult — shape of the JSON the AI returns
+// ============================================
+interface ExtractedMemory {
+  content: string;
+  category:
+    | "goal"
+    | "value"
+    | "decision"
+    | "lesson"
+    | "concern"
+    | "reflection"
+    | "relationship"
+    | "career"
+    | "habit";
+}
+
+interface ExtractionResult {
+  mood: string;
+  intensity: number;
+  tags: string[];
+  memories: ExtractedMemory[];
 }
 
 // ============================================
@@ -193,7 +217,28 @@ export async function runMemoryPipeline(conversationId: string): Promise<void> {
       messages: [
         {
           role: "system",
-          content: buildExtractionPrompt({ mode: "full", primaryFlowerKey: flower.species.key }),
+          content: `You are a memory extraction system for a personal reflection app.
+Analyze the following conversation and return a JSON object with:
+{
+  "mood": "one of: happy, calm, sad, anxious, motivated, reflective, confused, angry, grateful",
+  "intensity": "1–5 integer — how strongly the mood was felt (1=barely noticeable, 3=clearly present, 5=overwhelming)",
+  "tags": ["3-5 short topic keywords, e.g. career, family, startup"],
+  "memories": [
+    {
+      "content": "ONE short first-person sentence, at most ~12 words — never a paragraph or multiple sentences (e.g. 'I want to change careers')",
+      "category": "one of: goal, value, decision, lesson, concern, reflection, relationship, career, habit"
+    }
+  ]
+}
+Extract 2-5 meaningful memories — the kind of thing a close friend would actually remember and bring up again weeks later, not something that fades by tomorrow. A memory earns its place if it does at least one of these:
+  - Shows a stable trait: a value, fear, goal, coping style, or pattern that keeps showing up for them
+  - Marks a real turning point: a decision, realization, or shift — and what it MEANT to them, not just what happened
+  - Carries genuine emotional weight: something that clearly mattered, not a passing mood or polite remark
+  - Reveals something about a relationship or person that shapes their life
+Skip: small talk and logistics, generic statements that could describe almost anyone ("I want to be happier"), and anything that only matters for this one exchange and won't matter next week. When in doubt, prefer fewer, sharper memories over padding out to 5.
+Keep each memory's "content" to a single short sentence (roughly 8-12 words) — they're displayed in small hover cards on the garden's memory tree, and anything longer overflows the card and looks broken. Summarize the insight; don't narrate the conversation.
+Write "tags" and each memory's "content" in the SAME language the user writes in — e.g. if the conversation is in Mongolian, write those fields in Mongolian. Never translate them to English; the example phrasing above only illustrates the form (concise, first person), not the language. "mood" and "category" must stay exactly as the fixed English values listed above — those are never translated.
+Respond only with the JSON object.`,
         },
         {
           role: "user",
@@ -213,6 +258,9 @@ export async function runMemoryPipeline(conversationId: string): Promise<void> {
 
   // Validate mood — if AI returned something unexpected, fall back to default
   const mood = VALID_MOODS.includes(extracted.mood) ? extracted.mood : DEFAULT_MOOD;
+  const intensity = typeof extracted.intensity === "number" && extracted.intensity >= 1 && extracted.intensity <= 5
+    ? Math.round(extracted.intensity)
+    : getIntensity(mood);
 
   logExtractionInsights("pipeline", conversationId, extracted);
 
@@ -261,8 +309,8 @@ export async function runMemoryPipeline(conversationId: string): Promise<void> {
         conversationId,
         mood,
         rippleColor: getRippleColor(mood),
-        weather: getWeather(mood),
-        intensity: getIntensity(mood),
+        weather: getWeatherByIntensity(mood, intensity),
+        intensity,
       },
     });
   }

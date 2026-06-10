@@ -73,6 +73,24 @@ export function getWeather(mood: string): string {
   return MOOD_TO_WEATHER[mood] ?? MOOD_TO_WEATHER[DEFAULT_MOOD];
 }
 
+// Helper: get weather considering both mood and intensity (1–5)
+// intensity 1–2 = mild, 3 = moderate, 4–5 = strong
+export function getWeatherByIntensity(mood: string, intensity: number): string {
+  const level = intensity <= 2 ? "low" : intensity >= 4 ? "high" : "mid";
+  const matrix: Record<string, Record<string, string>> = {
+    sad:        { low: "light_rain", mid: "rainy",        high: "heavy_rain" },
+    anxious:    { low: "windy",      mid: "windy",        high: "stormy"     },
+    angry:      { low: "windy",      mid: "stormy",       high: "stormy"     },
+    happy:      { low: "partly_cloudy", mid: "sunny",     high: "clear_sky"  },
+    calm:       { low: "partly_cloudy", mid: "partly_cloudy", high: "clear_sky" },
+    grateful:   { low: "sunny",     mid: "sunny",         high: "clear_sky"  },
+    motivated:  { low: "sunny",     mid: "clear_sky",     high: "clear_sky"  },
+    reflective: { low: "cloudy",    mid: "cloudy",        high: "cloudy"     },
+    confused:   { low: "foggy",     mid: "foggy",         high: "foggy"      },
+  };
+  return matrix[mood]?.[level] ?? getWeather(mood);
+}
+
 // Helper: get intensity for a mood, with fallback
 export function getIntensity(mood: string): number {
   return MOOD_INTENSITY[mood] ?? MOOD_INTENSITY[DEFAULT_MOOD];
