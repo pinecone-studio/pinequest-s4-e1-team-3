@@ -19,15 +19,22 @@ const SPECIES_ART: Record<string, string> = {
   lavender: "/garden/lavender.png",
   iris: "/garden/Iris.png",
   daisy: "/garden/daisy.png",
+  sunflower: "/garden/sunflower.png",
 };
 
 // Positions aligning each flower sprite with the pots in green-house-zoomed.png
 const POT_POSITIONS = [
-  { x: 24, y: 76 },
-  { x: 38, y: 76 },
-  { x: 54, y: 76 },
+  { x: 16, y: 76 },
+  { x: 32, y: 76 },
+  { x: 50, y: 76 },
   { x: 68, y: 76 },
+  { x: 84, y: 76 },
 ];
+
+// EQ-flow order (Self-Awareness → Self-Regulation → Motivation → Empathy →
+// Social Skills) — /api/species returns alphabetical order, so re-sort here
+// to keep the Greenhouse laid out as a deliberate progression.
+const SPECIES_ORDER = ["daisy", "lavender", "sunflower", "iris", "rose"];
 
 
 export function WorkshopPanel({
@@ -35,7 +42,7 @@ export function WorkshopPanel({
   onPlanted,
 }: {
   onClose: () => void;
-  onPlanted: () => void;
+  onPlanted: (flowerId?: string) => void;
 }) {
   const { data: species, loading } = useFetchJson<Species[]>("/api/species");
   const [planting, setPlanting] = useState<string | null>(null);
@@ -60,8 +67,8 @@ export function WorkshopPanel({
         body: JSON.stringify({ speciesId: picked.id }),
       });
       if (!res.ok) throw new Error("Could not plant that seed — try again.");
-      await res.json();
-      onPlanted();
+      const planted = (await res.json()) as { id: string };
+      onPlanted(planted.id);
     } catch (err) {
       setPlantError(err instanceof Error ? err.message : "Something went wrong");
       setPlanting(null);
@@ -94,7 +101,7 @@ export function WorkshopPanel({
 
       <p className="garden-scene-panel-note">
         <span className="pin" aria-hidden/>
-        Plant your intentions. Nurture your future.
+        Choose what you want to grow today.
       </p>
 
       {loading && (
@@ -108,7 +115,10 @@ export function WorkshopPanel({
         </p>
       )}
 
-      {!loading && (species ?? []).map((s: Species, i: number) => {
+      {!loading && (species ?? [])
+        .slice()
+        .sort((a, b) => SPECIES_ORDER.indexOf(a.key) - SPECIES_ORDER.indexOf(b.key))
+        .map((s: Species, i: number) => {
         const pos = POT_POSITIONS[i] ?? { x: 50, y: 68 };
         const art = SPECIES_ART[s.key];
         const isHovered = hovered === s.id;

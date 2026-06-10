@@ -74,12 +74,12 @@ enum RelationshipStage {
 // ============================================
 //  FLOWER SPECIES — the 5 types available in the Workshop
 //
-//  Each species represents an emotional intention:
-//    sunflower      → career & purpose
-//    rose           → relationships & connection
-//    lotus          → self-reflection & inner peace
-//    lavender       → stress & emotional relief
-//    cherry-blossom → future goals & dreams
+//  Each species maps to one area of Daniel Goleman's EQ model:
+//    daisy     → self-awareness  — understand my feelings
+//    lavender  → self-regulation — calm my reactions
+//    sunflower → motivation      — find my inner direction
+//    iris      → empathy         — understand someone else
+//    rose      → social skills   — communicate better
 //
 //  systemPrompt: injected into the AI's context so the companion
 //  personality matches the chosen intention.
@@ -89,7 +89,7 @@ enum RelationshipStage {
 // ============================================
 model FlowerSpecies {
   id           String @id @default(cuid())
-  key          String @unique // "sunflower" | "rose" | "lotus" | "lavender" | "cherry-blossom"
+  key          String @unique // "daisy" | "lavender" | "sunflower" | "iris" | "rose"
   name         String
   description  String // shown in the Workshop picker UI
   color        String // hex — frontend uses this for flower tint

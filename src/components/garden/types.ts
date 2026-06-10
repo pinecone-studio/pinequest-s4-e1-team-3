@@ -34,6 +34,14 @@ export interface FlowerSummary {
   completedAt: string | null;
   species: SpeciesSummary;
   conversationId: string | null;
+  /**
+   * Other EQ areas the AI leaned on during this session (e.g. a Daisy
+   * conversation that drew on Lavender's calming techniques), rendered as
+   * small companion buds beside the main flower. Currently always `[]` from
+   * GET /api/flowers — see detectSupportFlower() in flowerPrompts.ts for the
+   * not-yet-wired detection logic.
+   */
+  supportFlowers?: SpeciesSummary[];
 }
 
 export interface Stone {

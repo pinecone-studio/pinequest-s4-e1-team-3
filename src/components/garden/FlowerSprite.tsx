@@ -37,6 +37,7 @@ const SPECIES_ART: Record<string, string> = {
   rose: "/garden/rose.png",
   iris: "/garden/Iris.png",
   lavender: "/garden/lavender.png",
+  sunflower: "/garden/sunflower.png",
 };
 
 const ART_SCALE: Record<GrowthStage, number> = {
@@ -46,6 +47,11 @@ const ART_SCALE: Record<GrowthStage, number> = {
   MATURE: 84,
   BLOOMING: 96,
 };
+
+// Size of each support-flower bud glyph — roughly 40-50% of the SEED size
+// so they read as small companions next to the main flower.
+const BUD_SIZE = 12;
+const BUD_PETALS = 5;
 
 export function FlowerSprite({
   flower,
@@ -127,6 +133,37 @@ export function FlowerSprite({
         </span>
       )}
 
+      {flower.supportFlowers && flower.supportFlowers.length > 0 && (
+        <span className="garden-flower-buds" aria-hidden>
+          {flower.supportFlowers.map((support) => (
+            <span key={support.id} className="garden-flower-bud">
+              {Array.from({ length: BUD_PETALS }).map((_, i) => (
+                <span
+                  key={i}
+                  className="garden-petal"
+                  style={{
+                    background: support.color,
+                    width: BUD_SIZE * 0.42,
+                    height: BUD_SIZE * 0.62,
+                    transform: `translate(-50%,-100%) rotate(${(i * 360) / BUD_PETALS}deg)`,
+                    opacity: 0.85,
+                  }}
+                />
+              ))}
+              <span
+                className="garden-fcore"
+                style={{
+                  background: "#e0c860",
+                  width: BUD_SIZE * 0.34,
+                  height: BUD_SIZE * 0.34,
+                  margin: `${BUD_SIZE * 0.33}px auto 0`,
+                }}
+              />
+            </span>
+          ))}
+        </span>
+      )}
+
       <span className={"garden-flower-card" + (hovered ? " visible" : "")}>
         <span
           className="garden-flower-card-icon"
@@ -151,6 +188,11 @@ export function FlowerSprite({
           </span>
           {flower.tags.length > 0 && (
             <span className="summary">{flower.tags.join(" · ")}</span>
+          )}
+          {flower.supportFlowers && flower.supportFlowers.length > 0 && (
+            <span className="support-flowers">
+              + {flower.supportFlowers.map((s) => s.name).join(", ")}
+            </span>
           )}
         </span>
       </span>
