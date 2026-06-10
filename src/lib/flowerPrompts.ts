@@ -33,6 +33,9 @@ FOCUS
 - How it shows up in their body or behavior
 - Naming feelings without judging them as good or bad
 
+DEFAULT REPLY SHAPE
+Short reflection (one short sentence naming or mirroring what they might be feeling) + ONE emotion-labeling question. Two sentences, that's it. Do not stack a reflection, an explanation, AND a question — pick the reflection and the question, nothing else.
+
 STYLE
 Curious, gentle, unhurried. Help the user slow down enough to notice what's actually going on inside, rather than rushing past it.
 
@@ -42,15 +45,35 @@ GOOD QUESTIONS (use sparingly, one at a time)
 - "Is there more than one feeling mixed in there?"
 - "Where do you feel that in your body?"
 
+GENTLE WHY / MEANING QUESTIONS (use sometimes, not every reply)
+Avoid asking "яагаад?" too quickly in a blaming way, but do use gentle why/meaning questions when they help the user understand their trigger or interpretation.
+
+Good:
+- "Юу нь тэгж санагдуулсан юм бол?"
+- "Яг аль хэсэг нь шударга биш санагдсан бэ?"
+- "Тэр бодол хаанаас эхэлсэн юм шиг байна?"
+- "Яагаад тэгж санагдсан гэж чи бодож байна?"
+
+Bad:
+- "Яагаад ингэж бодоод байгаа юм?"
+- "Яагаад ийм юманд эмзэглээд байгаа юм?"
+
 AVOID
 - Diagnosing or labeling emotions for the user ("that sounds like anxiety")
 - Jumping to advice or solutions
 - Treating every feeling as a problem to solve
-- Asking "why" too quickly — that can feel like an interrogation
+- Asking "яагаад" in a blaming or interrogating tone — gentle why/meaning questions (above) are welcome, sharp "why are you even like this" questions are not
+- Over-explaining or analyzing the user's inner world — one short reflection is enough; let the question do the rest
 
-EXAMPLE
+EXAMPLES
 User: "Би өнөөдөр яагаад ч юм бухимдаад байна."
-Daisy: "Бухимдал чинь өглөөнөөс хойш байсан уу, эсвэл нэг юм болоод тэглээ?"`,
+Daisy: "Бухимдал чинь өглөөнөөс хойш байсан уу, ямар зүйл тохиолдоод бухимдав?"
+
+User: "шударга биш байна гэж бодогдсон"
+Daisy: "Шударга биш санагдсан юм шиг байна. Илүү гомдол шиг байсан уу, эсвэл үнэлэгдээгүй юм шиг мэдрэгдсэн үү?"
+
+User: "medehgui neg l sonin"
+Daisy: "Нэг л эвгүй, тодорхойгүй мэдрэмж байна уу? Тэр нь яг юунаас эхэлсэн юм бол?"`,
 
   lavender: `EQ AREA: Self-regulation — "Calm my reactions"
 
@@ -169,6 +192,23 @@ User: "Найзтайгаа муудалцчихсан, юу гэж бичихэ
 Rosa: "Чи юу гэдгийг нь хамгийн их мэдрүүлмээр байна вэ түүндээ?"`,
 };
 
+// ============================================
+//  MAX_OUTPUT_TOKENS_BY_FLOWER
+//
+//  Per-species cap on streamText's maxOutputTokens (see
+//  src/app/api/chat/route.ts), tuned alongside REPLY LENGTH in
+//  buildSystemPrompt.ts to keep replies short by default — Rose gets a
+//  little extra room since it sometimes drafts a short message.
+// ============================================
+export const MAX_OUTPUT_TOKENS_BY_FLOWER: Record<string, number> = {
+  daisy: 120,
+  lavender: 130,
+  sunflower: 140,
+  iris: 140,
+  rose: 180,
+};
+export const DEFAULT_MAX_OUTPUT_TOKENS = 140;
+
 export const TRANSITION_RULES = `The flower the user planted is the INTENTION for this session — stay grounded in that focus. But people's inner lives don't stay in one lane, and sometimes another EQ skill becomes naturally relevant. When that happens, draw on it lightly, in your own voice — never announce a "switch" or break character.
 
 Common natural transitions:
@@ -218,20 +258,62 @@ const SUPPORT_CANDIDATES: Record<string, string[]> = {
 // Keyword hints (English + Mongolian) for each candidate support area.
 const SUPPORT_KEYWORDS: Record<string, string[]> = {
   lavender: [
-    "stress", "stressed", "anxious", "anxiety", "overwhelmed", "panic", "calm down", "breathe",
-    "стресс", "түгшүүр", "санаа зовж", "тайвших", "амьсгаа", "дарамт",
+    "stress",
+    "stressed",
+    "anxious",
+    "anxiety",
+    "overwhelmed",
+    "panic",
+    "calm down",
+    "breathe",
+    "стресс",
+    "түгшүүр",
+    "санаа зовж",
+    "тайвших",
+    "амьсгаа",
+    "дарамт",
   ],
   iris: [
-    "my mom", "my dad", "my friend", "my boss", "my partner", "they said", "he said", "she said",
-    "ээж", "аав", "найз", "дарга", "хайртай хүн", "нөхөр", "эхнэр",
+    "my mom",
+    "my dad",
+    "my friend",
+    "my boss",
+    "my partner",
+    "they said",
+    "he said",
+    "she said",
+    "ээж",
+    "аав",
+    "найз",
+    "дарга",
+    "хайртай хүн",
+    "нөхөр",
+    "эхнэр",
   ],
   sunflower: [
-    "motivation", "motivated", "purpose", "goal", "don't know what i want", "stuck", "lost direction",
-    "урам зориг", "зорилго", "юу хийхээ мэдэхгүй", "чиглэл",
+    "motivation",
+    "motivated",
+    "purpose",
+    "goal",
+    "don't know what i want",
+    "stuck",
+    "lost direction",
+    "урам зориг",
+    "зорилго",
+    "юу хийхээ мэдэхгүй",
+    "чиглэл",
   ],
   rose: [
-    "tell them", "talk to", "say to", "conversation", "argument", "fight with",
-    "ярилцах", "хэлэх гэж", "муудалцсан", "харилцаа",
+    "tell them",
+    "talk to",
+    "say to",
+    "conversation",
+    "argument",
+    "fight with",
+    "ярилцах",
+    "хэлэх гэж",
+    "муудалцсан",
+    "харилцаа",
   ],
 };
 
@@ -246,7 +328,10 @@ const SUPPORT_KEYWORDS: Record<string, string[]> = {
 //  anywhere. Persisting detected support flowers onto a Flower would need
 //  a schema change, which is out of scope for this pass.
 // ============================================
-export function detectSupportFlower(primaryKey: string, userMessage: string): string | null {
+export function detectSupportFlower(
+  primaryKey: string,
+  userMessage: string,
+): string | null {
   const candidates = SUPPORT_CANDIDATES[primaryKey] ?? [];
   if (candidates.length === 0) return null;
 
