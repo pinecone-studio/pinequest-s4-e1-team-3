@@ -15,7 +15,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/getUser";
-import { getRippleColor, getWeatherByIntensity, getIntensity, DEFAULT_MOOD, VALID_MOODS } from "@/lib/moodMapping";
 
 // ============================================
 //  GET /api/mood
@@ -72,30 +71,6 @@ export async function GET(req: Request) {
   return NextResponse.json(stones);
 }
 
-export async function POST(req: Request) {
-  const user = await getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const body = await req.json().catch(() => ({}));
-  const topic: string = body.topic?.trim() ?? "";
-  const message: string = body.message?.trim() ?? "";
-  const rawMood: string = body.mood?.trim() ?? "";
-  const mood = VALID_MOODS.includes(rawMood) ? rawMood : DEFAULT_MOOD;
-
-  const entry = await prisma.moodEntry.create({
-    data: {
-      userId: user.id,
-      mood,
-      rippleColor: getRippleColor(mood),
-      intensity: getIntensity(mood),
-      weather: getWeatherByIntensity(mood, getIntensity(mood)),
-      note: [topic, message].filter(Boolean).join(" · ") || null,
-    },
-    select: { id: true, mood: true, rippleColor: true, weather: true, intensity: true, date: true, conversationId: true },
-  });
-
-  return NextResponse.json(entry, { status: 201 });
-}
 
 export async function DELETE(req: Request) {
   const user = await getUser();

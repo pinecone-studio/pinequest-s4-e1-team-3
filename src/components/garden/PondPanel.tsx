@@ -45,25 +45,13 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
   const rippleColor = apiStones?.[0]?.rippleColor ?? "#42A5F5";
   const today = forecast?.[forecast.length - 1];
 
-  async function handleAdd() {
+  function handleAdd() {
     const label = topic.trim() || `Stone ${localStones.length + 1 + (apiStones?.length ?? 0)}`;
-    const tempId = Date.now().toString();
-    setLocalStones((prev) => [...prev, { id: tempId, label, message: stoneMessage.trim(), rippleColor }]);
+    const id = Date.now().toString();
+    setLocalStones((prev) => [...prev, { id, label, message: stoneMessage.trim(), rippleColor }]);
     setAddingStone(false);
     setTopic("");
     setStoneMessage("");
-
-    try {
-      const res = await fetch("/api/mood", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: label, message: stoneMessage.trim() }),
-      });
-      if (res.ok) {
-        const saved = await res.json();
-        setLocalStones((prev) => prev.map((s) => s.id === tempId ? { ...s, id: saved.id, rippleColor: saved.rippleColor } : s));
-      }
-    } catch {}
   }
 
   function handleDrop() {
@@ -71,12 +59,12 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
     const droppingId = selectedStoneId;
     const isApiStone = apiStones?.some((s) => s.id === droppingId);
     setLocalStones((prev) => prev.filter((s) => s.id !== droppingId));
-    if (isApiStone && droppingId) setDroppedApiIds((prev) => new Set(prev).add(droppingId));
-    setSelectedStoneId(null);
-    setPhase("falling");
-    if (droppingId) {
+    if (isApiStone && droppingId) {
+      setDroppedApiIds((prev) => new Set(prev).add(droppingId));
       fetch(`/api/mood?id=${droppingId}`, { method: "DELETE" }).catch(() => {});
     }
+    setSelectedStoneId(null);
+    setPhase("falling");
     setTimeout(() => {
       playSplash();
       setPhase("sinking");
