@@ -30,6 +30,12 @@ import { getRippleColor, getWeatherByIntensity, getIntensity, VALID_MOODS, DEFAU
 import { getAblyRest, gardenChannel } from "@/lib/ably";
 import { updateRelationshipProgress } from "@/lib/relationship";
 import { GrowthStage } from "@prisma/client";
+import {
+  buildExtractionPrompt,
+  sanitizeExtraction,
+  type ExtractedMemory,
+  type FullExtractionResult,
+} from "@/lib/extractionPrompt";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -120,6 +126,52 @@ async function embedAndSaveMemories(
 }
 
 // ============================================
+//  logExtractionInsights
+//
+//  Shared by both extraction passes. mood/tags/memories (handled by their
+//  callers) are the only fields persisted today — everything else here is
+//  the new EQ-aware output from extractionPrompt.ts (primaryFlower,
+//  supportFlowers, eqDomain, skillsPracticed, mainEmotion, secondaryEmotion,
+//  trigger, thoughtPattern, insight, nextStep, suggestedPracticeTask,
+//  shouldStoreMemory/memoryToStore, confidence).
+//
+//  TODO(storage): once a schema migration adds columns/tables for these
+//  (e.g. a SessionInsight model, or extra Flower/Memory fields), persist
+//  them here instead of just logging. Likely candidates:
+//    - primaryFlower/supportFlowers/eqDomain/skillsPracticed → SessionInsight
+//    - shouldStoreMemory + memoryToStore → an extra Memory row (category
+//      inferred from eqDomain/thoughtPattern)
+//    - suggestedPracticeTask → seed row for the future Task Tree feature
+//
+//  safety.riskDetected is surfaced immediately as a [SAFETY] warning so
+//  it's visible in server logs even before there's a storage/alerting path.
+// ============================================
+function logExtractionInsights(logTag: string, conversationId: string, extracted: FullExtractionResult): void {
+  if (extracted.safety.riskDetected) {
+    console.warn(
+      `[${logTag}][SAFETY] conversation ${conversationId}: riskType=${extracted.safety.riskType} note=${extracted.safety.note ?? "(none)"}`
+    );
+  }
+
+  console.log(`[${logTag}] insights for ${conversationId}:`, {
+    primaryFlower: extracted.primaryFlower,
+    supportFlowers: extracted.supportFlowers,
+    eqDomain: extracted.eqDomain,
+    skillsPracticed: extracted.skillsPracticed,
+    mainEmotion: extracted.mainEmotion,
+    secondaryEmotion: extracted.secondaryEmotion,
+    trigger: extracted.trigger,
+    thoughtPattern: extracted.thoughtPattern,
+    insight: extracted.insight,
+    nextStep: extracted.nextStep,
+    shouldStoreMemory: extracted.shouldStoreMemory,
+    memoryToStore: extracted.memoryToStore,
+    suggestedPracticeTask: extracted.suggestedPracticeTask,
+    confidence: extracted.confidence,
+  });
+}
+
+// ============================================
 //  runMemoryPipeline
 //
 //  Main entry point. Called by the complete endpoint.
@@ -132,7 +184,7 @@ export async function runMemoryPipeline(conversationId: string): Promise<void> {
     include: {
       messages: { orderBy: { createdAt: "asc" } },
       flower: {
-        include: { user: true },
+        include: { user: true, species: { select: { key: true } } },
       },
     },
   });
@@ -156,8 +208,8 @@ export async function runMemoryPipeline(conversationId: string): Promise<void> {
     .map((m) => `${m.role === "user" ? "User" : "Companion"}: ${m.content}`)
     .join("\n");
 
-  // --- Step 2: Extract summary, mood, tags, and memories via OpenAI ---
-  let extracted: ExtractionResult;
+  // --- Step 2: Extract summary, mood, tags, memories + EQ insights via OpenAI ---
+  let extracted: FullExtractionResult;
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -196,7 +248,7 @@ Respond only with the JSON object.`,
     });
 
     const raw = response.choices[0]?.message?.content ?? "{}";
-    extracted = JSON.parse(raw) as ExtractionResult;
+    extracted = sanitizeExtraction(JSON.parse(raw));
   } catch (err) {
     console.error(`[pipeline] Memory extraction failed for ${conversationId}:`, err);
     // Still mark conversation as complete even if extraction fails
@@ -209,6 +261,8 @@ Respond only with the JSON object.`,
   const intensity = typeof extracted.intensity === "number" && extracted.intensity >= 1 && extracted.intensity <= 5
     ? Math.round(extracted.intensity)
     : getIntensity(mood);
+
+  logExtractionInsights("pipeline", conversationId, extracted);
 
   // --- Step 3: Generate embeddings and save Memory records ---
   // Each memory is embedded independently so they can be retrieved
@@ -324,7 +378,7 @@ export async function runMemoryCheckpoint(conversationId: string): Promise<void>
     where: { id: conversationId },
     include: {
       messages: { orderBy: { createdAt: "asc" } },
-      flower: { select: { userId: true } },
+      flower: { select: { userId: true, species: { select: { key: true } } } },
     },
   });
 
@@ -341,7 +395,7 @@ export async function runMemoryCheckpoint(conversationId: string): Promise<void>
     .map((m) => `${m.role === "user" ? "User" : "Companion"}: ${m.content}`)
     .join("\n");
 
-  let memories: ExtractedMemory[] = [];
+  let extracted: FullExtractionResult;
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -349,25 +403,7 @@ export async function runMemoryCheckpoint(conversationId: string): Promise<void>
       messages: [
         {
           role: "system",
-          content: `You are a memory extraction system for a personal reflection app.
-Read this excerpt from the MIDDLE of an ongoing conversation (it is not the end — more will follow) and return a JSON object:
-{
-  "memories": [
-    {
-      "content": "ONE short first-person sentence, at most ~12 words — never a paragraph or multiple sentences (e.g. 'I want to change careers')",
-      "category": "one of: goal, value, decision, lesson, concern, reflection, relationship, career, habit"
-    }
-  ]
-}
-Only include memories that a close friend would actually remember weeks later — not things that fade by tomorrow. A memory earns its place if it does at least one of these:
-  - Shows a stable trait: a value, fear, goal, coping style, or pattern that keeps showing up for them
-  - Marks a real turning point: a decision, realization, or shift — and what it MEANT to them, not just what happened
-  - Carries genuine emotional weight: something that clearly mattered, not a passing mood or polite remark
-  - Reveals something about a relationship or person that shapes their life
-Skip: small talk and logistics, generic statements that could describe almost anyone ("I want to be happier"), and anything tied only to this moment that won't matter next week. Return an empty list if nothing truly stands out — an empty list is a good, honest result here.
-Keep each memory's "content" to a single short sentence (roughly 8-12 words) — they're displayed in small hover cards on the garden's memory tree, and anything longer overflows the card and looks broken. Summarize the insight; don't narrate the conversation.
-Write each memory's "content" in the SAME language the user writes in — e.g. if the conversation is in Mongolian, write it in Mongolian. Never translate it to English; the example phrasing above only illustrates the form (concise, first person), not the language. "category" must stay exactly as one of the fixed English values listed above — that is never translated.
-Respond only with the JSON object.`,
+          content: buildExtractionPrompt({ mode: "checkpoint", primaryFlowerKey: conversation.flower.species.key }),
         },
         {
           role: "user",
@@ -377,7 +413,7 @@ Respond only with the JSON object.`,
     });
 
     const raw = response.choices[0]?.message?.content ?? "{}";
-    memories = (JSON.parse(raw) as { memories?: ExtractedMemory[] }).memories ?? [];
+    extracted = sanitizeExtraction(JSON.parse(raw));
   } catch (err) {
     console.error(`[checkpoint] Extraction failed for ${conversationId}:`, err);
     // Leave lastMemoryCheckpoint where it was — the next interval will
@@ -385,6 +421,9 @@ Respond only with the JSON object.`,
     return;
   }
 
+  logExtractionInsights("checkpoint", conversationId, extracted);
+
+  const memories = extracted.memories;
   await embedAndSaveMemories(memories, userId, conversationId, "checkpoint");
 
   await prisma.conversation.update({
