@@ -114,6 +114,18 @@ const FIREFLIES: Array<{
   { x: 96, y: 78, delay: "3.9s", dur: "5.1s", size: 4 },
 ];
 
+// Ambient petal/leaf drifters — viewport-fixed, never panned
+const DRIFTERS = [
+  { left: "4%",  color: "#d8c27a", w: 7,  h: 12, angle: -20, dur: "17s", delay: "0s",    dx: "75px",  rot: "380deg" },
+  { left: "13%", color: "#b6a8cf", w: 5,  h: 9,  angle: 15,  dur: "23s", delay: "-7s",   dx: "-55px", rot: "300deg" },
+  { left: "27%", color: "#cf8aa0", w: 6,  h: 11, angle: -10, dur: "15s", delay: "-3s",   dx: "90px",  rot: "420deg" },
+  { left: "41%", color: "#9aa87f", w: 5,  h: 9,  angle: 25,  dur: "21s", delay: "-11s",  dx: "40px",  rot: "340deg" },
+  { left: "56%", color: "#d8c27a", w: 7,  h: 12, angle: -18, dur: "18s", delay: "-5s",   dx: "-65px", rot: "400deg" },
+  { left: "69%", color: "#cf8aa0", w: 5,  h: 9,  angle: 12,  dur: "14s", delay: "-9s",   dx: "70px",  rot: "280deg" },
+  { left: "82%", color: "#b6a8cf", w: 6,  h: 11, angle: -22, dur: "25s", delay: "-2s",   dx: "-48px", rot: "360deg" },
+  { left: "94%", color: "#9aa87f", w: 5,  h: 9,  angle: 8,   dur: "19s", delay: "-14s",  dx: "55px",  rot: "390deg" },
+];
+
 const EASE = 0.1; // how fast cur chases target (lower = floatier)
 const FRICTION = 0.88; // inertia decay per frame
 
@@ -128,6 +140,7 @@ export function GardenScene({
   onOpenFlowerChat,
   userName,
   nightMode = false,
+  refetchSignal = 0,
 }: {
   onOpenWorkshop: () => void;
   onOpenMemoryTree: () => void;
@@ -135,14 +148,33 @@ export function GardenScene({
   onOpenFlowerChat: (flowerId: string) => void;
   userName: string;
   nightMode?: boolean;
+  refetchSignal?: number;
 }) {
   const {
     data: flowers,
     loading,
     error,
+    refetch,
   } = useFetchJson<FlowerSummary[]>("/api/flowers");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [showPanHint, setShowPanHint] = useState(true);
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const time = nightMode ? TIME_PRESETS[1] : TIME_PRESETS[0];
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowPanHint(false), 7000);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Re-fetch flowers whenever a panel closes back to the garden view
+  const prevSignal = useRef(refetchSignal);
+  useEffect(() => {
+    if (refetchSignal !== prevSignal.current) {
+      prevSignal.current = refetchSignal;
+      refetch();
+      setWelcomeDismissed(false); // re-show card if garden is still empty after panel closes
+    }
+  }, [refetchSignal, refetch]);
 
   // DOM refs
   const vpRef = useRef<HTMLDivElement>(null); // the viewport element
@@ -388,7 +420,7 @@ export function GardenScene({
         {/* Invisible clickable region over the Greenhouse */}
         <button
           type="button"
-          className="garden-tree-hotspot"
+          className={`garden-tree-hotspot${!loading && (flowers?.length ?? 0) === 0 ? " beacon" : ""}`}
           style={{ left: "74%", top: "10%", width: "20%", height: "72%" }}
           onClick={onOpenWorkshop}
           aria-label="Open the Greenhouse"
@@ -421,6 +453,29 @@ export function GardenScene({
         })}
       </div>
 
+      {/* Ambient petal drifters — viewport layer, never panned */}
+      {DRIFTERS.map((d, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            left: d.left,
+            top: 0,
+            width: d.w,
+            height: d.h,
+            borderRadius: "50% 50% 30% 70% / 50% 50% 60% 40%",
+            background: d.color,
+            opacity: 0,
+            transform: `rotate(${d.angle}deg)`,
+            pointerEvents: "none",
+            zIndex: 6,
+            "--drift-x": d.dx,
+            "--drift-rot": d.rot,
+            animation: `petal-drift ${d.dur} linear ${d.delay} infinite`,
+          } as React.CSSProperties}
+        />
+      ))}
+
       {/* Fixed UI chrome — viewport-relative, never panned */}
       <p className="garden-welcome">
         {userName ? `Welcome back, ${userName}` : "Your garden"}
@@ -430,15 +485,44 @@ export function GardenScene({
       {error && (
         <p className="garden-hint">Couldn&apos;t load your garden — {error}</p>
       )}
-      {!loading && !error && (flowers?.length ?? 0) === 0 && (
-        <button type="button" className="garden-hint" onClick={onOpenWorkshop}>
-          Your garden is empty · visit the Workshop to plant your first flower
-        </button>
+
+      {/* First-time welcome card */}
+      {!welcomeDismissed && !loading && !error && (flowers?.length ?? 0) === 0 && (
+        <div className="garden-welcome-card">
+          <button
+            type="button"
+            className="garden-welcome-close"
+            onClick={() => setWelcomeDismissed(true)}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+          <span className="wc-icon" aria-hidden>🌱</span>
+          <h2>Your garden awaits</h2>
+          <p>Plant a flower to open a space for reflection. Each bloom grows with every conversation you have with Bloom.</p>
+          <div className="wc-steps">
+            <div className="wc-step">
+              <span className="wc-step-num">1</span>
+              <span>Open the <strong style={{ color: "var(--g-on-forest)" }}>Greenhouse</strong> to choose your first flower and set an intention</span>
+            </div>
+            <div className="wc-step">
+              <span className="wc-step-num">2</span>
+              <span>Give it a name — it will be planted right here in your garden</span>
+            </div>
+            <div className="wc-step">
+              <span className="wc-step-num">3</span>
+              <span>Click your flower anytime to continue the conversation</span>
+            </div>
+          </div>
+          <button type="button" className="garden-welcome-btn" onClick={onOpenWorkshop}>
+            Open the Greenhouse →
+          </button>
+        </div>
       )}
-      {!loading && (flowers?.length ?? 0) > 0 && (
-        <p className="garden-hint">
-          Click a flower to step into its conversation
-        </p>
+
+      {/* Pan hint — fades out after 7s */}
+      {showPanHint && !loading && (flowers?.length ?? 0) > 0 && (
+        <p className="garden-pan-hint">Click a flower · drag to explore</p>
       )}
 
       {/* Hover birds — fixed to viewport, fly from flower to Memory Tree nav */}
