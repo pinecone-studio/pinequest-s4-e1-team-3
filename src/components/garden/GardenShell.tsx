@@ -31,6 +31,7 @@ export function GardenShell({ userName }: { userName: string }) {
   const [selectedFlowerId, setSelectedFlowerId] = useState<string | undefined>();
   const [birdDot, setBirdDot] = useState(false);    // red dot on feather button
   const [birdRefetch, setBirdRefetch] = useState(0); // increments to trigger panel refetch
+  const [gardenRefetch, setGardenRefetch] = useState(0); // increments when a panel closes so GardenScene re-fetches flowers
   const { user } = useUser();
   const panelRef = useRef(panel);
   useEffect(() => { panelRef.current = panel; }, [panel]);
@@ -66,7 +67,10 @@ export function GardenShell({ userName }: { userName: string }) {
     };
   }, [user?.id]);
 
-  const close = () => setPanel("garden");
+  const close = () => {
+    setPanel("garden");
+    setGardenRefetch((n) => n + 1);
+  };
 
   function openFlowerChat(flowerId: string) {
     setSelectedFlowerId(flowerId);
@@ -87,6 +91,7 @@ export function GardenShell({ userName }: { userName: string }) {
         onOpenFlowerChat={openFlowerChat}
         userName={userName}
         nightMode={nightMode}
+        refetchSignal={gardenRefetch}
       />
       <GardenTopNav
         active={panel}

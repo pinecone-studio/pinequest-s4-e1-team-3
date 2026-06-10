@@ -23,6 +23,17 @@
   transform: translate(-50%, -100%) translateY(-4px);
 }
 
+/* body wrapper — isolates the idle sway transform from the button's positioning translate */
+.garden-flower-body {
+  display: block;
+  transform-origin: 50% 100%;
+  animation: flower-sway var(--sway-dur, 3.8s) ease-in-out var(--sway-delay, 0s) infinite;
+}
+.garden-flower:hover .garden-flower-body,
+.garden-flower:focus-visible .garden-flower-body {
+  animation-play-state: paused;
+}
+
 /* painted info card shown above a flower on hover/focus */
 .garden-flower-card {
   position: absolute;

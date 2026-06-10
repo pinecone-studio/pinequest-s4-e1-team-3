@@ -491,6 +491,179 @@
   white-space: nowrap;
 }
 
+/* ---- idle sway for flower sprites ---- */
+@keyframes flower-sway {
+  0%, 100% { transform: rotate(-2.5deg); }
+  25%       { transform: rotate(-1.1deg) translateY(-0.5px); }
+  50%       { transform: rotate(2.5deg);  }
+  75%       { transform: rotate(1.1deg) translateY(-0.5px);  }
+}
+
+/* ---- ambient petal/leaf drifters (viewport layer) ---- */
+@keyframes petal-drift {
+  0%   { transform: translateY(-30px) translateX(0) rotate(0deg); opacity: 0; }
+  8%   { opacity: 0.65; }
+  88%  { opacity: 0.45; }
+  100% { transform: translateY(108vh) translateX(var(--drift-x, 70px)) rotate(var(--drift-rot, 360deg)); opacity: 0; }
+}
+
+/* ---- first-time welcome card ---- */
+@keyframes garden-welcome-in {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 20px)); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}
+@keyframes wc-icon-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%       { transform: translateY(-6px) scale(1.05); }
+}
+
+.garden-welcome-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--g-on-forest-soft);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.garden-welcome-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--g-on-forest);
+}
+
+.garden-welcome-card {
+  position: absolute;
+  z-index: 22;
+  left: 50%;
+  top: 52%;
+  transform: translate(-50%, -50%);
+  background: rgba(35, 39, 27, 0.87);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(216, 194, 122, 0.22);
+  border-radius: 28px;
+  padding: 36px 44px 40px;
+  text-align: center;
+  max-width: 460px;
+  width: calc(100% - 48px);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.52);
+  animation: garden-welcome-in 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.garden-welcome-card .wc-icon {
+  font-size: 38px;
+  line-height: 1;
+  display: block;
+  margin-bottom: 18px;
+  animation: wc-icon-float 3.2s ease-in-out infinite;
+}
+.garden-welcome-card h2 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 30px;
+  line-height: 1.15;
+  color: var(--g-ivory);
+  margin: 0 0 10px;
+}
+.garden-welcome-card > p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--g-on-forest-soft);
+  margin: 0 0 24px;
+}
+.garden-welcome-card .wc-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+  text-align: left;
+}
+.garden-welcome-card .wc-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--g-on-forest-soft);
+  line-height: 1.5;
+}
+.garden-welcome-card .wc-step-num {
+  flex: 0 0 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(216, 194, 122, 0.14);
+  border: 1px solid rgba(216, 194, 122, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--g-gold);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.garden-welcome-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--g-sage) 0%, var(--g-moss) 100%);
+  color: var(--g-ivory);
+  font-family: "Mulish", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 14px 30px;
+  border-radius: 999px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+}
+.garden-welcome-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.44);
+}
+
+/* ---- greenhouse beacon ring (empty state) ---- */
+@keyframes beacon-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(154, 168, 127, 0.55); }
+  70%  { box-shadow: 0 0 0 28px rgba(154, 168, 127, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(154, 168, 127, 0); }
+}
+.garden-tree-hotspot.beacon {
+  border-radius: 18px;
+  animation: beacon-ring 2.4s ease-out infinite;
+}
+
+/* ---- pan hint (fades out on its own) ---- */
+@keyframes pan-hint-vanish {
+  0%, 65%  { opacity: 1; }
+  100%     { opacity: 0; pointer-events: none; }
+}
+.garden-pan-hint {
+  position: absolute;
+  z-index: 22;
+  left: 50%;
+  bottom: 96px;
+  transform: translateX(-50%);
+  background: rgba(35, 39, 27, 0.66);
+  backdrop-filter: blur(8px);
+  color: var(--g-on-forest);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 999px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: pan-hint-vanish 6s ease forwards;
+}
+
 /* bird flies left→right across the full world width (250vh) */
 @keyframes garden-bird-fly {
   from { transform: translateX(-100px); }

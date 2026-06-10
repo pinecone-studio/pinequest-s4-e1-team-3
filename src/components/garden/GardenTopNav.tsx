@@ -18,12 +18,12 @@
 import { UserButton } from "@clerk/nextjs";
 import type { PanelKey } from "./GardenShell";
 
-const NAV_ITEMS: { key: PanelKey; label: string }[] = [
-  { key: "garden", label: "Garden" },
-  { key: "notes", label: "Chat" },
-  { key: "pond", label: "Pond" },
-  { key: "workshop", label: "Greenhouse" },
-  { key: "memory", label: "Memory Tree" },
+const NAV_ITEMS: { key: PanelKey; label: string; icon: string }[] = [
+  { key: "garden",   label: "Garden",       icon: "🌿" },
+  { key: "notes",    label: "Chat",         icon: "🌸" },
+  { key: "pond",     label: "Pond",         icon: "🫧" },
+  { key: "workshop", label: "Greenhouse",   icon: "🪴" },
+  { key: "memory",   label: "Memory Tree",  icon: "🌳" },
 ];
 
 export function GardenTopNav({
@@ -59,6 +59,7 @@ export function GardenTopNav({
             className={"garden-nav-pill" + (active === item.key ? " active" : "")}
             onClick={() => onSelect(item.key)}
           >
+            <span style={{ marginRight: 5, fontSize: 13, lineHeight: 1 }} aria-hidden>{item.icon}</span>
             {item.label}
           </button>
         ))}
