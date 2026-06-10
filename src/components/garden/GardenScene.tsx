@@ -29,18 +29,20 @@ import { MoodPill } from "./MoodPill";
 import type { FlowerSummary } from "./types";
 
 const SPECIES_CATEGORY: Record<string, string> = {
-  daisy: "career",
-  lavender: "stress-relief",
-  rose: "relationships",
-  iris: "self-reflection",
+  daisy: "self-awareness",
+  lavender: "self-regulation",
+  sunflower: "motivation",
+  iris: "empathy",
+  rose: "social-skills",
 };
 
 const FILTERS: { key: string; label: string; color?: string }[] = [
   { key: "all", label: "All" },
-  { key: "career", label: "Career", color: "#d8c27a" },
-  { key: "stress-relief", label: "Stress Relief", color: "#b6a8cf" },
-  { key: "relationships", label: "Relationships", color: "#cf8aa0" },
-  { key: "self-reflection", label: "Self-Reflection", color: "#9b8ec4" },
+  { key: "self-awareness", label: "Self-Awareness", color: "#d8c27a" },
+  { key: "self-regulation", label: "Self-Regulation", color: "#b6a8cf" },
+  { key: "motivation", label: "Motivation", color: "#F9A825" },
+  { key: "empathy", label: "Empathy", color: "#9b8ec4" },
+  { key: "social-skills", label: "Social Skills", color: "#cf8aa0" },
 ];
 
 const TIME_PRESETS = [

@@ -155,6 +155,7 @@ export async function POST(req: NextRequest) {
   const systemPrompt = buildSystemPrompt({
     companionName: species.name,
     personality: species.systemPrompt,
+    flowerKey: species.key,
     userName: user.name ?? "",
     userProfile,
     retrievedMemories,

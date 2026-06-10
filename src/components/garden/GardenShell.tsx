@@ -105,7 +105,10 @@ export function GardenShell({ userName }: { userName: string }) {
       {panel === "workshop" && (
         <WorkshopPanel
           onClose={close}
-          onPlanted={() => setPanel("notes")}
+          onPlanted={(flowerId) => {
+            if (flowerId) setSelectedFlowerId(flowerId);
+            setPanel("notes");
+          }}
         />
       )}
       {panel === "pond" && <PondPanel onClose={close} />}

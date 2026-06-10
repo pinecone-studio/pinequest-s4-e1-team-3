@@ -105,6 +105,35 @@
   color: var(--g-ink);
 }
 
+/* Names of any support EQ areas the AI drew on this session (see
+   FlowerSummary.supportFlowers) — a quieter line below the summary. */
+.garden-flower-card .support-flowers {
+  display: block;
+  margin-top: 4px;
+  font-size: 10.5px;
+  font-style: italic;
+  color: var(--g-ink-soft);
+}
+
+/* Small companion buds rendered beside the main flower when the AI's focus
+   touched another EQ area during the session (FlowerSummary.supportFlowers).
+   Sits inside the same button so click/hover/the card above are shared. */
+.garden-flower-buds {
+  position: absolute;
+  right: -6px;
+  bottom: 2px;
+  display: flex;
+  gap: 4px;
+  z-index: 3;
+  pointer-events: none;
+}
+.garden-flower-bud {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  opacity: 0.8;
+}
+
 .garden-petal {
   position: absolute;
   left: 50%;
