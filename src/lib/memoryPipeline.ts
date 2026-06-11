@@ -36,6 +36,10 @@ import {
   type ExtractedMemory,
   type FullExtractionResult,
 } from "@/lib/extractionPrompt";
+import {
+  persistConversationEQSignal,
+  loadAndLogCombinedEQProfile,
+} from "@/lib/eqSignals";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -259,6 +263,16 @@ export async function runMemoryPipeline(conversationId: string): Promise<void> {
     : getIntensity(mood);
 
   logExtractionInsights("pipeline", conversationId, extracted);
+
+  // --- Step 2a: Persist conversation EQ signal + log combined profile ---
+  // Reuses the already-extracted result (no extra AI call). One soft signal
+  // per completed conversation, then the merged onboarding+weekly+signals view.
+  try {
+    await persistConversationEQSignal(extracted, { userId, conversationId });
+    await loadAndLogCombinedEQProfile(userId);
+  } catch (err) {
+    console.error(`[pipeline] EQ signal/profile step failed for ${conversationId}:`, err);
+  }
 
   // --- Step 2b: Save practice task if the extraction suggested one ---
   const task = extracted.suggestedPracticeTask;

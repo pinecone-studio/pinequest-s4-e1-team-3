@@ -52,6 +52,121 @@ model User {
   memories    Memory[]
   moodEntries MoodEntry[]
   tasks       Task[]
+
+  eqProfile     UserEQProfile?
+  eqAssessments EQAssessment[]
+  eqSignals     ConversationEQSignal[]
+}
+
+// ============================================
+//  EQ ASSESSMENT SYSTEM
+//
+//  Three sources feed a user's EQ picture:
+//    1. UserEQProfile  — the current snapshot (baseline from onboarding,
+//                        kept current by weekly reflections)
+//    2. EQAssessment   — one row per completed test (onboarding or weekly),
+//                        with the per-area breakdown frozen at that time
+//    3. ConversationEQSignal — soft signals mapped from the chat extraction
+//                        pipeline (see src/lib/eqSignals.ts)
+//
+//  Goleman's 5 EQ areas. EQArea mirrors EQDomain in
+//  src/lib/extractionPrompt.ts so conversation signals line up.
+// ============================================
+enum EQArea {
+  SELF_AWARENESS
+  SELF_REGULATION
+  MOTIVATION
+  EMPATHY
+  SOCIAL_SKILLS
+}
+
+enum EQAssessmentType {
+  onboarding
+  weekly
+}
+
+// Current EQ snapshot for a user. Baseline set by the onboarding test,
+// kept current by weekly reflections. One row per user.
+model UserEQProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  onboardingCompleted Boolean  @default(false)
+
+  initialTotalScore Int?
+  currentTotalScore Int?
+
+  selfAwarenessScore  Int?
+  selfRegulationScore Int?
+  motivationScore     Int?
+  empathyScore        Int?
+  socialSkillsScore   Int?
+
+  strongestArea EQArea?
+  supportArea   EQArea?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// One completed test. The latest type=weekly row (by completedAt) is the
+// single source of truth for the 7-day unlock and the "previous weekly".
+model EQAssessment {
+  id        String           @id @default(cuid())
+  userId    String
+  type      EQAssessmentType
+  totalScore Int
+
+  selfAwarenessScore  Int
+  selfRegulationScore Int
+  motivationScore     Int
+  empathyScore        Int
+  socialSkillsScore   Int
+
+  strongestArea EQArea
+  supportArea   EQArea
+
+  completedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  user    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers EQAssessmentAnswer[]
+
+  @@index([userId, type, completedAt])
+}
+
+model EQAssessmentAnswer {
+  id             String @id @default(cuid())
+  assessmentId   String
+  questionId     String
+  eqArea         EQArea
+  selectedOption String
+  score          Int
+  createdAt      DateTime @default(now())
+
+  assessment EQAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+}
+
+// Soft EQ signal mapped from the conversation extraction pipeline
+// (src/lib/eqSignals.ts). Not a diagnosis — gentle observations only.
+model ConversationEQSignal {
+  id              String   @id @default(cuid())
+  userId          String
+  conversationId  String
+  eqArea          EQArea
+  emotions        String[] @default([])
+  pattern         String?
+  confidence      Float    @default(0)
+  gentleInsight   String?
+  suggestedSupport String?
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ============================================
