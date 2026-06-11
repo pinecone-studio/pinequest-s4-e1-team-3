@@ -125,6 +125,11 @@ function GardenShellContent({ userName }: { userName: string }) {
     if (tutorialActive && currentStep === 4) advanceStep();
   }
 
+  function openPond() {
+    setPanel("pond");
+    if (tutorialActive && currentStep === 5) advanceStep();
+  }
+
   // data-tutorial-step on the root element drives CSS glow animations
   // (see tutorial.css) without any React class manipulation.
   const tutorialStep = tutorialActive ? currentStep : undefined;
@@ -132,9 +137,9 @@ function GardenShellContent({ userName }: { userName: string }) {
   return (
     <div className="garden-root" data-tutorial-step={tutorialStep}>
       <GardenScene
-        onOpenWorkshop={() => setPanel("workshop")}
-        onOpenTaskTree={() => setPanel("tasks")}
-        onOpenPond={() => setPanel("pond")}
+        onOpenWorkshop={openWorkshop}
+        onOpenTaskTree={openMemoryTree}
+        onOpenPond={openPond}
         onOpenFlowerChat={openFlowerChat}
         userName={userName}
         nightMode={nightMode}
