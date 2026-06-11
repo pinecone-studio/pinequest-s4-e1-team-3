@@ -280,6 +280,8 @@ export function DeskChatPanel({
 
     if (res.headers.get("X-Stone-Prompt") === "true") {
       setShowStonePrompt(true);
+    }
+
     // Voice path: play TTS after reply arrives
     if (withVoice && fullReply) {
       try {
