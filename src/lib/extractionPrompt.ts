@@ -212,6 +212,7 @@ export interface ExtractedMemory {
 // future wiring — see header).
 export interface FullExtractionResult extends ConversationInsights {
   mood: string;
+  intensity: number;
   tags: string[];
   memories: ExtractedMemory[];
 }
@@ -482,6 +483,7 @@ export function sanitizeExtraction(raw: unknown): FullExtractionResult {
 
   return {
     mood: typeof r.mood === "string" ? r.mood : "",
+    intensity: typeof r.intensity === "number" && r.intensity >= 1 && r.intensity <= 5 ? Math.round(r.intensity) : 3,
     tags: Array.isArray(r.tags) ? (r.tags as unknown[]).filter((t): t is string => typeof t === "string") : [],
     memories,
 

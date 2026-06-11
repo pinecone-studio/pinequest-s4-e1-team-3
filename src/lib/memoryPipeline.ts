@@ -57,29 +57,6 @@ export function computeGrowthStage(messageCount: number, isCompleted: boolean): 
   return GrowthStage.SEED;
 }
 
-// ============================================
-//  ExtractionResult — shape of the JSON the AI returns
-// ============================================
-interface ExtractedMemory {
-  content: string;
-  category:
-    | "goal"
-    | "value"
-    | "decision"
-    | "lesson"
-    | "concern"
-    | "reflection"
-    | "relationship"
-    | "career"
-    | "habit";
-}
-
-interface ExtractionResult {
-  mood: string;
-  intensity: number;
-  tags: string[];
-  memories: ExtractedMemory[];
-}
 
 // ============================================
 //  embedAndSaveMemories

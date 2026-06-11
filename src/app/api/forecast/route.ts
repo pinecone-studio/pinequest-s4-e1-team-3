@@ -66,6 +66,7 @@ export async function GET(req: Request) {
     where: {
       userId: user.id,
       date: { gte: since },
+      conversationId: { not: null },
     },
     select: {
       mood: true,

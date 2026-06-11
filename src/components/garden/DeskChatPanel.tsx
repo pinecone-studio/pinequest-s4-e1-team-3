@@ -143,6 +143,7 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
   const [error, setError] = useState("");
   const [completing, setCompleting] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [showStonePrompt, setShowStonePrompt] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // History panel
@@ -262,6 +263,10 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
         };
         return updated;
       });
+    }
+
+    if (res.headers.get("X-Stone-Prompt") === "true") {
+      setShowStonePrompt(true);
     }
 
     setLoading(false);
@@ -514,6 +519,35 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
           )}
 
           {error && <p className="dc-error">{error}</p>}
+
+          {showStonePrompt && !completed && (
+            <div className="dc-stone-prompt">
+              <span className="dc-stone-prompt-text">🪨 Энэ яриагаа чулуунд хадгалах уу?</span>
+              <div className="dc-stone-prompt-actions">
+                <button
+                  className="dc-stone-yes"
+                  onClick={async () => {
+                    setShowStonePrompt(false);
+                    if (!conversationId) return;
+                    try {
+                      await fetch(`/api/conversations/${conversationId}/save-stone`, { method: "POST" });
+                    } catch {
+                      // stone save failed silently — conversation continues
+                    }
+                  }}
+                >
+                  Тийм
+                </button>
+                <button
+                  className="dc-stone-no"
+                  onClick={() => setShowStonePrompt(false)}
+                >
+                  Дараа
+                </button>
+              </div>
+            </div>
+          )}
+
           {completed && (
             <p className="dc-saved-note">
               This reflection is saved — your flower is blooming in the garden
