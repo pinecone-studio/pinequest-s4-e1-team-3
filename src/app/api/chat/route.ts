@@ -172,6 +172,7 @@ export async function POST(req: NextRequest) {
     messages: [...history, { role: "user", content: message }],
   });
 
+  console.log("[chat] STEP 1 — GPT-5.4 draft (English):", draft.text);
   // Detect and strip [STONE_PROMPT] before translation so it never surfaces in text
   const hasStonePrompt = draft.text.includes("[STONE_PROMPT]");
   const draftForTranslation = draft.text.replace(/\[STONE_PROMPT\]/g, "").trim();
@@ -184,7 +185,7 @@ export async function POST(req: NextRequest) {
     messages: [
       {
         role: "user",
-        content: `Доорх англи текстийг ярианы монгол хэл рүү орчуул. "чи/чамд/чиний" хэрэглэ, "Та" гэхгүй. Утга, урт, emoji хэвээр. Бодол, тайлбар бичихгүй — ЗӨВХӨН орчуулгыг шууд бич.
+        content: `Доорх англи текстийг ярианы монгол хэл рүү орчуул. "чи/чамд/чиний" хэрэглэ, "Та" гэхгүй. Утгыг яг хэвээр хадгал — нэмж бүү тайлбарла, бүү драмжуул, эх хувилбараас илүү дулаан бүү бол. "үнэхээр" гэх мэт нэмэлт онцлох үг бүү нэм. Өгүүлбэрийн тоо болон emoji-г эх хувилбартай яг адил байлга. Хэрэв эх нь ганц асуулт бол орчуулга ч ганц асуулт байх ёстой — нэмэлт асуулт, зөвлөгөө бүү нэм. Бодол, тайлбар бичихгүй — ЗӨВХӨН орчуулгыг шууд бич.
 
 Англи текст:
 """
@@ -202,6 +203,8 @@ ${TRANSLATION_MARKER}`,
   const mongolianText = cleanTranslation(
     completion.choices[0]?.message?.content ?? "",
   );
+
+  console.log("[chat] STEP 2 — Egune translation (Mongolian):", mongolianText);
 
   // Fallback: if cleaning somehow produced nothing, send the English draft
   // rather than a blank bubble.
