@@ -160,7 +160,7 @@ export function MoodPill() {
   const yTicks = [1, 2, 3, 4, 5];
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative" }} data-tutorial-target="mood-tracker">
       <button
         type="button"
         className="garden-pill-btn"
