@@ -19,11 +19,11 @@ import { UserButton } from "@clerk/nextjs";
 import type { PanelKey } from "./GardenShell";
 
 const NAV_ITEMS: { key: PanelKey; label: string; icon: string }[] = [
-  { key: "garden",   label: "Garden",      icon: "🌿" },
-  { key: "notes",    label: "Chat",        icon: "🌸" },
-  { key: "pond",     label: "Pond",        icon: "🫧" },
-  { key: "workshop", label: "Greenhouse",  icon: "🪴" },
-  { key: "tasks",    label: "Task Tree",   icon: "🌳" },
+  { key: "garden", label: "Garden", icon: "🌿" },
+  { key: "notes", label: "Chat", icon: "🌸" },
+  { key: "pond", label: "Pond", icon: "🫧" },
+  { key: "workshop", label: "Greenhouse", icon: "🪴" },
+  { key: "tasks", label: "Task Tree", icon: "🌳" },
 ];
 
 export function GardenTopNav({
@@ -56,10 +56,11 @@ export function GardenTopNav({
             key={item.key}
             type="button"
             data-nav={item.key}
-            className={"garden-nav-pill" + (active === item.key ? " active" : "")}
+            className={
+              "garden-nav-pill" + (active === item.key ? " active" : "")
+            }
             onClick={() => onSelect(item.key)}
           >
-            <span style={{ marginRight: 5, fontSize: 13, lineHeight: 1 }} aria-hidden>{item.icon}</span>
             {item.label}
           </button>
         ))}
@@ -73,7 +74,12 @@ export function GardenTopNav({
           className="garden-icon-pill"
           onClick={onToggleNight}
           aria-label={nightMode ? "Switch to day" : "Switch to night"}
-          style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.04em", padding: "0 14px" }}
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: "0.04em",
+            padding: "0 14px",
+          }}
         >
           {nightMode ? "Day" : "Night"}
         </button>

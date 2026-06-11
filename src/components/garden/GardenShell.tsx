@@ -22,20 +22,48 @@ import { DeskChatPanel } from "./DeskChatPanel";
 import { WorkshopPanel } from "./WorkshopPanel";
 import { BirdMessagesPanel } from "./BirdMessagesPanel";
 import { TaskTreePanel } from "./TaskTreePanel";
+import {
+  TutorialProvider,
+  useTutorial,
+} from "@/components/tutorial/TutorialContext";
+import { TutorialOverlay } from "@/components/tutorial/TutorialOverlay";
 
-export type PanelKey = "garden" | "workshop" | "pond" | "notes" | "birds" | "tasks";
+export type PanelKey =
+  | "garden"
+  | "workshop"
+  | "pond"
+  | "notes"
+  | "birds"
+  | "tasks";
 
+// Public export: wraps the inner component with TutorialProvider so the
+// inner component can call useTutorial() as a descendant.
 export function GardenShell({ userName }: { userName: string }) {
+  return (
+    <TutorialProvider>
+      <GardenShellContent userName={userName} />
+    </TutorialProvider>
+  );
+}
+
+// All the real logic lives here, inside the provider.
+function GardenShellContent({ userName }: { userName: string }) {
   const [panel, setPanel] = useState<PanelKey>("garden");
   const [nightMode, setNightMode] = useState(false);
-  const [selectedFlowerId, setSelectedFlowerId] = useState<string | undefined>();
+  const [selectedFlowerId, setSelectedFlowerId] = useState<
+    string | undefined
+  >();
   const [birdDot, setBirdDot] = useState(false);
   const [birdRefetch, setBirdRefetch] = useState(0);
   const [gardenRefetch, setGardenRefetch] = useState(0);
   const [expectingTask, setExpectingTask] = useState(false);
   const { user } = useUser();
   const panelRef = useRef(panel);
-  useEffect(() => { panelRef.current = panel; }, [panel]);
+  useEffect(() => {
+    panelRef.current = panel;
+  }, [panel]);
+
+  const { tutorialActive, currentStep, advanceStep } = useTutorial();
 
   // Global Ably subscription — lives for the full garden session, not just
   // while the bird messages panel is open.
@@ -46,45 +74,64 @@ export function GardenShell({ userName }: { userName: string }) {
     let mounted = true;
     let ablyClient: { close(): void } | null = null;
 
-    import("ably").then(({ Realtime }) => {
-      if (!mounted) return; // cleaned up before the import resolved — bail out
-      ablyClient = new Realtime({ authUrl: "/api/ably-token" });
-      const channel = (ablyClient as any).channels.get(`garden:${user.id}`);
-      channel.subscribe("garden-update", () => {
+    import("ably")
+      .then(({ Realtime }) => {
         if (!mounted) return;
-        if (panelRef.current === "birds") {
-          // Panel already open — tell it to refetch immediately
-          setBirdRefetch((n) => n + 1);
-        } else {
-          // Panel closed — show the red dot
-          setBirdDot(true);
-        }
-      });
-    }).catch(() => {});
+        ablyClient = new Realtime({ authUrl: "/api/ably-token" });
+        const channel = (ablyClient as any).channels.get(`garden:${user.id}`);
+        channel.subscribe("garden-update", () => {
+          if (!mounted) return;
+          // Always refresh the garden scene's flower list when garden-update fires
+          setGardenRefetchKey((n) => n + 1);
+          if (panelRef.current === "birds") {
+            setBirdRefetch((n) => n + 1);
+          } else {
+            setBirdDot(true);
+          }
+        });
+      })
+      .catch(() => {});
 
     return () => {
       mounted = false;
-      try { ablyClient?.close(); } catch {}
+      try {
+        ablyClient?.close();
+      } catch {}
     };
   }, [user?.id]);
 
-  const close = () => {
-    setPanel("garden");
-    setGardenRefetch((n) => n + 1);
-  };
+  const close = () => setPanel("garden");
 
   function openFlowerChat(flowerId: string) {
     setSelectedFlowerId(flowerId);
     setPanel("notes");
+    // Step 3: user clicked their planted flower → advance to Memory Tree step
+    if (tutorialActive && currentStep === 3) advanceStep();
   }
 
   function openBirds() {
-    setBirdDot(false); // clear the notification dot when the panel opens
+    setBirdDot(false);
     setPanel("birds");
   }
 
+  function openWorkshop() {
+    setPanel("workshop");
+    // Step 1: user clicked the Greenhouse → advance to flower-picker step
+    if (tutorialActive && currentStep === 1) advanceStep();
+  }
+
+  function openMemoryTree() {
+    setPanel("memory");
+    // Step 4: user clicked the Memory Tree → advance to mood-tracker step
+    if (tutorialActive && currentStep === 4) advanceStep();
+  }
+
+  // data-tutorial-step on the root element drives CSS glow animations
+  // (see tutorial.css) without any React class manipulation.
+  const tutorialStep = tutorialActive ? currentStep : undefined;
+
   return (
-    <div className="garden-root">
+    <div className="garden-root" data-tutorial-step={tutorialStep}>
       <GardenScene
         onOpenWorkshop={() => setPanel("workshop")}
         onOpenTaskTree={() => setPanel("tasks")}
@@ -92,7 +139,12 @@ export function GardenShell({ userName }: { userName: string }) {
         onOpenFlowerChat={openFlowerChat}
         userName={userName}
         nightMode={nightMode}
-        refetchSignal={gardenRefetch}
+        // Tutorial: highlight the newly-planted flower in the garden for step 3
+        tutorialFlowerId={
+          tutorialActive && currentStep === 3 ? selectedFlowerId : undefined
+        }
+        // Tutorial: refetch flowers after planting while in tutorial mode
+        refetchKey={gardenRefetchKey}
       />
       <GardenTopNav
         active={panel}
@@ -108,7 +160,15 @@ export function GardenShell({ userName }: { userName: string }) {
           onClose={close}
           onPlanted={(flowerId) => {
             if (flowerId) setSelectedFlowerId(flowerId);
-            setPanel("notes");
+            if (tutorialActive && currentStep === 2) {
+              // Step 2 complete: stay in garden so user can see their flower (step 3).
+              // Force an immediate flower refetch so the planted flower appears.
+              setGardenRefetchKey((k) => k + 1);
+              setPanel("garden");
+              advanceStep();
+            } else {
+              setPanel("notes");
+            }
           }}
         />
       )}
@@ -117,10 +177,15 @@ export function GardenShell({ userName }: { userName: string }) {
         <DeskChatPanel
           onClose={close}
           flowerId={selectedFlowerId}
-          onOpenTasks={() => { setExpectingTask(true); setPanel("tasks"); }}
+          onOpenTasks={() => {
+            setExpectingTask(true);
+            setPanel("tasks");
+          }}
         />
       )}
-      {panel === "birds" && <BirdMessagesPanel onClose={close} refetchSignal={birdRefetch} />}
+      {panel === "birds" && (
+        <BirdMessagesPanel onClose={close} refetchSignal={birdRefetch} />
+      )}
       {panel === "tasks" && (
         <TaskTreePanel
           onClose={close}
@@ -128,6 +193,8 @@ export function GardenShell({ userName }: { userName: string }) {
           onTaskArrived={() => setExpectingTask(false)}
         />
       )}
+
+      <TutorialOverlay panel={panel} />
     </div>
   );
 }

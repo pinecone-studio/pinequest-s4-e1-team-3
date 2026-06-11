@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { GardenShell } from "@/components/garden/GardenShell";
 import "./garden-shell.css";
 import "./garden-panels.css";
+import "./tutorial.css";
 
 export default async function GardenPage() {
   const { userId: clerkId } = await auth();
