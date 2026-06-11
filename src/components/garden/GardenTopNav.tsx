@@ -19,11 +19,11 @@ import { UserButton } from "@clerk/nextjs";
 import type { PanelKey } from "./GardenShell";
 
 const NAV_ITEMS: { key: PanelKey; label: string; icon: string }[] = [
-  { key: "garden",   label: "Garden",       icon: "🌿" },
-  { key: "notes",    label: "Chat",         icon: "🌸" },
-  { key: "pond",     label: "Pond",         icon: "🫧" },
-  { key: "workshop", label: "Greenhouse",   icon: "🪴" },
-  { key: "memory",   label: "Memory Tree",  icon: "🌳" },
+  { key: "garden",   label: "Garden",      icon: "🌿" },
+  { key: "notes",    label: "Chat",        icon: "🌸" },
+  { key: "pond",     label: "Pond",        icon: "🫧" },
+  { key: "workshop", label: "Greenhouse",  icon: "🪴" },
+  { key: "tasks",    label: "Task Tree",   icon: "🌳" },
 ];
 
 export function GardenTopNav({

@@ -45,22 +45,43 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
   const rippleColor = apiStones?.[0]?.rippleColor ?? "#42A5F5";
   const today = forecast?.[forecast.length - 1];
 
-  function handleAdd() {
+  async function handleAdd() {
     const label = topic.trim() || `Stone ${localStones.length + 1 + (apiStones?.length ?? 0)}`;
-    const id = Date.now().toString();
-    setLocalStones((prev) => [...prev, { id, label, message: stoneMessage.trim(), rippleColor }]);
+    const note = [topic.trim(), stoneMessage.trim()].filter(Boolean).join(" · ");
+    const tempId = `temp_${Date.now()}`;
+
+    // Optimistic: show stone tab immediately
+    setLocalStones((prev) => [...prev, { id: tempId, label, message: stoneMessage.trim(), rippleColor }]);
     setAddingStone(false);
     setTopic("");
     setStoneMessage("");
+
+    // Persist to backend, swap temp ID with real DB id
+    try {
+      const res = await fetch("/api/mood", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note }),
+      });
+      if (res.ok) {
+        const data = await res.json() as { id: string; rippleColor: string };
+        setLocalStones((prev) =>
+          prev.map((s) => s.id === tempId ? { ...s, id: data.id, rippleColor: data.rippleColor } : s)
+        );
+      }
+    } catch {
+      // keep temp stone if save fails — will not persist after refresh
+    }
   }
 
   function handleDrop() {
     if (phase !== "idle") return;
     const droppingId = selectedStoneId;
     const isApiStone = apiStones?.some((s) => s.id === droppingId);
+    const isPersistedLocal = droppingId && !droppingId.startsWith("temp_") && localStones.some((s) => s.id === droppingId);
     setLocalStones((prev) => prev.filter((s) => s.id !== droppingId));
-    if (isApiStone && droppingId) {
-      setDroppedApiIds((prev) => new Set(prev).add(droppingId));
+    if (droppingId && (isApiStone || isPersistedLocal)) {
+      if (isApiStone) setDroppedApiIds((prev) => new Set(prev).add(droppingId));
       fetch(`/api/mood?id=${droppingId}`, { method: "DELETE" }).catch(() => {});
     }
     setSelectedStoneId(null);
@@ -487,29 +508,55 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
           </div>
         ))}
         {apiStones?.filter((s) => s.note && !droppedApiIds.has(s.id)).map((s) => {
-          const label = s.note!.split(" · ")[0] || s.note!;
+          const parts = s.note!.split(" · ");
+          const label = parts[0] || s.note!;
+          const message = parts.slice(1).join(" · ");
           return (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => { setSelectedStoneId((v) => v === s.id ? null : s.id); setAddingStone(false); }}
-              style={{
-                background: selectedStoneId === s.id ? "rgba(247,241,228,0.28)" : "rgba(247,241,228,0.08)",
-                border: `1px solid ${selectedStoneId === s.id ? "rgba(247,241,228,0.5)" : "rgba(247,241,228,0.18)"}`,
-                borderRadius: 10,
-                color: selectedStoneId === s.id ? "#f0ede8" : "rgba(240,237,232,0.75)",
-                fontSize: 13,
-                fontWeight: selectedStoneId === s.id ? 600 : 500,
-                padding: "8px 14px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
+            <div key={s.id} style={{ position: "relative" }}
+              onMouseEnter={() => setHoveredStone(s.id)}
+              onMouseLeave={() => setHoveredStone(null)}
             >
-              <Image src="/garden/stone.png" alt="" width={18} height={18} style={{ height: "auto", mixBlendMode: "screen", flexShrink: 0, filter: "invert(1)" }} />
-              {label}
-            </button>
+              {hoveredStone === s.id && message && (
+                <div style={{
+                  position: "absolute",
+                  bottom: "calc(100% + 8px)",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  background: "#fff",
+                  color: "#222",
+                  fontSize: 13,
+                  borderRadius: 10,
+                  padding: "8px 12px",
+                  whiteSpace: "normal" as const,
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+                  pointerEvents: "none",
+                  zIndex: 20,
+                  maxWidth: 240,
+                }}>
+                  {message}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => { setSelectedStoneId((v) => v === s.id ? null : s.id); setAddingStone(false); }}
+                style={{
+                  background: selectedStoneId === s.id ? "rgba(247,241,228,0.28)" : "rgba(247,241,228,0.08)",
+                  border: `1px solid ${selectedStoneId === s.id ? "rgba(247,241,228,0.5)" : "rgba(247,241,228,0.18)"}`,
+                  borderRadius: 10,
+                  color: selectedStoneId === s.id ? "#f0ede8" : "rgba(240,237,232,0.75)",
+                  fontSize: 13,
+                  fontWeight: selectedStoneId === s.id ? 600 : 500,
+                  padding: "8px 14px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <Image src="/garden/stone.png" alt="" width={18} height={18} style={{ height: "auto", mixBlendMode: "screen", flexShrink: 0, filter: "invert(1)" }} />
+                {label}
+              </button>
+            </div>
           );
         })}
         {addingStone && phase === "idle" && (

@@ -173,6 +173,9 @@ export async function POST(req: NextRequest) {
   });
 
   console.log("[chat] STEP 1 — GPT-5.4 draft (English):", draft.text);
+  // Detect and strip [STONE_PROMPT] before translation so it never surfaces in text
+  const hasStonePrompt = draft.text.includes("[STONE_PROMPT]");
+  const draftForTranslation = draft.text.replace(/\[STONE_PROMPT\]/g, "").trim();
 
   // --- STEP 2: Egune translates to Mongolian (non-streaming) ---
   const completion = await eguneClient.chat.completions.create({
@@ -186,7 +189,7 @@ export async function POST(req: NextRequest) {
 
 Англи текст:
 """
-${draft.text}
+${draftForTranslation}
 """
 
 ${TRANSLATION_MARKER}`,
@@ -227,6 +230,9 @@ ${TRANSLATION_MARKER}`,
   }
 
   return new Response(finalText, {
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      ...(hasStonePrompt ? { "X-Stone-Prompt": "true" } : {}),
+    },
   });
 }
