@@ -55,6 +55,27 @@
   }
 }
 
+@keyframes tutorial-glow-blue {
+  0%, 100% {
+    outline-color: rgba(100, 160, 220, 0.55);
+    box-shadow: 0 0 0 0 rgba(100, 160, 220, 0.4);
+  }
+  50% {
+    outline-color: rgba(100, 160, 220, 1);
+    box-shadow: 0 0 0 8px rgba(100, 160, 220, 0.1);
+  }
+}
+
+@keyframes tutorial-arrow-bounce-down {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%       { transform: translateX(-50%) translateY(5px); }
+}
+
+@keyframes tutorial-arrow-bounce-up {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%       { transform: translateX(-50%) translateY(-5px); }
+}
+
 /* ---- Per-step glow rules ----------------------------------------- */
 
 /*  Step 1 — Greenhouse hotspot  */
@@ -73,16 +94,24 @@
   animation: tutorial-glow-rose 1.6s ease-in-out infinite;
 }
 
-/*  Step 4 — Memory Tree hotspot  */
-.garden-root[data-tutorial-step="4"] [data-tutorial-target="memory-tree"] {
+/*  Step 4 — Task Tree hotspot  */
+.garden-root[data-tutorial-step="4"] [data-tutorial-target="task-tree"] {
   outline: 2px solid rgba(154, 168, 127, 0.55);
   outline-offset: 4px;
   border-radius: 10px;
   animation: tutorial-glow-green 1.6s ease-in-out infinite;
 }
 
-/*  Step 5 — Mood pill  */
-.garden-root[data-tutorial-step="5"] [data-tutorial-target="mood-tracker"] {
+/*  Step 5 — Pond hotspot  */
+.garden-root[data-tutorial-step="5"] [data-tutorial-target="pond"] {
+  outline: 2px solid rgba(100, 160, 220, 0.55);
+  outline-offset: 4px;
+  border-radius: 10px;
+  animation: tutorial-glow-blue 1.6s ease-in-out infinite;
+}
+
+/*  Step 6 — Mood pill  */
+.garden-root[data-tutorial-step="6"] [data-tutorial-target="mood-tracker"] {
   outline: 2px solid rgba(154, 168, 127, 0.55);
   outline-offset: 4px;
   border-radius: 999px;

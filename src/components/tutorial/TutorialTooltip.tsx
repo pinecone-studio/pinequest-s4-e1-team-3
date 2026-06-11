@@ -32,6 +32,7 @@ export function TutorialTooltip({
   visible,
 }: TutorialTooltipProps) {
   const [pos, setPos] = useState<TooltipPos>({ top: 0, left: 0 });
+  const [arrowDir, setArrowDir] = useState<"down" | "up" | "none">("none");
   const retryRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   function calcPos() {
@@ -62,6 +63,7 @@ export function TutorialTooltip({
         top: vh / 2 - tooltipH / 2,
         left: Math.max(12, vw / 2 - TOOLTIP_W / 2),
       });
+      setArrowDir("none");
       return;
     }
 
@@ -71,14 +73,18 @@ export function TutorialTooltip({
     const spaceAbove = r.top;
 
     let top: number;
+    let dir: "down" | "up" = "up";
     if (spaceBelow >= tooltipH + GAP) {
       top = r.bottom + GAP;
+      dir = "up"; // tooltip is below target, arrow points up toward it
     } else if (spaceAbove >= tooltipH + GAP) {
       top = r.top - tooltipH - GAP;
+      dir = "down"; // tooltip is above target, arrow points down toward it
     } else {
-      // Prefer below even if clipped; the user can scroll
       top = Math.min(r.bottom + GAP, vh - tooltipH - 12);
+      dir = "up";
     }
+    setArrowDir(dir);
 
     // Center over target, clamped to viewport
     let left = midX - TOOLTIP_W / 2;
@@ -123,6 +129,38 @@ export function TutorialTooltip({
         animation: "tutorial-tooltip-in 200ms ease both",
       }}
     >
+      {arrowDir === "down" && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: -10,
+            left: "50%",
+            width: 0,
+            height: 0,
+            borderLeft: "8px solid transparent",
+            borderRight: "8px solid transparent",
+            borderTop: "11px solid rgba(247,241,228,0.97)",
+            animation: "tutorial-arrow-bounce-down 0.9s ease-in-out infinite",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      {arrowDir === "up" && (
+        <div
+          style={{
+            position: "absolute",
+            top: -10,
+            left: "50%",
+            width: 0,
+            height: 0,
+            borderLeft: "8px solid transparent",
+            borderRight: "8px solid transparent",
+            borderBottom: "11px solid rgba(247,241,228,0.97)",
+            animation: "tutorial-arrow-bounce-up 0.9s ease-in-out infinite",
+            pointerEvents: "none",
+          }}
+        />
+      )}
       <p
         style={{
           margin: "0 0 5px",

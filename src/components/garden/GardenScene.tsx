@@ -21,7 +21,7 @@
 
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { useFetchJson } from "@/hooks/useFetchJson";
 import { FlowerSprite } from "./FlowerSprite";
@@ -57,8 +57,8 @@ const TIME_PRESETS = [
     key: "evening",
     label: "Evening",
     icon: "🌙",
-    filter: "brightness(0.72) saturate(0.8) hue-rotate(200deg)",
-    tint: "rgba(64, 52, 110, 0.18)",
+    filter: "brightness(0.52) saturate(0.6) hue-rotate(215deg)",
+    tint: "rgba(12, 28, 72, 0.42)",
   },
 ];
 
@@ -73,47 +73,16 @@ const BIRDS = [
   { top: "17%", duration: "24s", delay: "-22s", size: 116 },
 ];
 
-// Fireflies — positions as % of world width / scene height, with per-fly timing
-const FIREFLIES: Array<{
-  x: number;
-  y: number;
-  delay: string;
-  dur: string;
-  size: number;
-}> = [
-  { x: 3, y: 58, delay: "0s", dur: "3.2s", size: 5 },
-  { x: 7, y: 65, delay: "1.2s", dur: "4.5s", size: 4 },
-  { x: 1, y: 72, delay: "2.8s", dur: "3.8s", size: 6 },
-  { x: 11, y: 57, delay: "0.5s", dur: "4.1s", size: 4 },
-  { x: 15, y: 66, delay: "1.9s", dur: "3.5s", size: 5 },
-  { x: 19, y: 74, delay: "3.1s", dur: "4.8s", size: 4 },
-  { x: 23, y: 54, delay: "0.7s", dur: "3.1s", size: 5 },
-  { x: 27, y: 69, delay: "2.0s", dur: "4.2s", size: 4 },
-  { x: 31, y: 60, delay: "1.4s", dur: "3.7s", size: 6 },
-  { x: 35, y: 76, delay: "3.8s", dur: "5.0s", size: 4 },
-  { x: 39, y: 51, delay: "0.3s", dur: "3.4s", size: 5 },
-  { x: 37, y: 44, delay: "2.4s", dur: "3.9s", size: 3 },
-  { x: 41, y: 38, delay: "4.0s", dur: "4.2s", size: 3 },
-  { x: 44, y: 42, delay: "1.7s", dur: "5.5s", size: 4 },
-  { x: 43, y: 67, delay: "2.5s", dur: "4.6s", size: 4 },
-  { x: 47, y: 60, delay: "1.1s", dur: "3.9s", size: 5 },
-  { x: 51, y: 76, delay: "3.5s", dur: "4.3s", size: 4 },
-  { x: 55, y: 54, delay: "0.6s", dur: "3.6s", size: 6 },
-  { x: 59, y: 71, delay: "2.2s", dur: "4.4s", size: 4 },
-  { x: 63, y: 58, delay: "1.6s", dur: "3.3s", size: 5 },
-  { x: 67, y: 73, delay: "3.0s", dur: "4.7s", size: 4 },
-  { x: 71, y: 62, delay: "0.9s", dur: "3.8s", size: 5 },
-  { x: 75, y: 54, delay: "2.7s", dur: "5.2s", size: 4 },
-  { x: 79, y: 69, delay: "1.3s", dur: "4.0s", size: 6 },
-  { x: 83, y: 57, delay: "3.6s", dur: "3.5s", size: 4 },
-  { x: 87, y: 73, delay: "0.4s", dur: "4.9s", size: 5 },
-  { x: 91, y: 60, delay: "2.0s", dur: "3.2s", size: 4 },
-  { x: 95, y: 55, delay: "1.7s", dur: "4.1s", size: 5 },
-  { x: 98, y: 69, delay: "3.3s", dur: "3.7s", size: 4 },
-  { x: 5, y: 82, delay: "1.0s", dur: "4.6s", size: 3 },
-  { x: 20, y: 84, delay: "2.6s", dur: "3.3s", size: 4 },
-  { x: 88, y: 81, delay: "0.2s", dur: "4.0s", size: 3 },
-  { x: 96, y: 78, delay: "3.9s", dur: "5.1s", size: 4 },
+// Night-mode drifters — cool blue/silver tones, only rendered in night mode
+const NIGHT_DRIFTERS = [
+  { left: "8%",  color: "rgba(160,195,235,0.42)", w: 5, h: 8,  angle: -15, dur: "26s", delay: "0s",    dx: "60px",  rot: "320deg" },
+  { left: "22%", color: "rgba(200,225,250,0.35)", w: 4, h: 7,  angle:  18, dur: "31s", delay: "-8s",   dx: "-50px", rot: "280deg" },
+  { left: "38%", color: "rgba(140,175,220,0.48)", w: 6, h: 10, angle: -22, dur: "22s", delay: "-4s",   dx: "80px",  rot: "350deg" },
+  { left: "52%", color: "rgba(190,210,240,0.38)", w: 5, h: 8,  angle:  10, dur: "28s", delay: "-12s",  dx: "-40px", rot: "300deg" },
+  { left: "66%", color: "rgba(165,200,238,0.44)", w: 4, h: 7,  angle:  -8, dur: "24s", delay: "-6s",   dx: "55px",  rot: "330deg" },
+  { left: "79%", color: "rgba(210,230,255,0.32)", w: 6, h: 9,  angle:  20, dur: "35s", delay: "-3s",   dx: "-70px", rot: "290deg" },
+  { left: "91%", color: "rgba(155,190,230,0.40)", w: 5, h: 8,  angle: -12, dur: "27s", delay: "-9s",   dx: "45px",  rot: "360deg" },
+  { left: "45%", color: "rgba(180,215,245,0.35)", w: 4, h: 7,  angle:  25, dur: "32s", delay: "-16s",  dx: "-35px", rot: "310deg" },
 ];
 
 // Ambient petal/leaf drifters — viewport-fixed, never panned
@@ -249,7 +218,28 @@ export function GardenScene({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refetchKey]);
 
+  // Idle hint — fires after 5 s of no interaction once data is loaded
+  const scheduleIdle = useCallback(() => {
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+    idleTimer.current = setTimeout(() => {
+      setIdleHint((flowers?.length ?? 0) === 0 ? "empty" : "explore");
+    }, 5000);
+  }, [flowers?.length]);
+
+  useEffect(() => {
+    if (loading) return;
+    scheduleIdle();
+    return () => { if (idleTimer.current) clearTimeout(idleTimer.current); };
+  }, [loading, scheduleIdle]);
+
+  function dismissIdle() {
+    setIdleHint(null);
+    scheduleIdle();
+  }
+
   const [activeFilter, setActiveFilter] = useState("all");
+  const [idleHint, setIdleHint] = useState<"explore" | "empty" | null>(null);
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const time = nightMode ? TIME_PRESETS[1] : TIME_PRESETS[0];
 
   // DOM refs
@@ -288,6 +278,7 @@ export function GardenScene({
     const vp = vpRef.current;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      dismissIdle();
       const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
       target.current = clampX(
         target.current - d,
@@ -331,6 +322,7 @@ export function GardenScene({
   // ---- pointer handlers ----
 
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    dismissIdle();
     // Don't capture pointer on interactive children — it steals their click events
     if ((e.target as HTMLElement).closest("button, a")) return;
     drag.current = {
@@ -427,25 +419,6 @@ export function GardenScene({
           style={{ objectFit: "cover" }}
         />
 
-        {FIREFLIES.map((f, i) => (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              left: `${f.x}%`,
-              top: `${f.y}%`,
-              width: f.size,
-              height: f.size,
-              borderRadius: "50%",
-              background: "#ffe07a",
-              boxShadow: `0 0 ${f.size * 2}px ${f.size + 1}px rgba(255, 210, 70, 0.82)`,
-              pointerEvents: "none",
-              animation: `firefly-twinkle ${f.dur} ease-in-out ${f.delay} infinite`,
-              zIndex: 3,
-            }}
-          />
-        ))}
-
         {BIRDS.map((b, i) => (
           <div
             key={i}
@@ -492,6 +465,7 @@ export function GardenScene({
           onClick={onOpenTaskTree}
           aria-label="Open the Task Tree"
           title="Open the Task Tree"
+          data-tutorial-target="task-tree"
         />
 
         {/* Invisible clickable region over the Greenhouse */}
@@ -513,6 +487,7 @@ export function GardenScene({
           onClick={onOpenPond}
           aria-label="Open the Pond"
           title="Open the Pond"
+          data-tutorial-target="pond"
         />
 
         {(flowers ?? []).map((flower) => {
@@ -537,7 +512,7 @@ export function GardenScene({
       </div>
 
       {/* Ambient petal drifters — viewport layer, never panned */}
-      {DRIFTERS.map((d, i) => (
+      {(nightMode ? NIGHT_DRIFTERS : DRIFTERS).map((d, i) => (
         <div
           key={i}
           style={
@@ -561,23 +536,26 @@ export function GardenScene({
         />
       ))}
 
-      {/* Fixed UI chrome — viewport-relative, never panned */}
-      <p className="garden-welcome">
-        {userName ? `Welcome back, ${userName}` : "Your garden"}
-      </p>
+
 
       {loading && <p className="garden-hint">Loading your garden…</p>}
       {error && (
         <p className="garden-hint">Couldn&apos;t load your garden — {error}</p>
       )}
-      {!loading && !error && (flowers?.length ?? 0) === 0 && (
-        <button type="button" className="garden-hint" onClick={onOpenWorkshop}>
-          Your garden is empty · visit the Greenhouse to plant your first flower
+
+      {/* Idle contextual hints — only appear after 5 s of no interaction */}
+      {idleHint === "empty" && (
+        <button
+          type="button"
+          className="garden-hint garden-hint--idle"
+          onClick={() => { dismissIdle(); onOpenWorkshop(); }}
+        >
+          Your garden is empty &nbsp;·&nbsp; visit the Greenhouse to plant your first flower →
         </button>
       )}
-      {!loading && (flowers?.length ?? 0) > 0 && (
-        <p className="garden-hint">
-          Click a flower to step into its conversation
+      {idleHint === "explore" && (
+        <p className="garden-hint garden-hint--idle">
+          ← Drag to explore your garden &nbsp;·&nbsp; click a flower to chat
         </p>
       )}
 

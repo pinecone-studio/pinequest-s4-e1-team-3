@@ -24,19 +24,10 @@ export function TutorialOverlay({ panel }: TutorialOverlayProps) {
 
   const stepDef = TUTORIAL_STEPS[currentStep];
 
-  // ----- step 6: celebration -----
-  // Render independently of tutorialActive flag so the fade has a moment to play
-  // before completeTutorial() switches tutorialActive off.
-  if (tutorialActive && currentStep === 6) {
-    return (
-      <CelebrationOverlay onDismiss={completeTutorial} timerMs={stepDef?.timerMs ?? 2500} />
-    );
-  }
-
-  if (!tutorialActive || !stepDef) return null;
-
   // Which steps are visible in which panel states.
+  // Returns false when inactive/invalid so hooks below always run unconditionally.
   const visible = (() => {
+    if (!tutorialActive || !stepDef) return false;
     switch (currentStep) {
       case 0:
       case 1:
@@ -46,23 +37,34 @@ export function TutorialOverlay({ panel }: TutorialOverlayProps) {
       case 3:
         return panel === "garden";
       case 4:
-        // Show in garden; hide while memory tree panel is open (user can browse it)
-        return panel === "garden";
+        return panel === "garden"; // task tree
       case 5:
-        return panel === "garden";
+        return panel === "garden"; // pond
+      case 6:
+        return panel === "garden"; // mood tracker
       default:
         return false;
     }
   })();
 
-  // Timer-based auto-advance for step 4 (resets if user leaves the panel)
+  // Timer-based auto-advance for click-or-timer steps (task tree, pond).
+  // Must be before any early returns to satisfy Rules of Hooks.
   useEffect(() => {
-    if (!visible) return;
-    if (currentStep !== 4 || stepDef.advanceOn !== "click-or-timer") return;
+    if (!visible || !stepDef || stepDef.advanceOn !== "click-or-timer") return;
     const t = setTimeout(advanceStep, stepDef.timerMs ?? 4000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, visible]);
+
+  // ----- step 7: celebration -----
+  // Rendered after all hooks so hook order never changes between renders.
+  if (tutorialActive && currentStep === 7) {
+    return (
+      <CelebrationOverlay onDismiss={completeTutorial} timerMs={stepDef?.timerMs ?? 2500} />
+    );
+  }
+
+  if (!tutorialActive || !stepDef) return null;
 
   const showButton =
     stepDef.advanceOn === "button" ||

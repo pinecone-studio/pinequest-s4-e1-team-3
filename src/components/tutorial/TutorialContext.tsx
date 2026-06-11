@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 const STORAGE_KEY = "bloom_tutorial_complete";
-const TOTAL_STEPS = 7; // steps 0–6
+const TOTAL_STEPS = 8; // steps 0–7
 
 export interface TutorialContextType {
   tutorialActive: boolean;
