@@ -9,7 +9,7 @@
 "use client";
 
 import { UserButton } from "@clerk/nextjs";
-import { Leaf, MessageCircle, Waves, Sprout, ListTree, Bird, Sun, Moon } from "lucide-react";
+import { Leaf, MessageCircle, Waves, Sprout, ListTree, Bird, Sun, Moon, HeartHandshake } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { PanelKey } from "./GardenShell";
 
@@ -25,6 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: "pond",     label: "Pond",       Icon: Waves         },
   { key: "workshop", label: "Greenhouse", Icon: Sprout        },
   { key: "tasks",    label: "Task Tree",  Icon: ListTree      },
+  { key: "reflection", label: "Check-in", Icon: HeartHandshake },
 ];
 
 export function GardenTopNav({

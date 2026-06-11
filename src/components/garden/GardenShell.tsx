@@ -22,6 +22,7 @@ import { DeskChatPanel } from "./DeskChatPanel";
 import { WorkshopPanel } from "./WorkshopPanel";
 import { BirdMessagesPanel } from "./BirdMessagesPanel";
 import { TaskTreePanel } from "./TaskTreePanel";
+import { ReflectionPanel } from "./ReflectionPanel";
 import {
   TutorialProvider,
   useTutorial,
@@ -34,7 +35,8 @@ export type PanelKey =
   | "pond"
   | "notes"
   | "birds"
-  | "tasks";
+  | "tasks"
+  | "reflection";
 
 // Public export: wraps the inner component with TutorialProvider so the
 // inner component can call useTutorial() as a descendant.
@@ -197,6 +199,7 @@ function GardenShellContent({ userName }: { userName: string }) {
           onTaskArrived={() => setExpectingTask(false)}
         />
       )}
+      {panel === "reflection" && <ReflectionPanel onClose={close} />}
 
       <TutorialOverlay panel={panel} />
     </div>
