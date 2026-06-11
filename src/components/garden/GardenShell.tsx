@@ -18,20 +18,21 @@ import { useUser } from "@clerk/nextjs";
 import { GardenTopNav } from "./GardenTopNav";
 import { GardenScene } from "./GardenScene";
 import { PondPanel } from "./PondPanel";
-import { MemoryTreePanel } from "./MemoryTreePanel";
 import { DeskChatPanel } from "./DeskChatPanel";
 import { WorkshopPanel } from "./WorkshopPanel";
 import { BirdMessagesPanel } from "./BirdMessagesPanel";
+import { TaskTreePanel } from "./TaskTreePanel";
 
-export type PanelKey = "garden" | "workshop" | "pond" | "memory" | "notes" | "birds";
+export type PanelKey = "garden" | "workshop" | "pond" | "notes" | "birds" | "tasks";
 
 export function GardenShell({ userName }: { userName: string }) {
   const [panel, setPanel] = useState<PanelKey>("garden");
   const [nightMode, setNightMode] = useState(false);
   const [selectedFlowerId, setSelectedFlowerId] = useState<string | undefined>();
-  const [birdDot, setBirdDot] = useState(false);    // red dot on feather button
-  const [birdRefetch, setBirdRefetch] = useState(0); // increments to trigger panel refetch
-  const [gardenRefetch, setGardenRefetch] = useState(0); // increments when a panel closes so GardenScene re-fetches flowers
+  const [birdDot, setBirdDot] = useState(false);
+  const [birdRefetch, setBirdRefetch] = useState(0);
+  const [gardenRefetch, setGardenRefetch] = useState(0);
+  const [expectingTask, setExpectingTask] = useState(false);
   const { user } = useUser();
   const panelRef = useRef(panel);
   useEffect(() => { panelRef.current = panel; }, [panel]);
@@ -86,7 +87,7 @@ export function GardenShell({ userName }: { userName: string }) {
     <div className="garden-root">
       <GardenScene
         onOpenWorkshop={() => setPanel("workshop")}
-        onOpenMemoryTree={() => setPanel("memory")}
+        onOpenTaskTree={() => setPanel("tasks")}
         onOpenPond={() => setPanel("pond")}
         onOpenFlowerChat={openFlowerChat}
         userName={userName}
@@ -112,9 +113,21 @@ export function GardenShell({ userName }: { userName: string }) {
         />
       )}
       {panel === "pond" && <PondPanel onClose={close} />}
-      {panel === "memory" && <MemoryTreePanel onClose={close} />}
-      {panel === "notes" && <DeskChatPanel onClose={close} flowerId={selectedFlowerId} />}
+      {panel === "notes" && (
+        <DeskChatPanel
+          onClose={close}
+          flowerId={selectedFlowerId}
+          onOpenTasks={() => { setExpectingTask(true); setPanel("tasks"); }}
+        />
+      )}
       {panel === "birds" && <BirdMessagesPanel onClose={close} refetchSignal={birdRefetch} />}
+      {panel === "tasks" && (
+        <TaskTreePanel
+          onClose={close}
+          expectingTask={expectingTask}
+          onTaskArrived={() => setExpectingTask(false)}
+        />
+      )}
     </div>
   );
 }
