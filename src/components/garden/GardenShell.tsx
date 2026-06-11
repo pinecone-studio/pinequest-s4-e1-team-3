@@ -82,7 +82,7 @@ function GardenShellContent({ userName }: { userName: string }) {
         channel.subscribe("garden-update", () => {
           if (!mounted) return;
           // Always refresh the garden scene's flower list when garden-update fires
-          setGardenRefetchKey((n) => n + 1);
+          setGardenRefetch((n) => n + 1);
           if (panelRef.current === "birds") {
             setBirdRefetch((n) => n + 1);
           } else {
@@ -121,8 +121,7 @@ function GardenShellContent({ userName }: { userName: string }) {
   }
 
   function openMemoryTree() {
-    setPanel("memory");
-    // Step 4: user clicked the Memory Tree → advance to mood-tracker step
+    setPanel("tasks");
     if (tutorialActive && currentStep === 4) advanceStep();
   }
 
@@ -144,7 +143,7 @@ function GardenShellContent({ userName }: { userName: string }) {
           tutorialActive && currentStep === 3 ? selectedFlowerId : undefined
         }
         // Tutorial: refetch flowers after planting while in tutorial mode
-        refetchKey={gardenRefetchKey}
+        refetchKey={gardenRefetch}
       />
       <GardenTopNav
         active={panel}
@@ -163,7 +162,7 @@ function GardenShellContent({ userName }: { userName: string }) {
             if (tutorialActive && currentStep === 2) {
               // Step 2 complete: stay in garden so user can see their flower (step 3).
               // Force an immediate flower refetch so the planted flower appears.
-              setGardenRefetchKey((k) => k + 1);
+              setGardenRefetch((k) => k + 1);
               setPanel("garden");
               advanceStep();
             } else {
