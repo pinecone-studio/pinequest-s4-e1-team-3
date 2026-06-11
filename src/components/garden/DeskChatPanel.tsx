@@ -40,16 +40,16 @@ const COMPANION_NAME = "Sage";
 // companion (matches "Sage"). Falls back to the first available species.
 const DEFAULT_SPECIES_KEY = "lavender";
 
-// species.key → the conversation topic shown in the chat header pill
+// species.key → the EQ domain shown in the chat header pill
 const TOPIC_BY_SPECIES: Record<string, string> = {
-  lavender: "Stress Relief",
-  sunflower: "Career",
-  rose: "Relationships",
-  lotus: "Self-Reflection",
-  "cherry-blossom": "Self-Reflection",
+  daisy:     "Self-Awareness",
+  lavender:  "Self-Regulation",
+  sunflower: "Motivation",
+  iris:      "Empathy",
+  rose:      "Social Skills",
 };
 
-export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flowerId?: string }) {
+export function DeskChatPanel({ onClose, flowerId, onOpenTasks }: { onClose: () => void; flowerId?: string; onOpenTasks?: () => void }) {
   const { data: flowers, refetch: refetchFlowers } =
     useFetchJson<FlowerSummary[]>("/api/flowers");
   const { data: speciesList } = useFetchJson<Species[]>("/api/species");
@@ -515,10 +515,29 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
 
           {error && <p className="dc-error">{error}</p>}
           {completed && (
-            <p className="dc-saved-note">
-              This reflection is saved — your flower is blooming in the garden
-              🌸
-            </p>
+            <div className="dc-saved-note">
+              <p>This reflection is saved — your flower is blooming in the garden 🌸</p>
+              {onOpenTasks && (
+                <button
+                  type="button"
+                  onClick={() => { onClose(); onOpenTasks(); }}
+                  style={{
+                    marginTop: 8,
+                    background: "rgba(160,184,154,0.22)",
+                    border: "1.5px solid rgba(160,184,154,0.5)",
+                    borderRadius: 10,
+                    padding: "7px 14px",
+                    fontSize: 13,
+                    color: "var(--g-ink)",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    width: "100%",
+                  }}
+                >
+                  🌳 View your new task
+                </button>
+              )}
+            </div>
           )}
 
           <div className="dc-input">

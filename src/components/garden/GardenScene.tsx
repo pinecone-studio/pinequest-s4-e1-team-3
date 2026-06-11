@@ -137,7 +137,7 @@ function clampX(x: number, worldPx: number, vpW: number): number {
 
 export function GardenScene({
   onOpenWorkshop,
-  onOpenMemoryTree,
+  onOpenTaskTree,
   onOpenPond,
   onOpenFlowerChat,
   userName,
@@ -145,7 +145,7 @@ export function GardenScene({
   refetchSignal = 0,
 }: {
   onOpenWorkshop: () => void;
-  onOpenMemoryTree: () => void;
+  onOpenTaskTree: () => void;
   onOpenPond: () => void;
   onOpenFlowerChat: (flowerId: string) => void;
   userName: string;
@@ -301,8 +301,8 @@ export function GardenScene({
     const sx = (flower.posX / 100) * worldW.current + cur.current;
     const sy = (flower.posY / 100) * vpH;
 
-    // Aim for the Memory Tree nav button; fall back to upper-center if not found
-    const memBtn = document.querySelector<HTMLElement>('[data-nav="memory"]');
+    // Aim for the Task Tree nav button; fall back to upper-center if not found
+    const memBtn = document.querySelector<HTMLElement>('[data-nav="tasks"]');
     let ex = window.innerWidth * 0.58;
     let ey = 50;
     if (memBtn) {
@@ -409,14 +409,14 @@ export function GardenScene({
 
       {/* Layer 2 — flowers + tree hotspot (same fx = 1, locked to the painting) */}
       <div ref={objRef} style={{ ...worldLayer, zIndex: 10 }}>
-        {/* Invisible clickable region over the Memory Tree */}
+        {/* Invisible clickable region over the Task Tree */}
         <button
           type="button"
           className="garden-tree-hotspot"
           style={{ left: "28%", top: "8%", width: "26%", height: "80%" }}
-          onClick={onOpenMemoryTree}
-          aria-label="Open the Memory Tree"
-          title="Open the Memory Tree"
+          onClick={onOpenTaskTree}
+          aria-label="Open the Task Tree"
+          title="Open the Task Tree"
         />
 
         {/* Invisible clickable region over the Greenhouse */}
