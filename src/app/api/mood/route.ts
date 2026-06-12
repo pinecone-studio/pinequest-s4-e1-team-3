@@ -72,6 +72,27 @@ export async function GET(req: Request) {
 }
 
 
+export async function POST(req: Request) {
+  const user = await getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { note } = await req.json() as { note?: string };
+
+  const stone = await prisma.moodEntry.create({
+    data: {
+      userId: user.id,
+      mood: "reflective",
+      rippleColor: "#8ba4c0",
+      weather: "partly_cloudy",
+      intensity: 3,
+      note: note?.trim() || null,
+      // conversationId intentionally omitted — manual stones excluded from forecast
+    },
+  });
+
+  return NextResponse.json({ id: stone.id, rippleColor: stone.rippleColor });
+}
+
 export async function DELETE(req: Request) {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

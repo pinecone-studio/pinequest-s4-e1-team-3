@@ -56,7 +56,8 @@ function cleanTranslation(raw: string): string {
 
   // If the model echoed our completion anchor, keep only what follows it.
   const markerIdx = text.lastIndexOf(TRANSLATION_MARKER);
-  if (markerIdx !== -1) text = text.slice(markerIdx + TRANSLATION_MARKER.length);
+  if (markerIdx !== -1)
+    text = text.slice(markerIdx + TRANSLATION_MARKER.length);
 
   return text.trim();
 }
@@ -116,7 +117,8 @@ export async function POST(req: NextRequest) {
           model: "text-embedding-3-small",
           input: message,
         });
-        const embeddingStr = "[" + embeddingRes.data[0].embedding.join(",") + "]";
+        const embeddingStr =
+          "[" + embeddingRes.data[0].embedding.join(",") + "]";
 
         const similar = await prisma.$queryRaw<
           { content: string; score: number }[]
@@ -172,6 +174,13 @@ export async function POST(req: NextRequest) {
     messages: [...history, { role: "user", content: message }],
   });
 
+  console.log("[chat] STEP 1 — GPT-5.4 draft (English):", draft.text);
+  // Detect and strip [STONE_PROMPT] before translation so it never surfaces in text
+  const hasStonePrompt = draft.text.includes("[STONE_PROMPT]");
+  const draftForTranslation = draft.text
+    .replace(/\[STONE_PROMPT\]/g, "")
+    .trim();
+
   // --- STEP 2: Egune translates to Mongolian (non-streaming) ---
   const completion = await eguneClient.chat.completions.create({
     model: "egune-nano",
@@ -180,11 +189,29 @@ export async function POST(req: NextRequest) {
     messages: [
       {
         role: "user",
-        content: `Доорх англи текстийг ярианы монгол хэл рүү орчуул. "чи/чамд/чиний" хэрэглэ, "Та" гэхгүй. Утга, урт, emoji хэвээр. Бодол, тайлбар бичихгүй — ЗӨВХӨН орчуулгыг шууд бич.
+        content: `Доорх англи текстийг ярианы монгол руу орчуул. Үгчлэхгүй — монгол хүн ярихдаа хэлэх жамаар, доорх жишээнүүдийн адил буулга.
+
+Дүрэм:
+- "чи/чамд" хэрэглэ, "Та" биш.
+- Утгыг яг хадгал: шинэ санаа/мэдрэмж бүү нэм, бүү драмжуул. Өгүүлбэр болон emoji-н тоог эхтэй ойролцоо байлга.
+- Сонголтын асуулт ("more like X, or more like Y") бол "эсвэл" хэрэглэж сонгуул — "X ч, Y ч" гэж хоёуланг нь батлахгүй.
+- Зөөлрүүлэгч бөөмс (даа/л доо/юм) нэг өгүүлбэрт нэгээс илүүгүй. "байна уу даа" гэж бүү давхарла.
+
+Жишээ:
+EN: That sounds really uncomfortable. Does it feel more like fear, or more like shame?
+MN: Ёстой эвгүй л юм байна. Айдас шиг мэдрэгдэж байна УУ, эсвэл ичмээр санагдаж байна уу?
+
+EN: Yeah, so it feels more like shame there. Do you feel like you understand the feeling a little better now?
+MN: Тийм ээ, жоохон ичиж байгаа юм байна. Одоо тэр мэдрэмжээ арай дээр ойлгож байна уу?
+
+EN: Ah... after saying that, it probably feels heavy inside. There may still be a way to fix it.
+MN: Өө... тэгж хэлснийхээ дараа дотор чинь хүндхэн байгаа байх. Гэсэн ч засах арга бий.
+
+Зөвхөн орчуулгыг бич, өөр юм бичихгүй.
 
 Англи текст:
 """
-${draft.text}
+${draftForTranslation}
 """
 
 ${TRANSLATION_MARKER}`,
@@ -198,6 +225,8 @@ ${TRANSLATION_MARKER}`,
   const mongolianText = cleanTranslation(
     completion.choices[0]?.message?.content ?? "",
   );
+
+  console.log("[chat] STEP 2 — Egune translation (Mongolian):", mongolianText);
 
   // Fallback: if cleaning somehow produced nothing, send the English draft
   // rather than a blank bubble.
@@ -223,6 +252,9 @@ ${TRANSLATION_MARKER}`,
   }
 
   return new Response(finalText, {
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      ...(hasStonePrompt ? { "X-Stone-Prompt": "true" } : {}),
+    },
   });
 }

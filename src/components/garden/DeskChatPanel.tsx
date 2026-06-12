@@ -40,16 +40,24 @@ const COMPANION_NAME = "Sage";
 // companion (matches "Sage"). Falls back to the first available species.
 const DEFAULT_SPECIES_KEY = "lavender";
 
-// species.key → the conversation topic shown in the chat header pill
+// species.key → the EQ domain shown in the chat header pill
 const TOPIC_BY_SPECIES: Record<string, string> = {
-  lavender: "Stress Relief",
-  sunflower: "Career",
-  rose: "Relationships",
-  lotus: "Self-Reflection",
-  "cherry-blossom": "Self-Reflection",
+  daisy: "Self-Awareness",
+  lavender: "Self-Regulation",
+  sunflower: "Motivation",
+  iris: "Empathy",
+  rose: "Social Skills",
 };
 
-export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flowerId?: string }) {
+export function DeskChatPanel({
+  onClose,
+  flowerId,
+  onOpenTasks,
+}: {
+  onClose: () => void;
+  flowerId?: string;
+  onOpenTasks?: () => void;
+}) {
   const { data: flowers, refetch: refetchFlowers } =
     useFetchJson<FlowerSummary[]>("/api/flowers");
   const { data: speciesList } = useFetchJson<Species[]>("/api/species");
@@ -75,7 +83,8 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
   // historic one from the History panel, otherwise the active flower's conv.
   const [overrideConvId, setOverrideConvId] = useState<string | null>(null);
 
-  const conversationId = overrideConvId ?? activeFlower?.conversationId ?? createdConversationId;
+  const conversationId =
+    overrideConvId ?? activeFlower?.conversationId ?? createdConversationId;
   const species = activeFlower?.species;
   const topic = species ? (TOPIC_BY_SPECIES[species.key] ?? "Companion") : "";
 
@@ -143,7 +152,16 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
   const [error, setError] = useState("");
   const [completing, setCompleting] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [showStonePrompt, setShowStonePrompt] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Voice mode
+  const [voiceMode, setVoiceMode] = useState(false);
+  const [micState, setMicState] = useState<"idle" | "recording" | "processing">(
+    "idle",
+  );
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   // History panel
   const [showHistory, setShowHistory] = useState(false);
@@ -213,25 +231,24 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
     }
   }
 
-  async function send() {
-    const text = input.trim();
-    if (!text || loading) return;
+  async function sendText(text: string, withVoice = false) {
+    if (!text.trim() || loading) return;
 
-    setInput("");
     setError("");
     setLoading(true);
 
-    // If there's no conversation yet, plant a default flower first so the
-    // user can chat immediately without visiting the Greenhouse.
     const convId = await ensureConversation();
     if (!convId) {
       setError("Couldn't start a conversation — please try again.");
-      setInput(text); // restore what they typed so it isn't lost
       setLoading(false);
       return;
     }
 
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: text },
+      { role: "assistant", content: "" },
+    ]);
 
     const res = await fetch("/api/chat", {
       method: "POST",
@@ -240,31 +257,95 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
     });
 
     if (!res.ok || !res.body) {
+      setMessages((prev) => prev.slice(0, -1));
       setError("Something went wrong — please try again.");
       setLoading(false);
       return;
     }
 
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-
+    let fullReply = "";
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       const chunk = decoder.decode(value, { stream: true });
+      fullReply += chunk;
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = {
-          role: "assistant",
-          content: updated[updated.length - 1].content + chunk,
-        };
+        updated[updated.length - 1] = { role: "assistant", content: fullReply };
         return updated;
       });
     }
 
+    if (res.headers.get("X-Stone-Prompt") === "true") {
+      setShowStonePrompt(true);
+    }
+
+    // Voice path: play TTS after reply arrives
+    if (withVoice && fullReply) {
+      try {
+        const ttsRes = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: fullReply }),
+        });
+        const audioBlob = await ttsRes.blob();
+        const typedBlob = new Blob([audioBlob], { type: "audio/wav" });
+        const audio = new Audio(URL.createObjectURL(typedBlob));
+        await audio.play();
+      } catch (err) {
+        console.error("[voice] TTS failed:", err);
+      }
+    }
+
     setLoading(false);
+  }
+
+  function send() {
+    const text = input.trim();
+    if (!text) return;
+    setInput("");
+    void sendText(text, false);
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
+      recorder.start();
+      recorderRef.current = recorder;
+      setMicState("recording");
+    } catch {
+      setError("Microphone access denied.");
+    }
+  }
+
+  function stopRecording() {
+    if (!recorderRef.current) return;
+    recorderRef.current.stop();
+    recorderRef.current.onstop = async () => {
+      setMicState("processing");
+      try {
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const sttRes = await fetch("/api/stt", { method: "POST", body: blob });
+        const { text } = (await sttRes.json()) as { text?: string };
+        if (text?.trim()) {
+          await sendText(text.trim(), true);
+        }
+      } catch {
+        setError("Voice recognition failed — please try again.");
+      } finally {
+        setMicState("idle");
+      }
+    };
+  }
+
+  function handleMicClick() {
+    if (micState === "recording") stopRecording();
+    else if (micState === "idle" && !loading) startRecording();
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -479,7 +560,11 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
               )}
             </div>
           ) : (
-            <div className={"dc-body" + (messages.length === 0 ? " dc-body-empty" : "")}>
+            <div
+              className={
+                "dc-body" + (messages.length === 0 ? " dc-body-empty" : "")
+              }
+            >
               {topic && (
                 <div className="dc-topic">
                   {topic}
@@ -514,39 +599,150 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
           )}
 
           {error && <p className="dc-error">{error}</p>}
+
+          {showStonePrompt && !completed && (
+            <div className="dc-stone-prompt">
+              <span className="dc-stone-prompt-text">🪨 Энэ яриагаа чулуунд хадгалах уу?</span>
+              <div className="dc-stone-prompt-actions">
+                <button
+                  className="dc-stone-yes"
+                  onClick={async () => {
+                    setShowStonePrompt(false);
+                    if (!conversationId) return;
+                    try {
+                      await fetch(`/api/conversations/${conversationId}/save-stone`, { method: "POST" });
+                    } catch {
+                      // stone save failed silently — conversation continues
+                    }
+                  }}
+                >
+                  Тийм
+                </button>
+                <button
+                  className="dc-stone-no"
+                  onClick={() => setShowStonePrompt(false)}
+                >
+                  Дараа
+                </button>
+              </div>
+            </div>
+          )}
+
           {completed && (
-            <p className="dc-saved-note">
-              This reflection is saved — your flower is blooming in the garden
-              🌸
-            </p>
+            <div className="dc-saved-note">
+              <p>
+                This reflection is saved — your flower is blooming in the garden
+                🌸
+              </p>
+              {onOpenTasks && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenTasks();
+                  }}
+                  style={{
+                    marginTop: 8,
+                    background: "rgba(160,184,154,0.22)",
+                    border: "1.5px solid rgba(160,184,154,0.5)",
+                    borderRadius: 10,
+                    padding: "7px 14px",
+                    fontSize: 13,
+                    color: "var(--g-ink)",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    width: "100%",
+                  }}
+                >
+                  🌳 View your new task
+                </button>
+              )}
+            </div>
           )}
 
           <div className="dc-input">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={onKeyDown}
-              placeholder={
-                showHistory
-                  ? "Select a conversation above…"
-                  : completed
-                    ? "This reflection is saved"
-                    : "Write your message…"
-              }
-              disabled={loading || completed || showHistory}
-            />
-            <span className="dc-mic" aria-hidden>
-              🎙
-            </span>
-            <button
-              type="button"
-              className="dc-send"
-              onClick={send}
-              disabled={loading || !input.trim() || completed || showHistory}
-              aria-label="Send message"
-            >
-              ➤
-            </button>
+            {voiceMode ? (
+              <>
+                <div
+                  className={`dc-voice-orb${micState === "recording" ? " dc-voice-orb--recording" : micState === "processing" || loading ? " dc-voice-orb--thinking" : ""}`}
+                  onClick={handleMicClick}
+                  role="button"
+                  aria-label={micState === "recording" ? "Stop" : "Speak"}
+                />
+                <span className="dc-voice-status">
+                  {micState === "recording"
+                    ? "Listening… tap to stop"
+                    : micState === "processing"
+                      ? "Transcribing…"
+                      : loading
+                        ? "Thinking…"
+                        : "Tap the circle to speak"}
+                </span>
+                <button
+                  type="button"
+                  className="dc-voice-exit"
+                  onClick={() => {
+                    setVoiceMode(false);
+                    setMicState("idle");
+                  }}
+                  aria-label="Exit voice mode"
+                >
+                  ✕
+                </button>
+              </>
+            ) : (
+              <>
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  placeholder={
+                    showHistory
+                      ? "Select a conversation above…"
+                      : completed
+                        ? "This reflection is saved"
+                        : "Write your message…"
+                  }
+                  disabled={loading || completed || showHistory}
+                />
+                <button
+                  type="button"
+                  className="dc-mic-btn"
+                  onClick={() => setVoiceMode(true)}
+                  disabled={completed || showHistory}
+                  aria-label="Enter voice mode"
+                  title="Voice chat"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <rect x="9" y="2" width="6" height="13" rx="3" />
+                    <path d="M5 10a7 7 0 0 0 14 0" />
+                    <line x1="12" y1="19" x2="12" y2="23" />
+                    <line x1="9" y1="23" x2="15" y2="23" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className="dc-send"
+                  onClick={send}
+                  disabled={
+                    loading || !input.trim() || completed || showHistory
+                  }
+                  aria-label="Send message"
+                >
+                  ➤
+                </button>
+              </>
+            )}
           </div>
         </section>
 
@@ -602,7 +798,9 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
                     <article
                       key={note.id}
                       className={"dc-pin dc-drawer-pin pin-" + (i % 2)}
-                      style={{ backgroundImage: `url(/garden/note-${(i % 2) + 1}.png)` }}
+                      style={{
+                        backgroundImage: `url(/garden/note-${(i % 2) + 1}.png)`,
+                      }}
                     >
                       <div className="dc-pin-text">
                         <h3>{note.title}</h3>
@@ -647,7 +845,9 @@ export function DeskChatPanel({ onClose, flowerId }: { onClose: () => void; flow
                     <article
                       key={note.id}
                       className={"dc-pin pin-" + (i % 2)}
-                      style={{ backgroundImage: `url(/garden/note-${(i % 2) + 1}.png)` }}
+                      style={{
+                        backgroundImage: `url(/garden/note-${(i % 2) + 1}.png)`,
+                      }}
                     >
                       <button
                         type="button"

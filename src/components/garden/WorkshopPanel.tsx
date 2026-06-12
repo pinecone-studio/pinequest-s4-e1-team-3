@@ -104,6 +104,20 @@ export function WorkshopPanel({
         Choose what you want to grow today.
       </p>
 
+      {/* Tutorial target: anchors the step-2 tooltip to the pot area */}
+      <div
+        data-tutorial-target="flower-picker"
+        style={{
+          position: "absolute",
+          left: "8%",
+          top: "58%",
+          width: "84%",
+          height: "36%",
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
+
       {loading && (
         <p style={{ position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)", color: "var(--g-ivory)", fontSize: 13, zIndex: 3, whiteSpace: "nowrap" }}>
           Loading…

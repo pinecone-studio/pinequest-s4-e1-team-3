@@ -90,22 +90,6 @@ function getCurrentWeekFromMonday(): string[] {
   });
 }
 
-const MOCK_ENTRIES: Array<{ mood: string; weather: string; rippleColor: string; stoneCount: number }> = [
-  { mood: "calm",       weather: "partly_cloudy", rippleColor: "#6dbf9e", stoneCount: 2 },
-  { mood: "sad",        weather: "light_rain",    rippleColor: "#5b8dd9", stoneCount: 1 },
-  { mood: "anxious",    weather: "windy",         rippleColor: "#9b7fd4", stoneCount: 3 },
-  { mood: "sad",        weather: "heavy_rain",    rippleColor: "#5b8dd9", stoneCount: 5 },
-  { mood: "happy",      weather: "sunny",         rippleColor: "#f6c44a", stoneCount: 4 },
-  { mood: "reflective", weather: "cloudy",        rippleColor: "#a0a0b0", stoneCount: 1 },
-  { mood: "grateful",   weather: "clear_sky",     rippleColor: "#f6a44a", stoneCount: 3 },
-];
-
-function buildMockData(): ForecastDay[] {
-  const week = getCurrentWeekFromMonday();
-  return MOCK_ENTRIES.map((e, i) => ({ ...e, date: week[i] ?? week[0] }));
-}
-
-const MOCK_DATA = buildMockData();
 
 // SVG layout
 const W = 306, H = 118;
@@ -147,10 +131,7 @@ export function MoodPill() {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
 
-  // TODO: remove MOCK_DATA fallback once real data is flowing
-  const data = (apiData && apiData.length > 0) ? apiData : MOCK_DATA;
-
-  const dataMap = Object.fromEntries((data ?? []).map((d: ForecastDay) => [d.date, d]));
+  const dataMap = Object.fromEntries((apiData ?? []).map((d: ForecastDay) => [d.date, d]));
   const days = getCurrentWeekFromMonday();
   const todayStr = new Date().toISOString().slice(0, 10);
   const today = dataMap[todayStr] ?? null;
@@ -179,7 +160,7 @@ export function MoodPill() {
   const yTicks = [1, 2, 3, 4, 5];
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative" }} data-tutorial-target="mood-tracker">
       <button
         type="button"
         className="garden-pill-btn"

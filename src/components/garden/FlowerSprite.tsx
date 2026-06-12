@@ -59,12 +59,15 @@ export function FlowerSprite({
   onHoverStart,
   dimmed = false,
   nightMode = false,
+  tutorialTarget,
 }: {
   flower: FlowerSummary;
   onSelect: (flower: FlowerSummary) => void;
   onHoverStart?: (flower: FlowerSummary) => void;
   dimmed?: boolean;
   nightMode?: boolean;
+  /** When set, applied as data-tutorial-target so the tutorial spotlight can find this flower. */
+  tutorialTarget?: string;
 }) {
   const [hovered, setHovered] = useState(false);
   const { size, petals } = STAGE_SCALE[flower.growthStage];
@@ -79,6 +82,7 @@ export function FlowerSprite({
     <button
       type="button"
       className="garden-flower"
+      data-tutorial-target={tutorialTarget}
       style={{
         left: `${flower.posX}%`,
         top: `${flower.posY}%`,

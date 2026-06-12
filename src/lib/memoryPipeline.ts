@@ -36,8 +36,49 @@ import {
   type ExtractedMemory,
   type FullExtractionResult,
 } from "@/lib/extractionPrompt";
+import {
+  persistConversationEQSignal,
+  loadAndLogCombinedEQProfile,
+} from "@/lib/eqSignals";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const eguneClient = new OpenAI({
+  baseURL: process.env.EGUNE_BASE_URL,
+  apiKey: process.env.EGUNE_API_KEY,
+});
+
+const TRANSLATION_MARKER = "Монгол орчуулга:";
+
+function cleanTranslation(raw: string): string {
+  let text = raw;
+  const thinkEnd = text.lastIndexOf("</think>");
+  if (thinkEnd !== -1) text = text.slice(thinkEnd + "</think>".length);
+  const markerIdx = text.lastIndexOf(TRANSLATION_MARKER);
+  if (markerIdx !== -1) text = text.slice(markerIdx + TRANSLATION_MARKER.length);
+  return text.trim();
+}
+
+async function translateToMongolian(text: string): Promise<string> {
+  try {
+    const completion = await eguneClient.chat.completions.create({
+      model: "egune-nano",
+      temperature: 0.1,
+      max_tokens: 256,
+      messages: [{
+        role: "user",
+        content: `Доорх англи текстийг монгол хэл рүү орчуул. Зөвхөн орчуулгыг өгнө үү, тайлбар хийхгүй.\n\n${text}\n\n${TRANSLATION_MARKER}`,
+      }],
+      // @ts-expect-error Egune-specific parameter
+      chat_template_kwargs: { enable_thinking: false },
+    });
+    const translated = cleanTranslation(completion.choices[0]?.message?.content ?? "");
+    return translated || text;
+  } catch (err) {
+    console.error("[pipeline] Egune translation failed:", err);
+    return text;
+  }
+}
 
 // ============================================
 //  computeGrowthStage
@@ -57,29 +98,6 @@ export function computeGrowthStage(messageCount: number, isCompleted: boolean): 
   return GrowthStage.SEED;
 }
 
-// ============================================
-//  ExtractionResult — shape of the JSON the AI returns
-// ============================================
-interface ExtractedMemory {
-  content: string;
-  category:
-    | "goal"
-    | "value"
-    | "decision"
-    | "lesson"
-    | "concern"
-    | "reflection"
-    | "relationship"
-    | "career"
-    | "habit";
-}
-
-interface ExtractionResult {
-  mood: string;
-  intensity: number;
-  tags: string[];
-  memories: ExtractedMemory[];
-}
 
 // ============================================
 //  embedAndSaveMemories
@@ -210,6 +228,7 @@ export async function runMemoryPipeline(conversationId: string): Promise<void> {
 
   // --- Step 2: Extract summary, mood, tags, memories + EQ insights via OpenAI ---
   let extracted: FullExtractionResult;
+  let rawIntensity: number | null = null;
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -217,28 +236,7 @@ export async function runMemoryPipeline(conversationId: string): Promise<void> {
       messages: [
         {
           role: "system",
-          content: `You are a memory extraction system for a personal reflection app.
-Analyze the following conversation and return a JSON object with:
-{
-  "mood": "one of: happy, calm, sad, anxious, motivated, reflective, confused, angry, grateful",
-  "intensity": "1–5 integer — how strongly the mood was felt (1=barely noticeable, 3=clearly present, 5=overwhelming)",
-  "tags": ["3-5 short topic keywords, e.g. career, family, startup"],
-  "memories": [
-    {
-      "content": "ONE short first-person sentence, at most ~12 words — never a paragraph or multiple sentences (e.g. 'I want to change careers')",
-      "category": "one of: goal, value, decision, lesson, concern, reflection, relationship, career, habit"
-    }
-  ]
-}
-Extract 2-5 meaningful memories — the kind of thing a close friend would actually remember and bring up again weeks later, not something that fades by tomorrow. A memory earns its place if it does at least one of these:
-  - Shows a stable trait: a value, fear, goal, coping style, or pattern that keeps showing up for them
-  - Marks a real turning point: a decision, realization, or shift — and what it MEANT to them, not just what happened
-  - Carries genuine emotional weight: something that clearly mattered, not a passing mood or polite remark
-  - Reveals something about a relationship or person that shapes their life
-Skip: small talk and logistics, generic statements that could describe almost anyone ("I want to be happier"), and anything that only matters for this one exchange and won't matter next week. When in doubt, prefer fewer, sharper memories over padding out to 5.
-Keep each memory's "content" to a single short sentence (roughly 8-12 words) — they're displayed in small hover cards on the garden's memory tree, and anything longer overflows the card and looks broken. Summarize the insight; don't narrate the conversation.
-Write "tags" and each memory's "content" in the SAME language the user writes in — e.g. if the conversation is in Mongolian, write those fields in Mongolian. Never translate them to English; the example phrasing above only illustrates the form (concise, first person), not the language. "mood" and "category" must stay exactly as the fixed English values listed above — those are never translated.
-Respond only with the JSON object.`,
+          content: buildExtractionPrompt({ mode: "full", primaryFlowerKey: conversation.flower.species.key }),
         },
         {
           role: "user",
@@ -247,8 +245,10 @@ Respond only with the JSON object.`,
       ],
     });
 
-    const raw = response.choices[0]?.message?.content ?? "{}";
-    extracted = sanitizeExtraction(JSON.parse(raw));
+    const rawStr = response.choices[0]?.message?.content ?? "{}";
+    const rawParsed = JSON.parse(rawStr) as Record<string, unknown>;
+    rawIntensity = typeof rawParsed.intensity === "number" ? rawParsed.intensity : null;
+    extracted = sanitizeExtraction(rawParsed);
   } catch (err) {
     console.error(`[pipeline] Memory extraction failed for ${conversationId}:`, err);
     // Still mark conversation as complete even if extraction fails
@@ -258,11 +258,45 @@ Respond only with the JSON object.`,
 
   // Validate mood — if AI returned something unexpected, fall back to default
   const mood = VALID_MOODS.includes(extracted.mood) ? extracted.mood : DEFAULT_MOOD;
-  const intensity = typeof extracted.intensity === "number" && extracted.intensity >= 1 && extracted.intensity <= 5
-    ? Math.round(extracted.intensity)
+  const intensity = typeof rawIntensity === "number" && rawIntensity >= 1 && rawIntensity <= 5
+    ? Math.round(rawIntensity)
     : getIntensity(mood);
 
   logExtractionInsights("pipeline", conversationId, extracted);
+
+  // --- Step 2a: Persist conversation EQ signal + log combined profile ---
+  // Reuses the already-extracted result (no extra AI call). One soft signal
+  // per completed conversation, then the merged onboarding+weekly+signals view.
+  try {
+    await persistConversationEQSignal(extracted, { userId, conversationId });
+    await loadAndLogCombinedEQProfile(userId);
+  } catch (err) {
+    console.error(`[pipeline] EQ signal/profile step failed for ${conversationId}:`, err);
+  }
+
+  // --- Step 2b: Save practice task if the extraction suggested one ---
+  const task = extracted.suggestedPracticeTask;
+  if (task.shouldSuggest && task.title && task.description && task.flower) {
+    const flowerKey = task.flower.toLowerCase(); // "DAISY" → "daisy"
+    // Translate title + description to Mongolian via Egune
+    const [mongolianTitle, mongolianDescription] = await Promise.all([
+      translateToMongolian(task.title),
+      translateToMongolian(task.description),
+    ]);
+    try {
+      await prisma.task.create({
+        data: {
+          userId,
+          conversationId,
+          flowerKey,
+          title: mongolianTitle,
+          description: mongolianDescription,
+        },
+      });
+    } catch (err) {
+      console.error(`[pipeline] Failed to save task for ${conversationId}:`, err);
+    }
+  }
 
   // --- Step 3: Generate embeddings and save Memory records ---
   // Each memory is embedded independently so they can be retrieved

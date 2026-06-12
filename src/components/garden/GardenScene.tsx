@@ -21,7 +21,7 @@
 
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { useFetchJson } from "@/hooks/useFetchJson";
 import { FlowerSprite } from "./FlowerSprite";
@@ -57,8 +57,8 @@ const TIME_PRESETS = [
     key: "evening",
     label: "Evening",
     icon: "🌙",
-    filter: "brightness(0.72) saturate(0.8) hue-rotate(200deg)",
-    tint: "rgba(64, 52, 110, 0.18)",
+    filter: "brightness(0.52) saturate(0.6) hue-rotate(215deg)",
+    tint: "rgba(12, 28, 72, 0.42)",
   },
 ];
 
@@ -73,59 +73,108 @@ const BIRDS = [
   { top: "17%", duration: "24s", delay: "-22s", size: 116 },
 ];
 
-// Fireflies — positions as % of world width / scene height, with per-fly timing
-const FIREFLIES: Array<{
-  x: number;
-  y: number;
-  delay: string;
-  dur: string;
-  size: number;
-}> = [
-  { x: 3, y: 58, delay: "0s", dur: "3.2s", size: 5 },
-  { x: 7, y: 65, delay: "1.2s", dur: "4.5s", size: 4 },
-  { x: 1, y: 72, delay: "2.8s", dur: "3.8s", size: 6 },
-  { x: 11, y: 57, delay: "0.5s", dur: "4.1s", size: 4 },
-  { x: 15, y: 66, delay: "1.9s", dur: "3.5s", size: 5 },
-  { x: 19, y: 74, delay: "3.1s", dur: "4.8s", size: 4 },
-  { x: 23, y: 54, delay: "0.7s", dur: "3.1s", size: 5 },
-  { x: 27, y: 69, delay: "2.0s", dur: "4.2s", size: 4 },
-  { x: 31, y: 60, delay: "1.4s", dur: "3.7s", size: 6 },
-  { x: 35, y: 76, delay: "3.8s", dur: "5.0s", size: 4 },
-  { x: 39, y: 51, delay: "0.3s", dur: "3.4s", size: 5 },
-  { x: 37, y: 44, delay: "2.4s", dur: "3.9s", size: 3 },
-  { x: 41, y: 38, delay: "4.0s", dur: "4.2s", size: 3 },
-  { x: 44, y: 42, delay: "1.7s", dur: "5.5s", size: 4 },
-  { x: 43, y: 67, delay: "2.5s", dur: "4.6s", size: 4 },
-  { x: 47, y: 60, delay: "1.1s", dur: "3.9s", size: 5 },
-  { x: 51, y: 76, delay: "3.5s", dur: "4.3s", size: 4 },
-  { x: 55, y: 54, delay: "0.6s", dur: "3.6s", size: 6 },
-  { x: 59, y: 71, delay: "2.2s", dur: "4.4s", size: 4 },
-  { x: 63, y: 58, delay: "1.6s", dur: "3.3s", size: 5 },
-  { x: 67, y: 73, delay: "3.0s", dur: "4.7s", size: 4 },
-  { x: 71, y: 62, delay: "0.9s", dur: "3.8s", size: 5 },
-  { x: 75, y: 54, delay: "2.7s", dur: "5.2s", size: 4 },
-  { x: 79, y: 69, delay: "1.3s", dur: "4.0s", size: 6 },
-  { x: 83, y: 57, delay: "3.6s", dur: "3.5s", size: 4 },
-  { x: 87, y: 73, delay: "0.4s", dur: "4.9s", size: 5 },
-  { x: 91, y: 60, delay: "2.0s", dur: "3.2s", size: 4 },
-  { x: 95, y: 55, delay: "1.7s", dur: "4.1s", size: 5 },
-  { x: 98, y: 69, delay: "3.3s", dur: "3.7s", size: 4 },
-  { x: 5, y: 82, delay: "1.0s", dur: "4.6s", size: 3 },
-  { x: 20, y: 84, delay: "2.6s", dur: "3.3s", size: 4 },
-  { x: 88, y: 81, delay: "0.2s", dur: "4.0s", size: 3 },
-  { x: 96, y: 78, delay: "3.9s", dur: "5.1s", size: 4 },
+// Night-mode drifters — cool blue/silver tones, only rendered in night mode
+const NIGHT_DRIFTERS = [
+  { left: "8%",  color: "rgba(160,195,235,0.42)", w: 5, h: 8,  angle: -15, dur: "26s", delay: "0s",    dx: "60px",  rot: "320deg" },
+  { left: "22%", color: "rgba(200,225,250,0.35)", w: 4, h: 7,  angle:  18, dur: "31s", delay: "-8s",   dx: "-50px", rot: "280deg" },
+  { left: "38%", color: "rgba(140,175,220,0.48)", w: 6, h: 10, angle: -22, dur: "22s", delay: "-4s",   dx: "80px",  rot: "350deg" },
+  { left: "52%", color: "rgba(190,210,240,0.38)", w: 5, h: 8,  angle:  10, dur: "28s", delay: "-12s",  dx: "-40px", rot: "300deg" },
+  { left: "66%", color: "rgba(165,200,238,0.44)", w: 4, h: 7,  angle:  -8, dur: "24s", delay: "-6s",   dx: "55px",  rot: "330deg" },
+  { left: "79%", color: "rgba(210,230,255,0.32)", w: 6, h: 9,  angle:  20, dur: "35s", delay: "-3s",   dx: "-70px", rot: "290deg" },
+  { left: "91%", color: "rgba(155,190,230,0.40)", w: 5, h: 8,  angle: -12, dur: "27s", delay: "-9s",   dx: "45px",  rot: "360deg" },
+  { left: "45%", color: "rgba(180,215,245,0.35)", w: 4, h: 7,  angle:  25, dur: "32s", delay: "-16s",  dx: "-35px", rot: "310deg" },
 ];
 
 // Ambient petal/leaf drifters — viewport-fixed, never panned
 const DRIFTERS = [
-  { left: "4%",  color: "#d8c27a", w: 7,  h: 12, angle: -20, dur: "17s", delay: "0s",    dx: "75px",  rot: "380deg" },
-  { left: "13%", color: "#b6a8cf", w: 5,  h: 9,  angle: 15,  dur: "23s", delay: "-7s",   dx: "-55px", rot: "300deg" },
-  { left: "27%", color: "#cf8aa0", w: 6,  h: 11, angle: -10, dur: "15s", delay: "-3s",   dx: "90px",  rot: "420deg" },
-  { left: "41%", color: "#9aa87f", w: 5,  h: 9,  angle: 25,  dur: "21s", delay: "-11s",  dx: "40px",  rot: "340deg" },
-  { left: "56%", color: "#d8c27a", w: 7,  h: 12, angle: -18, dur: "18s", delay: "-5s",   dx: "-65px", rot: "400deg" },
-  { left: "69%", color: "#cf8aa0", w: 5,  h: 9,  angle: 12,  dur: "14s", delay: "-9s",   dx: "70px",  rot: "280deg" },
-  { left: "82%", color: "#b6a8cf", w: 6,  h: 11, angle: -22, dur: "25s", delay: "-2s",   dx: "-48px", rot: "360deg" },
-  { left: "94%", color: "#9aa87f", w: 5,  h: 9,  angle: 8,   dur: "19s", delay: "-14s",  dx: "55px",  rot: "390deg" },
+  {
+    left: "4%",
+    color: "#d8c27a",
+    w: 7,
+    h: 12,
+    angle: -20,
+    dur: "17s",
+    delay: "0s",
+    dx: "75px",
+    rot: "380deg",
+  },
+  {
+    left: "13%",
+    color: "#b6a8cf",
+    w: 5,
+    h: 9,
+    angle: 15,
+    dur: "23s",
+    delay: "-7s",
+    dx: "-55px",
+    rot: "300deg",
+  },
+  {
+    left: "27%",
+    color: "#cf8aa0",
+    w: 6,
+    h: 11,
+    angle: -10,
+    dur: "15s",
+    delay: "-3s",
+    dx: "90px",
+    rot: "420deg",
+  },
+  {
+    left: "41%",
+    color: "#9aa87f",
+    w: 5,
+    h: 9,
+    angle: 25,
+    dur: "21s",
+    delay: "-11s",
+    dx: "40px",
+    rot: "340deg",
+  },
+  {
+    left: "56%",
+    color: "#d8c27a",
+    w: 7,
+    h: 12,
+    angle: -18,
+    dur: "18s",
+    delay: "-5s",
+    dx: "-65px",
+    rot: "400deg",
+  },
+  {
+    left: "69%",
+    color: "#cf8aa0",
+    w: 5,
+    h: 9,
+    angle: 12,
+    dur: "14s",
+    delay: "-9s",
+    dx: "70px",
+    rot: "280deg",
+  },
+  {
+    left: "82%",
+    color: "#b6a8cf",
+    w: 6,
+    h: 11,
+    angle: -22,
+    dur: "25s",
+    delay: "-2s",
+    dx: "-48px",
+    rot: "360deg",
+  },
+  {
+    left: "94%",
+    color: "#9aa87f",
+    w: 5,
+    h: 9,
+    angle: 8,
+    dur: "19s",
+    delay: "-14s",
+    dx: "55px",
+    rot: "390deg",
+  },
 ];
 
 const EASE = 0.1; // how fast cur chases target (lower = floatier)
@@ -137,20 +186,24 @@ function clampX(x: number, worldPx: number, vpW: number): number {
 
 export function GardenScene({
   onOpenWorkshop,
-  onOpenMemoryTree,
+  onOpenTaskTree,
   onOpenPond,
   onOpenFlowerChat,
   userName,
   nightMode = false,
-  refetchSignal = 0,
+  tutorialFlowerId,
+  refetchKey = 0,
 }: {
   onOpenWorkshop: () => void;
-  onOpenMemoryTree: () => void;
+  onOpenTaskTree: () => void;
   onOpenPond: () => void;
   onOpenFlowerChat: (flowerId: string) => void;
   userName: string;
   nightMode?: boolean;
-  refetchSignal?: number;
+  /** When set, marks that flower with data-tutorial-target="flower-planted" for step 3. */
+  tutorialFlowerId?: string;
+  /** Increment to trigger a refetch of the flower list (e.g. after planting). */
+  refetchKey?: number;
 }) {
   const {
     data: flowers,
@@ -158,25 +211,36 @@ export function GardenScene({
     error,
     refetch,
   } = useFetchJson<FlowerSummary[]>("/api/flowers");
+
+  // Refetch whenever the parent increments refetchKey (e.g. after tutorial planting)
+  useEffect(() => {
+    if (refetchKey > 0) refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refetchKey]);
+
+  // Idle hint — fires after 5 s of no interaction once data is loaded
+  const scheduleIdle = useCallback(() => {
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+    idleTimer.current = setTimeout(() => {
+      setIdleHint((flowers?.length ?? 0) === 0 ? "empty" : "explore");
+    }, 5000);
+  }, [flowers?.length]);
+
+  useEffect(() => {
+    if (loading) return;
+    scheduleIdle();
+    return () => { if (idleTimer.current) clearTimeout(idleTimer.current); };
+  }, [loading, scheduleIdle]);
+
+  function dismissIdle() {
+    setIdleHint(null);
+    scheduleIdle();
+  }
+
   const [activeFilter, setActiveFilter] = useState("all");
-  const [showPanHint, setShowPanHint] = useState(true);
-  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+  const [idleHint, setIdleHint] = useState<"explore" | "empty" | null>(null);
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const time = nightMode ? TIME_PRESETS[1] : TIME_PRESETS[0];
-
-  useEffect(() => {
-    const t = setTimeout(() => setShowPanHint(false), 7000);
-    return () => clearTimeout(t);
-  }, []);
-
-  // Re-fetch flowers whenever a panel closes back to the garden view
-  const prevSignal = useRef(refetchSignal);
-  useEffect(() => {
-    if (refetchSignal !== prevSignal.current) {
-      prevSignal.current = refetchSignal;
-      refetch();
-      setWelcomeDismissed(false); // re-show card if garden is still empty after panel closes
-    }
-  }, [refetchSignal, refetch]);
 
   // DOM refs
   const vpRef = useRef<HTMLDivElement>(null); // the viewport element
@@ -214,6 +278,7 @@ export function GardenScene({
     const vp = vpRef.current;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      dismissIdle();
       const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
       target.current = clampX(
         target.current - d,
@@ -257,6 +322,7 @@ export function GardenScene({
   // ---- pointer handlers ----
 
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    dismissIdle();
     // Don't capture pointer on interactive children — it steals their click events
     if ((e.target as HTMLElement).closest("button, a")) return;
     drag.current = {
@@ -301,8 +367,8 @@ export function GardenScene({
     const sx = (flower.posX / 100) * worldW.current + cur.current;
     const sy = (flower.posY / 100) * vpH;
 
-    // Aim for the Memory Tree nav button; fall back to upper-center if not found
-    const memBtn = document.querySelector<HTMLElement>('[data-nav="memory"]');
+    // Aim for the Task Tree nav button; fall back to upper-center if not found
+    const memBtn = document.querySelector<HTMLElement>('[data-nav="tasks"]');
     let ex = window.innerWidth * 0.58;
     let ey = 50;
     if (memBtn) {
@@ -329,6 +395,7 @@ export function GardenScene({
       ref={vpRef}
       className="garden-scene"
       style={{ cursor: "grab" }}
+      data-tutorial-target="garden-scene"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -351,25 +418,6 @@ export function GardenScene({
           sizes={`${WORLD_RATIO * 100}vh`}
           style={{ objectFit: "cover" }}
         />
-
-        {FIREFLIES.map((f, i) => (
-            <div
-              key={i}
-              style={{
-                position: "absolute",
-                left: `${f.x}%`,
-                top: `${f.y}%`,
-                width: f.size,
-                height: f.size,
-                borderRadius: "50%",
-                background: "#ffe07a",
-                boxShadow: `0 0 ${f.size * 2}px ${f.size + 1}px rgba(255, 210, 70, 0.82)`,
-                pointerEvents: "none",
-                animation: `firefly-twinkle ${f.dur} ease-in-out ${f.delay} infinite`,
-                zIndex: 3,
-              }}
-            />
-          ))}
 
         {BIRDS.map((b, i) => (
           <div
@@ -409,24 +457,26 @@ export function GardenScene({
 
       {/* Layer 2 — flowers + tree hotspot (same fx = 1, locked to the painting) */}
       <div ref={objRef} style={{ ...worldLayer, zIndex: 10 }}>
-        {/* Invisible clickable region over the Memory Tree */}
+        {/* Invisible clickable region over the Task Tree */}
         <button
           type="button"
           className="garden-tree-hotspot"
           style={{ left: "28%", top: "8%", width: "26%", height: "80%" }}
-          onClick={onOpenMemoryTree}
-          aria-label="Open the Memory Tree"
-          title="Open the Memory Tree"
+          onClick={onOpenTaskTree}
+          aria-label="Open the Task Tree"
+          title="Open the Task Tree"
+          data-tutorial-target="task-tree"
         />
 
         {/* Invisible clickable region over the Greenhouse */}
         <button
           type="button"
-          className={`garden-tree-hotspot${!loading && (flowers?.length ?? 0) === 0 ? " beacon" : ""}`}
+          className="garden-tree-hotspot"
           style={{ left: "74%", top: "10%", width: "20%", height: "72%" }}
           onClick={onOpenWorkshop}
           aria-label="Open the Greenhouse"
           title="Open the Greenhouse"
+          data-tutorial-target="greenhouse"
         />
 
         {/* Invisible clickable region over the Pond */}
@@ -437,6 +487,7 @@ export function GardenScene({
           onClick={onOpenPond}
           aria-label="Open the Pond"
           title="Open the Pond"
+          data-tutorial-target="pond"
         />
 
         {(flowers ?? []).map((flower) => {
@@ -450,81 +501,62 @@ export function GardenScene({
               onHoverStart={handleFlowerHover}
               dimmed={dimmed}
               nightMode={nightMode}
+              tutorialTarget={
+                tutorialFlowerId && flower.id === tutorialFlowerId
+                  ? "flower-planted"
+                  : undefined
+              }
             />
           );
         })}
       </div>
 
       {/* Ambient petal drifters — viewport layer, never panned */}
-      {DRIFTERS.map((d, i) => (
+      {(nightMode ? NIGHT_DRIFTERS : DRIFTERS).map((d, i) => (
         <div
           key={i}
-          style={{
-            position: "absolute",
-            left: d.left,
-            top: 0,
-            width: d.w,
-            height: d.h,
-            borderRadius: "50% 50% 30% 70% / 50% 50% 60% 40%",
-            background: d.color,
-            opacity: 0,
-            transform: `rotate(${d.angle}deg)`,
-            pointerEvents: "none",
-            zIndex: 6,
-            "--drift-x": d.dx,
-            "--drift-rot": d.rot,
-            animation: `petal-drift ${d.dur} linear ${d.delay} infinite`,
-          } as React.CSSProperties}
+          style={
+            {
+              position: "absolute",
+              left: d.left,
+              top: 0,
+              width: d.w,
+              height: d.h,
+              borderRadius: "50% 50% 30% 70% / 50% 50% 60% 40%",
+              background: d.color,
+              opacity: 0,
+              transform: `rotate(${d.angle}deg)`,
+              pointerEvents: "none",
+              zIndex: 6,
+              "--drift-x": d.dx,
+              "--drift-rot": d.rot,
+              animation: `petal-drift ${d.dur} linear ${d.delay} infinite`,
+            } as React.CSSProperties
+          }
         />
       ))}
 
-      {/* Fixed UI chrome — viewport-relative, never panned */}
-      <p className="garden-welcome">
-        {userName ? `Welcome back, ${userName}` : "Your garden"}
-      </p>
+
 
       {loading && <p className="garden-hint">Loading your garden…</p>}
       {error && (
         <p className="garden-hint">Couldn&apos;t load your garden — {error}</p>
       )}
 
-      {/* First-time welcome card */}
-      {!welcomeDismissed && !loading && !error && (flowers?.length ?? 0) === 0 && (
-        <div className="garden-welcome-card">
-          <button
-            type="button"
-            className="garden-welcome-close"
-            onClick={() => setWelcomeDismissed(true)}
-            aria-label="Dismiss"
-          >
-            ×
-          </button>
-          <span className="wc-icon" aria-hidden>🌱</span>
-          <h2>Your garden awaits</h2>
-          <p>Plant a flower to open a space for reflection. Each bloom grows with every conversation you have with Bloom.</p>
-          <div className="wc-steps">
-            <div className="wc-step">
-              <span className="wc-step-num">1</span>
-              <span>Open the <strong style={{ color: "var(--g-on-forest)" }}>Greenhouse</strong> to choose your first flower and set an intention</span>
-            </div>
-            <div className="wc-step">
-              <span className="wc-step-num">2</span>
-              <span>Give it a name — it will be planted right here in your garden</span>
-            </div>
-            <div className="wc-step">
-              <span className="wc-step-num">3</span>
-              <span>Click your flower anytime to continue the conversation</span>
-            </div>
-          </div>
-          <button type="button" className="garden-welcome-btn" onClick={onOpenWorkshop}>
-            Open the Greenhouse →
-          </button>
-        </div>
+      {/* Idle contextual hints — only appear after 5 s of no interaction */}
+      {idleHint === "empty" && (
+        <button
+          type="button"
+          className="garden-hint garden-hint--idle"
+          onClick={() => { dismissIdle(); onOpenWorkshop(); }}
+        >
+          Your garden is empty &nbsp;·&nbsp; visit the Greenhouse to plant your first flower →
+        </button>
       )}
-
-      {/* Pan hint — fades out after 7s */}
-      {showPanHint && !loading && (flowers?.length ?? 0) > 0 && (
-        <p className="garden-pan-hint">Click a flower · drag to explore</p>
+      {idleHint === "explore" && (
+        <p className="garden-hint garden-hint--idle">
+          ← Drag to explore your garden &nbsp;·&nbsp; click a flower to chat
+        </p>
       )}
 
       {/* Hover birds — fixed to viewport, fly from flower to Memory Tree nav */}

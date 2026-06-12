@@ -12,21 +12,25 @@
 //  thin "who is allowed in, and what's their name" gate.
 // ============================================
 
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { getUser } from "@/lib/getUser";
 import { prisma } from "@/lib/prisma";
 import { GardenShell } from "@/components/garden/GardenShell";
 import "./garden-shell.css";
 import "./garden-panels.css";
+import "./tutorial.css";
 
 export default async function GardenPage() {
-  const { userId: clerkId } = await auth();
-  if (!clerkId) redirect("/sign-in");
+  // getUser() also lazily creates the User row, covering the OAuth path
+  // where the sign-up form's POST /api/users never ran.
+  const user = await getUser();
+  if (!user) redirect("/sign-in");
 
-  const user = await prisma.user.findUnique({
-    where: { clerkId },
-    select: { name: true },
+  // Hard gate: must finish the onboarding EQ reflection first.
+  const profile = await prisma.userEQProfile.findUnique({
+    where: { userId: user.id },
   });
+  if (!profile?.onboardingCompleted) redirect("/onboarding");
 
-  return <GardenShell userName={user?.name ?? ""} />;
+  return <GardenShell userName={user.name ?? ""} />;
 }
