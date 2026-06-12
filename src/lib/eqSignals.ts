@@ -12,7 +12,7 @@
 import type { EQArea } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { EQSkill, FullExtractionResult } from "@/lib/extractionPrompt";
-import { calculateCombinedEQProfile } from "@/lib/eqScoring";
+import { calculateCombinedEQProfile, type CombinedEQProfile } from "@/lib/eqScoring";
 
 // The mapped, ready-to-store signal (matches the ConversationEQSignal model).
 export interface MappedEQSignal {
@@ -103,13 +103,10 @@ export async function persistConversationEQSignal(
   return signal;
 }
 
-// Load the three EQ sources for a user, compute the combined profile, and
-// console.log it. Called after a conversation's signal is persisted and
-// after a weekly reflection is submitted.
-export async function loadAndLogCombinedEQProfile(
-  userId: string,
-  logTag = "pipeline",
-) {
+// Load the three EQ sources for a user and compute the combined profile
+// (including the per-area blended Test+Chat+Task scores). Used both for the
+// console-logged pipeline summary and for the live EQ profile dashboard.
+export async function loadCombinedEQProfile(userId: string): Promise<CombinedEQProfile> {
   const [onboarding, latestWeekly, signals, tasks] = await Promise.all([
     prisma.eQAssessment.findFirst({
       where: { userId, type: "onboarding" },
@@ -130,7 +127,7 @@ export async function loadAndLogCombinedEQProfile(
     }),
   ]);
 
-  const combined = calculateCombinedEQProfile({
+  return calculateCombinedEQProfile({
     userId,
     onboarding,
     latestWeekly,
@@ -140,6 +137,16 @@ export async function loadAndLogCombinedEQProfile(
     })),
     tasks,
   });
+}
+
+// Compute the combined profile and console.log it. Called after a
+// conversation's signal is persisted and after a weekly reflection is
+// submitted.
+export async function loadAndLogCombinedEQProfile(
+  userId: string,
+  logTag = "pipeline",
+) {
+  const combined = await loadCombinedEQProfile(userId);
   console.log(`[${logTag}] combined_eq_profile:`, combined);
   return combined;
 }

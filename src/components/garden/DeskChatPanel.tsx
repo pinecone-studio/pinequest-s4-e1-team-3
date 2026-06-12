@@ -289,7 +289,14 @@ export function DeskChatPanel({
       });
     }
 
-    if (res.headers.get("X-Stone-Prompt") === "true") setShowStonePrompt(true);
+    // Tutorial: the companion has finished replying → now point at "end & save".
+    if (tutorialActive && TUTORIAL_STEPS[currentStep]?.target === "chat-input") {
+      advanceStep();
+    }
+
+    if (res.headers.get("X-Stone-Prompt") === "true") {
+      setShowStonePrompt(true);
+    }
 
     setMessages((prev) => {
       const last = prev[prev.length - 1];

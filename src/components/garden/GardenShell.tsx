@@ -296,7 +296,8 @@ function GardenShellContent({ userName }: { userName: string }) {
             key="desk-chat"
             onClose={close}
             flowerId={selectedFlowerId}
-            onOpenTasks={() => {
+            onOpenTasks={(convId: string) => {
+              setTaskConversationId(convId);
               setExpectingTask(true);
               setPanel("tasks");
             }}

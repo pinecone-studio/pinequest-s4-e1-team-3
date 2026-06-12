@@ -16,12 +16,13 @@
 import type { EQArea } from "@prisma/client";
 import { useFetchJson } from "@/hooks/useFetchJson";
 import { FlowerStatsRadar } from "@/components/garden/FlowerStatsRadar";
+import type { AreaKey } from "@/lib/eqScoring";
 
 type EQLevel = "needs_more_support" | "developing" | "stable" | "strong_area";
 
 type AreaRow = {
   area: EQArea;
-  key: string;
+  key: AreaKey;
   score: number;
   max: number;
   pct: number;
@@ -39,6 +40,8 @@ type ProfileData =
       overall: { score: number; max: number; pct: number };
       areas: AreaRow[];
       trend: Record<string, Trend> | null;
+      // Per-area blended % (Test + Chat Analysis + Task Behavior), 0-100.
+      blendedScores: Record<AreaKey, number>;
     };
 
 const AREA_META: Record<EQArea, { label: string; color: string }> = {
@@ -49,14 +52,6 @@ const AREA_META: Record<EQArea, { label: string; color: string }> = {
   SOCIAL_SKILLS: { label: "Бусадтай харилцах", color: "#e07ea3" },
 };
 
-// Level → how far the radar axis is filled (out of 4).
-const LEVEL_RANK: Record<EQLevel, number> = {
-  needs_more_support: 1,
-  developing: 2,
-  stable: 3,
-  strong_area: 4,
-};
-
 export function EQDashboard({ refreshKey = 0 }: { refreshKey?: number }) {
   // refreshKey is part of the URL so a change after submitting a weekly test
   // forces a re-fetch via useFetchJson.
@@ -64,9 +59,11 @@ export function EQDashboard({ refreshKey = 0 }: { refreshKey?: number }) {
 
   if (!data || !data.hasProfile) return null;
 
-  // Strongest / focus area — ranked by raw score (used only for ordering,
-  // never displayed). Highest = strongest, lowest = worth focusing on.
-  const sorted = [...data.areas].sort((a, b) => b.score - a.score);
+  // Strongest / focus area — ranked by the blended score (used only for
+  // ordering, never displayed). Highest = strongest, lowest = worth focusing on.
+  const sorted = [...data.areas].sort(
+    (a, b) => data.blendedScores[b.key] - data.blendedScores[a.key],
+  );
   const strongest = sorted[0];
   const support = sorted[sorted.length - 1];
 
@@ -97,10 +94,10 @@ export function EQDashboard({ refreshKey = 0 }: { refreshKey?: number }) {
           <FlowerStatsRadar
             axes={data.areas.map((a) => ({
               label: AREA_META[a.area].label,
-              value: LEVEL_RANK[a.level],
+              value: data.blendedScores[a.key],
               color: AREA_META[a.area].color,
             }))}
-            max={4}
+            max={100}
           />
         </div>
       </div>
