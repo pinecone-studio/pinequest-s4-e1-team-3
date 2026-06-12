@@ -56,7 +56,7 @@ export function DeskChatPanel({
 }: {
   onClose: () => void;
   flowerId?: string;
-  onOpenTasks?: () => void;
+  onOpenTasks?: (conversationId: string) => void;
 }) {
   const { data: flowers, refetch: refetchFlowers } =
     useFetchJson<FlowerSummary[]>("/api/flowers");
@@ -684,7 +684,7 @@ export function DeskChatPanel({
                             "___",
                             fillBlankAnswer.trim(),
                           );
-                          sendMessage(completed);
+                          void sendText(completed, false);
                           setFillBlank(null);
                           setFillBlankAnswer("");
                         }
@@ -716,7 +716,7 @@ export function DeskChatPanel({
                           "___",
                           fillBlankAnswer.trim(),
                         );
-                        sendMessage(completed);
+                        void sendText(completed, false);
                         setFillBlank(null);
                         setFillBlankAnswer("");
                       }}
@@ -744,8 +744,8 @@ export function DeskChatPanel({
                 <button
                   type="button"
                   onClick={() => {
+                    if (conversationId) onOpenTasks(conversationId);
                     onClose();
-                    onOpenTasks();
                   }}
                   style={{
                     marginTop: 8,

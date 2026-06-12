@@ -59,6 +59,7 @@ function GardenShellContent({ userName }: { userName: string }) {
   const [birdRefetch, setBirdRefetch] = useState(0);
   const [gardenRefetch, setGardenRefetch] = useState(0);
   const [expectingTask, setExpectingTask] = useState(false);
+  const [taskConversationId, setTaskConversationId] = useState<string | null>(null);
   const { user } = useUser();
   const panelRef = useRef(panel);
   useEffect(() => {
@@ -183,7 +184,8 @@ function GardenShellContent({ userName }: { userName: string }) {
         <DeskChatPanel
           onClose={close}
           flowerId={selectedFlowerId}
-          onOpenTasks={() => {
+          onOpenTasks={(convId: string) => {
+            setTaskConversationId(convId);
             setExpectingTask(true);
             setPanel("tasks");
           }}
@@ -196,7 +198,11 @@ function GardenShellContent({ userName }: { userName: string }) {
         <TaskTreePanel
           onClose={close}
           expectingTask={expectingTask}
-          onTaskArrived={() => setExpectingTask(false)}
+          taskConversationId={taskConversationId}
+          onTaskArrived={() => {
+            setExpectingTask(false);
+            setTaskConversationId(null);
+          }}
         />
       )}
       {panel === "reflection" && <ReflectionPanel onClose={close} />}

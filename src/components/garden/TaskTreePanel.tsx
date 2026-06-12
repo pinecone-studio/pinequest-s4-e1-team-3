@@ -7,6 +7,7 @@ import { PanelShell } from "./PanelShell";
 
 type Task = {
   id: string;
+  conversationId: string | null;
   flowerKey: string;
   title: string;
   description: string;
@@ -228,42 +229,48 @@ function TaskDetail({
 export function TaskTreePanel({
   onClose,
   expectingTask = false,
+  taskConversationId,
   onTaskArrived,
 }: {
   onClose: () => void;
   expectingTask?: boolean;
+  taskConversationId?: string | null;
   onTaskArrived?: () => void;
 }) {
   const { data, refetch } = useFetchJson<Task[]>("/api/tasks");
   const [selected, setSelected] = useState<Task | null>(null);
-  const prevCountRef = useRef<number | null>(null);
+
+  // Keep a stable ref to onTaskArrived so the effect doesn't need it as a dep
+  const onTaskArrivedRef = useRef(onTaskArrived);
+  onTaskArrivedRef.current = onTaskArrived;
 
   const allTasks = data ?? [];
   const pending = allTasks.filter((t) => !t.isCompleted);
   const visible = pending.slice(0, 10);
   const queueCount = Math.max(0, pending.length - 10);
 
-  // Auto-poll when expecting a newly saved task
+  // Poll every 2s while expecting a task (up to 25 attempts = 50s total)
   useEffect(() => {
     if (!expectingTask) return;
-    prevCountRef.current = allTasks.length;
+    const first = setTimeout(() => refetch(), 600);
     let attempts = 0;
     const id = setInterval(() => {
       attempts++;
       refetch();
-      if (attempts >= 10) clearInterval(id);
+      if (attempts >= 25) clearInterval(id);
     }, 2000);
-    return () => clearInterval(id);
+    return () => { clearTimeout(first); clearInterval(id); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expectingTask]);
 
+  // Detect arrival: look for a pending task with the expected conversationId
   useEffect(() => {
-    if (!expectingTask || prevCountRef.current === null) return;
-    if (allTasks.length > prevCountRef.current) {
-      prevCountRef.current = allTasks.length;
-      onTaskArrived?.();
-    }
-  }, [allTasks.length, expectingTask, onTaskArrived]);
+    if (!expectingTask || !taskConversationId || data === null) return;
+    const arrived = data.some(
+      (t) => !t.isCompleted && t.conversationId === taskConversationId,
+    );
+    if (arrived) onTaskArrivedRef.current?.();
+  }, [data, expectingTask, taskConversationId]);
 
   async function complete(id: string) {
     await fetch(`/api/tasks/${id}`, {

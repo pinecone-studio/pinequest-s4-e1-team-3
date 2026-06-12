@@ -65,22 +65,57 @@ export const SKY_TILES: [number, number][] = GRID.flatMap((row, r) =>
   row.flatMap((type, c) => (type === "S" ? [[c, r] as [number, number]] : []))
 );
 
-// Pick a random grass tile, avoiding spots within 2 tiles of occupied flowers
+// Pick a random grass tile, avoiding spots within 1 tile of occupied flowers.
+// When the garden is dense and no tile has a clear gap, falls back to the tile
+// that is furthest from all occupied flowers — so flowers spread out instead of
+// stacking on top of each other.
 export function getRandomGrassPosition(
   occupied: { posX: number; posY: number }[] = []
 ): { posX: number; posY: number } {
   const tileW = 100 / COLS; // 4%
   const tileH = 100 / ROWS; // 10%
 
+  // First pass: tiles with at least 1 tile of clearance in both axes
   const available = GRASS_TILES.filter(([c, r]) => {
     const [px, py] = tileCenter(c, r);
     return !occupied.some(
-      (o) => Math.abs(o.posX - px) < tileW * 2 && Math.abs(o.posY - py) < tileH * 2
+      (o) =>
+        Math.abs(o.posX - px) < tileW * 1.5 &&
+        Math.abs(o.posY - py) < tileH * 1.5,
     );
   });
 
-  const pool = available.length > 0 ? available : GRASS_TILES;
-  const [col, row] = pool[Math.floor(Math.random() * pool.length)];
-  const [posX, posY] = tileCenter(col, row);
+  if (available.length > 0) {
+    const [col, row] = available[Math.floor(Math.random() * available.length)];
+    const [posX, posY] = tileCenter(col, row);
+    return { posX, posY };
+  }
+
+  // Fallback: pick the tile that maximises minimum distance from all flowers,
+  // so even in a dense garden the new flower lands as far as possible from
+  // its neighbours rather than landing on top of one.
+  let bestTile = GRASS_TILES[0];
+  let bestDist = -1;
+
+  for (const [c, r] of GRASS_TILES) {
+    const [px, py] = tileCenter(c, r);
+    const minDist =
+      occupied.length === 0
+        ? Infinity
+        : Math.min(
+            ...occupied.map((o) =>
+              Math.hypot(
+                (o.posX - px) / tileW,
+                (o.posY - py) / tileH,
+              ),
+            ),
+          );
+    if (minDist > bestDist) {
+      bestDist = minDist;
+      bestTile = [c, r];
+    }
+  }
+
+  const [posX, posY] = tileCenter(...bestTile);
   return { posX, posY };
 }
