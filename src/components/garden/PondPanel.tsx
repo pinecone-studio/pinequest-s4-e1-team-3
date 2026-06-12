@@ -278,8 +278,8 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
           }}
         >
           {isSettled
-            ? "It rests where it landed · watch the ripples fade"
-            : "A quiet moment — drop a single stone and let it ripple"}
+            ? "Тавьсан · долгион намжих хүртэл хара"
+            : "Тавьж өгөхийг хүссэн зүйлээ чулуу болгон усанд хий"}
         </p>
       </div>
 
@@ -507,9 +507,9 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
             </button>
           </div>
         ))}
-        {apiStones?.filter((s) => s.note && !droppedApiIds.has(s.id)).map((s) => {
-          const parts = s.note!.split(" · ");
-          const label = parts[0] || s.note!;
+        {apiStones?.filter((s) => !droppedApiIds.has(s.id)).map((s) => {
+          const parts = s.note ? s.note.split(" · ") : [];
+          const label = parts[0] || MOOD_PHRASES[s.mood] || s.mood;
           const message = parts.slice(1).join(" · ");
           return (
             <div key={s.id} style={{ position: "relative" }}

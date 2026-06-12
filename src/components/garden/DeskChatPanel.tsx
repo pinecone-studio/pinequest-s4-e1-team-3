@@ -153,6 +153,8 @@ export function DeskChatPanel({
   const [completing, setCompleting] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [showStonePrompt, setShowStonePrompt] = useState(false);
+  const [fillBlank, setFillBlank] = useState<string | null>(null);
+  const [fillBlankAnswer, setFillBlankAnswer] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Voice mode
@@ -278,9 +280,27 @@ export function DeskChatPanel({
       });
     }
 
-    if (res.headers.get("X-Stone-Prompt") === "true") {
-      setShowStonePrompt(true);
-    }
+    if (res.headers.get("X-Stone-Prompt") === "true") setShowStonePrompt(true);
+
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role !== "assistant") return prev;
+      const isRose = species?.key === "rose";
+      const match =
+        isRose &&
+        last.content.match(/\[FILL_BLANK\]([\s\S]*?)\[\/FILL_BLANK\]/);
+      if (match) {
+        setFillBlank(match[1].trim());
+        setFillBlankAnswer("");
+        const cleaned = last.content
+          .replace(/\[FILL_BLANK\][\s\S]*?\[\/FILL_BLANK\]/g, "")
+          .trim();
+        const updated = [...prev];
+        updated[updated.length - 1] = { ...last, content: cleaned };
+        return updated;
+      }
+      return prev;
+    });
 
     // Voice path: play TTS after reply arrives
     if (withVoice && fullReply) {
@@ -602,7 +622,9 @@ export function DeskChatPanel({
 
           {showStonePrompt && !completed && (
             <div className="dc-stone-prompt">
-              <span className="dc-stone-prompt-text">🪨 Энэ яриагаа чулуунд хадгалах уу?</span>
+              <span className="dc-stone-prompt-text">
+                🪨 Энэ яриагаас тавьж өгөхийг хүссэн зүйл байна уу?
+              </span>
               <div className="dc-stone-prompt-actions">
                 <button
                   className="dc-stone-yes"
@@ -610,23 +632,107 @@ export function DeskChatPanel({
                     setShowStonePrompt(false);
                     if (!conversationId) return;
                     try {
-                      await fetch(`/api/conversations/${conversationId}/save-stone`, { method: "POST" });
+                      await fetch(
+                        `/api/conversations/${conversationId}/save-stone`,
+                        { method: "POST" },
+                      );
                     } catch {
                       // stone save failed silently — conversation continues
                     }
                   }}
                 >
-                  Тийм
+                  Тавьж өгье
                 </button>
                 <button
                   className="dc-stone-no"
                   onClick={() => setShowStonePrompt(false)}
                 >
-                  Дараа
+                  Үгүй
                 </button>
               </div>
             </div>
           )}
+
+          {fillBlank &&
+            !completed &&
+            (() => {
+              const parts = fillBlank.split("___");
+              return (
+                <div className="dc-stone-prompt">
+                  <span
+                    className="dc-stone-prompt-text"
+                    style={{ display: "block", marginBottom: 8 }}
+                  >
+                    ✏️ Өгүүлбэрийг нөхөж бич:
+                  </span>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      lineHeight: 1.8,
+                      color: "var(--g-ink)",
+                      marginBottom: 10,
+                    }}
+                  >
+                    {parts[0]}
+                    <input
+                      type="text"
+                      value={fillBlankAnswer}
+                      onChange={(e) => setFillBlankAnswer(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && fillBlankAnswer.trim()) {
+                          const completed = fillBlank.replace(
+                            "___",
+                            fillBlankAnswer.trim(),
+                          );
+                          sendMessage(completed);
+                          setFillBlank(null);
+                          setFillBlankAnswer("");
+                        }
+                      }}
+                      placeholder="···"
+                      style={{
+                        display: "inline-block",
+                        width: 110,
+                        padding: "1px 8px",
+                        borderRadius: 6,
+                        border: "none",
+                        borderBottom: "2px solid var(--g-ink-soft)",
+                        fontSize: 14,
+                        background: "transparent",
+                        outline: "none",
+                        verticalAlign: "baseline",
+                        marginInline: 4,
+                      }}
+                      autoFocus
+                    />
+                    {parts[1]}
+                  </div>
+                  <div className="dc-stone-prompt-actions">
+                    <button
+                      className="dc-stone-yes"
+                      disabled={!fillBlankAnswer.trim()}
+                      onClick={() => {
+                        const completed = fillBlank.replace(
+                          "___",
+                          fillBlankAnswer.trim(),
+                        );
+                        sendMessage(completed);
+                        setFillBlank(null);
+                        setFillBlankAnswer("");
+                      }}
+                    >
+                      Илгээх
+                    </button>
+                    <button
+                      className="dc-stone-no"
+                      onClick={() => setFillBlank(null)}
+                    >
+                      Алгасах
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
           {completed && (
             <div className="dc-saved-note">
