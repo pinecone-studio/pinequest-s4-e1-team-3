@@ -46,7 +46,7 @@ const AREA_META: Record<EQArea, { label: string; color: string }> = {
   SELF_REGULATION: { label: "Сэтгэлээ тайвшруулах", color: "#9a8fd0" },
   MOTIVATION: { label: "Дотоод хүсэл", color: "#ef9526" },
   EMPATHY: { label: "Бусдыг ойлгох", color: "#6f87c4" },
-  SOCIAL_SKILLS: { label: "Харилцаа", color: "#e07ea3" },
+  SOCIAL_SKILLS: { label: "Бусадтай харилцах", color: "#e07ea3" },
 };
 
 // Level → how far the radar axis is filled (out of 4).

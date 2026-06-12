@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 
 interface TooltipPos {
   top: number;
@@ -14,25 +15,22 @@ interface TutorialTooltipProps {
   showButton: boolean;
   buttonLabel?: string;
   onAdvance: () => void;
-  visible: boolean;
 }
 
-const TOOLTIP_W = 320;
-const TOOLTIP_H_BASE = 118; // rough height without button
-const TOOLTIP_H_BTN = 148;  // rough height with button
-const GAP = 18; // space between tooltip and target
+const TOOLTIP_W = 330;
+const TOOLTIP_H_BASE = 132; // rough height without button
+const TOOLTIP_H_BTN = 162; // rough height with button
+const GAP = 20; // space between tooltip and target
 
 export function TutorialTooltip({
   targetSelector,
   headline,
   instruction,
   showButton,
-  buttonLabel = "Got it →",
+  buttonLabel = "Ойлголоо →",
   onAdvance,
-  visible,
 }: TutorialTooltipProps) {
   const [pos, setPos] = useState<TooltipPos>({ top: 0, left: 0 });
-  const [arrowDir, setArrowDir] = useState<"down" | "up" | "none">("none");
   const retryRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   function calcPos() {
@@ -40,19 +38,13 @@ export function TutorialTooltip({
     const vh = window.innerHeight;
     const tooltipH = showButton ? TOOLTIP_H_BTN : TOOLTIP_H_BASE;
 
-    if (!targetSelector) {
-      setPos({
-        top: vh / 2 - tooltipH / 2,
-        left: Math.max(12, vw / 2 - TOOLTIP_W / 2),
-      });
-      return;
-    }
+    const el = targetSelector
+      ? document.querySelector<HTMLElement>(
+          `[data-tutorial-target="${targetSelector}"]`,
+        )
+      : null;
 
-    const el = document.querySelector<HTMLElement>(
-      `[data-tutorial-target="${targetSelector}"]`
-    );
-
-    // Full-screen target or element not found → center in screen
+    // Full-screen target or element not found → center on screen
     const isFullScreen =
       !el ||
       (el.getBoundingClientRect().width >= vw * 0.88 &&
@@ -63,7 +55,6 @@ export function TutorialTooltip({
         top: vh / 2 - tooltipH / 2,
         left: Math.max(12, vw / 2 - TOOLTIP_W / 2),
       });
-      setArrowDir("none");
       return;
     }
 
@@ -73,18 +64,13 @@ export function TutorialTooltip({
     const spaceAbove = r.top;
 
     let top: number;
-    let dir: "down" | "up" = "up";
     if (spaceBelow >= tooltipH + GAP) {
       top = r.bottom + GAP;
-      dir = "up"; // tooltip is below target, arrow points up toward it
     } else if (spaceAbove >= tooltipH + GAP) {
       top = r.top - tooltipH - GAP;
-      dir = "down"; // tooltip is above target, arrow points down toward it
     } else {
       top = Math.min(r.bottom + GAP, vh - tooltipH - 12);
-      dir = "up";
     }
-    setArrowDir(dir);
 
     // Center over target, clamped to viewport
     let left = midX - TOOLTIP_W / 2;
@@ -94,10 +80,8 @@ export function TutorialTooltip({
   }
 
   useEffect(() => {
-    if (!visible) return;
-
     calcPos();
-    retryRef.current = setInterval(calcPos, 300);
+    retryRef.current = setInterval(calcPos, 200);
     window.addEventListener("resize", calcPos);
 
     return () => {
@@ -105,12 +89,14 @@ export function TutorialTooltip({
       window.removeEventListener("resize", calcPos);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetSelector, visible, showButton]);
-
-  if (!visible) return null;
+  }, [targetSelector, showButton]);
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 7 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 7 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
       style={{
         position: "fixed",
         top: pos.top,
@@ -126,41 +112,8 @@ export function TutorialTooltip({
           "0 8px 40px rgba(40,34,18,0.22), 0 0 0 1px rgba(216,194,122,0.28)",
         pointerEvents: "auto",
         fontFamily: "'Mulish', system-ui, sans-serif",
-        animation: "tutorial-tooltip-in 200ms ease both",
       }}
     >
-      {arrowDir === "down" && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: -10,
-            left: "50%",
-            width: 0,
-            height: 0,
-            borderLeft: "8px solid transparent",
-            borderRight: "8px solid transparent",
-            borderTop: "11px solid rgba(247,241,228,0.97)",
-            animation: "tutorial-arrow-bounce-down 0.9s ease-in-out infinite",
-            pointerEvents: "none",
-          }}
-        />
-      )}
-      {arrowDir === "up" && (
-        <div
-          style={{
-            position: "absolute",
-            top: -10,
-            left: "50%",
-            width: 0,
-            height: 0,
-            borderLeft: "8px solid transparent",
-            borderRight: "8px solid transparent",
-            borderBottom: "11px solid rgba(247,241,228,0.97)",
-            animation: "tutorial-arrow-bounce-up 0.9s ease-in-out infinite",
-            pointerEvents: "none",
-          }}
-        />
-      )}
       <p
         style={{
           margin: "0 0 5px",
@@ -204,13 +157,7 @@ export function TutorialTooltip({
           {buttonLabel}
         </button>
       ) : (
-        <span
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
+        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span
             style={{
               width: 6,
@@ -231,10 +178,10 @@ export function TutorialTooltip({
               textTransform: "uppercase",
             }}
           >
-            click to continue
+            үргэлжлүүлэхийн тулд дарна уу
           </span>
         </span>
       )}
-    </div>
+    </motion.div>
   );
 }

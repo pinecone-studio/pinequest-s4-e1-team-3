@@ -142,7 +142,7 @@ export function ChatWindow({
               }`}
             >
               {m.content || (
-                <span className="inline-flex items-center gap-1 py-1" aria-label="thinking">
+                <span className="inline-flex items-center gap-1 py-1" aria-label="бодож байна">
                   <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50 animate-bounce [animation-delay:0ms]" />
                   <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50 animate-bounce [animation-delay:150ms]" />
                   <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50 animate-bounce [animation-delay:300ms]" />

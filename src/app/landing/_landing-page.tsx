@@ -27,11 +27,11 @@ function Nav({ onLogin, onBegin }: { onLogin: () => void; onBegin: () => void })
         <LeafMark />
       </a>
       <div className="nav-links">
-        <a className="nav-link hide-sm" href="#how" onClick={go("how")}>How it grows</a>
-        <a className="nav-link hide-sm" href="#faq" onClick={go("faq")}>Questions</a>
+        <a className="nav-link hide-sm" href="#how" onClick={go("how")}>Хэрхэн ургадаг</a>
+        <a className="nav-link hide-sm" href="#faq" onClick={go("faq")}>Асуултууд</a>
         <div className="nav-actions">
-          <a className="nav-link" href="#login" onClick={(e) => { e.preventDefault(); onLogin(); }}>Log in</a>
-          <button className="btn" onClick={onBegin}>Begin</button>
+          <a className="nav-link" href="#login" onClick={(e) => { e.preventDefault(); onLogin(); }}>Нэвтрэх</a>
+          <button className="btn" onClick={onBegin}>Эхлэх</button>
         </div>
       </div>
     </nav>
@@ -45,7 +45,7 @@ function Hero({ onBegin }: { onBegin: () => void }) {
     if (el) window.scrollTo({ top: el.offsetTop - 60, behavior: "smooth" });
   };
 
-  const rawTitle = "Tend to the garden *within.*";
+  const rawTitle = "Сэтгэлээ ойлгож *хөгжүүл*.";
   const titleHtml = rawTitle
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -56,7 +56,7 @@ function Hero({ onBegin }: { onBegin: () => void }) {
   return (
     <header className="hero" id="top" data-layout="left">
       <div className="hero-art" ref={artRef}>
-        <img src="/garden/garden-bg.png" alt="A sunlit storybook garden with a great tree and a still pond" />
+        <img src="/garden/garden-bg.png" alt="Нартай, агуу том мод, нам гүм нууртай үлгэрийн цэцэрлэг" />
       </div>
       <div className="hero-grade" />
       <div className="hero-vignette" />
@@ -65,29 +65,29 @@ function Hero({ onBegin }: { onBegin: () => void }) {
 
       <div className="hero-inner">
         <div className="hero-copy">
-          <p className="eyebrow on-art">A gentle companion for the mind</p>
+          <p className="eyebrow on-art">EQ хөгжүүлэх цэцэрлэг</p>
           <h1 className="display" dangerouslySetInnerHTML={{ __html: titleHtml }} />
           <p className="hero-sub">
-            Bloom is a gentle companion for the mind — a quiet place to talk, reflect and grow, whenever the world feels like too much.
+            Bordoo бол сэтгэл хөдлөлийн таван чадвараа яриа, өдөр тутмын дадлагаар хөгжүүлдэг EQ-н цэцэрлэг.
           </p>
           <div className="hero-cta">
-            <button className="btn lg" onClick={onBegin}>Begin your garden</button>
+            <button className="btn lg" onClick={onBegin}>Цэцэрлэгээ эхлүүл</button>
             <a
               className="btn lg ghost"
               href="#how"
               onClick={(e) => { e.preventDefault(); cue(); }}
             >
-              See how it grows
+              Хэрхэн хөгждөгийг үзэх
             </a>
           </div>
           <p className="hero-note">
-            <b>Free to begin.</b>&nbsp; Private by design · No judgment, ever
+            <b>Эхлэхэд үнэгүй.</b>&nbsp; Нууцлал хамгаалагдсан · Голманы 5 чадварт суурилсан
           </p>
         </div>
       </div>
 
       <div className="scroll-cue" onClick={cue} style={{ cursor: "pointer" }}>
-        <span>Wander in</span>
+        <span>Дотогш алхах</span>
         <span className="dot" />
       </div>
     </header>
@@ -96,10 +96,10 @@ function Hero({ onBegin }: { onBegin: () => void }) {
 
 function Assurance() {
   const items = [
-    "Here any hour, day or night",
-    "Private & encrypted",
-    "Not a clinic — a companion",
-    "Grows with you",
+    "Голманы таван EQ чадвар",
+    "Өдөр бүр бяцхан дадлага",
+    "Нууцлалтай",
+    "Чадвар чинь хэмжигдэж өсдөг",
   ];
   return (
     <section className="assure" id="assure">
@@ -117,17 +117,17 @@ function Assurance() {
 
 function Grows() {
   const steps = [
-    { n: "I", t: "Arrive as you are", d: "No forms to perform. Tell Bloom how today actually feels — tangled, tired, hopeful, numb. It listens the way a good friend would." },
-    { n: "II", t: "Tend what’s tender", d: "Bloom learns your weather over time and offers gentle prompts, grounding moments and reflections — never lectures, never a fixed script." },
-    { n: "III", t: "Watch it bloom", d: "Return whenever you need to. Little by little, the patterns soften and the garden you are quietly fills back in." },
+    { n: "I", t: "Чадвараа сонго", d: "Хөгжүүлэхийг хүссэн EQ чадвараа төлөөлөх цэцгийг сонгож тарь. Цэцэг бүр Голманы таван чадварын нэгд зориулагдсан — өөрийгөө таних, зохицуулах, урам зориг, бусдыг ойлгох, харилцах." },
+    { n: "II", t: "Ярилцаж дадлагал", d: "Дэмжигчтэйгээ ярилцаж, өнөөдрийн нөхцөл байдал, мэдрэмжээ үгээр нэрлэж, бодит жишээн дээр дадлага хий. Сургаал биш — чиний хэмнэлээр." },
+    { n: "III", t: "Ахицаа хар", d: "Долоо хоног тутмын эргэцүүллээр чадвар бүрийн ахицаа хар. Цэцэрлэг өсөхийн хэрээр чиний сэтгэл хөдлөлийн оюун ухаан ч өсдөг." },
   ];
   return (
     <section className="scene" id="how">
       <div className="wrap">
         <div className="section-head">
-          <span className="eyebrow">How it grows</span>
-          <h2>Healing isn&apos;t a sprint.<br />It&apos;s a season.</h2>
-          <p>Bloom isn&apos;t here to fix you in one sitting. It&apos;s a quiet place you can keep returning to, that remembers where you left off.</p>
+          <span className="eyebrow">Хэрхэн хөгждөг</span>
+          <h2>EQ бол төрөлхийн бэлэг биш.<br />Дадлагаар хөгждөг чадвар.</h2>
+          <p>Bordoo чамайг нэг шөнийн дотор өөрчлөхгүй. Энэ бол өдөр бүр бяцхан дадлагаар сэтгэл хөдлөлийн чадвараа тууштай хөгжүүлэх газар.</p>
         </div>
         <div className="grows-grid">
           {steps.map((s, i) => (
@@ -164,38 +164,59 @@ function FAQItem({ q, children }: { q: string; children: React.ReactNode }) {
   );
 }
 
+// Small superscript footnote marker linking to the dedicated references page.
+function Ref({ n }: { n: number }) {
+  return (
+    <sup style={{ fontSize: "0.66em", lineHeight: 0 }}>
+      <a
+        href={`/references#ref-${n}`}
+        style={{
+          color: "var(--leaf, #6f8a5b)",
+          textDecoration: "none",
+          fontWeight: 800,
+          padding: "0 1px",
+        }}
+      >
+        {n}
+      </a>
+    </sup>
+  );
+}
+
 function FAQ({ onBegin }: { onBegin: () => void }) {
   return (
     <section className="scene" id="faq" style={{ background: "var(--parchment-2)" }}>
       <div className="wrap">
         <div className="section-head">
-          <span className="eyebrow">Before you wander in</span>
-          <h2>Gentle answers to fair questions</h2>
+          <span className="eyebrow">Эхлэхээсээ өмнө</span>
+          <h2>Шударга асуултад тодорхой хариулт</h2>
         </div>
         <div className="faq">
           <aside className="faq-aside">
             <div className="quietcard">
-              <h3>Still wondering?</h3>
-              <p>There&apos;s no wrong way to begin. You can look around, talk a little, and leave whenever you like. Nothing is owed.</p>
-              <button className="btn full" onClick={onBegin}>Plant your first seed</button>
+              <h3>Эргэлзсээр байна уу?</h3>
+              <p>Эхлэх буруу арга гэж байхгүй. Эргэн тойрноо харж, нэг чадвар сонгож, дуртай үедээ гарч болно. Юу ч төлбөргүй.</p>
+              <button className="btn full" onClick={onBegin}>Эхний үрээ тарь</button>
             </div>
           </aside>
           <div className="faq-list">
-            <FAQItem q="Is Bloom a replacement for therapy?">
-              <p>No — and it won&apos;t pretend to be. Bloom is a companion for everyday reflection, grounding and support between (or alongside) professional care.</p>
-              <p>If you&apos;re in crisis or in danger, Bloom will always point you toward real, human help straight away.</p>
+            <FAQItem q="Сэтгэл хөдлөлийн оюун ухаан (EQ) гэж юу вэ?">
+              <p>EQ бол өөрийн болон бусдын сэтгэл хөдлөлийг таньж, ойлгож, удирдах чадвар. Дэниел Голман үүнийг таван хэсэгт хуваадаг: өөрийгөө таних, өөрийгөө зохицуулах, урам зориг, бусдыг ойлгох, бусадтай харилцах. Bordoo-н цэцэг бүр эдгээрийн нэгийг төлөөлдөг.</p>
             </FAQItem>
-            <FAQItem q="Is what I share really private?">
-              <p>Your conversations belong to you. They&apos;re encrypted, never sold, and you can read, export or delete everything at any time — no questions, no friction.</p>
+            <FAQItem q="EQ үнэхээр хөгждөг үү?">
+              <p>Тийм. IQ-гаас ялгаатай нь EQ бол дадлагаар сайжруулж болох чадвар. Хяналттай судалгаануудын мета-шинжилгээгээр зохион байгуулалттай дадлага сэтгэл хөдлөлийн оюун ухааныг бодитоор нэмэгдүүлдэг нь батлагдсан.<Ref n={1} /></p>
             </FAQItem>
-            <FAQItem q="What can I actually talk to Bloom about?">
-              <p>Anything that&apos;s sitting on your chest — a hard day, a spiralling thought, grief, a small win you&apos;ve no one to tell. Bloom listens without judgment and meets you at your pace.</p>
+            <FAQItem q="Bordoo яаж ажилладаг вэ?">
+              <p>Хөгжүүлэхийг хүссэн чадвараа сонгож цэцэг тарина. Дараа нь дэмжигчтэйгээ ярилцаж, мэдрэмжээ үгээр нэрлэж дадлага хийнэ — мэдрэмжээ нэрлэх нь өөрийгөө танихыг сайжруулж, тархины айдсын хариу урвалыг намжаадаг.<Ref n={2} /> Чухал бодлоо тэмдэглэлд бичиж болох ба,<Ref n={3} /> долоо хоног тутам ахицаа хэмжинэ.</p>
             </FAQItem>
-            <FAQItem q="What if I don't know what to say?">
-              <p>That&apos;s the most common way to arrive. Bloom can open with a soft prompt, a grounding breath, or simply sit with you until words come. Silence is allowed here.</p>
+            <FAQItem q="Энэ эмчилгээ (терапи) мөн үү?">
+              <p>Үгүй. Bordoo бол чадвар хөгжүүлэх дадлагын хэрэгсэл — мэргэжлийн эмчилгээг орлохгүй. Хяналттай туршилтаар ийм яриа хөтлөгчид сэтгэлийн шинжийг хөнгөвчилдөг ч эмчилгээний оронд биш, түүнийг дэмжих зорилготой.<Ref n={4} /> Хэрэв та хүндээр зовж байвал мэргэжлийн хүнд хандаарай.</p>
             </FAQItem>
-            <FAQItem q="How much does it cost?">
-              <p>Bloom is free to begin and free to keep using for daily reflection. A gentle paid tier adds deeper memory and guided journeys — but care is never paywalled in a hard moment.</p>
+            <FAQItem q="Миний хуваалцсан зүйл нууц уу?">
+              <p>Таны яриа танд харьяалагдана. Тэдгээр нь шифрлэгдсэн, хэзээ ч зарагдахгүй бөгөөд та ямар ч үед бүгдийг унших, татах эсвэл устгаж болно — асуулт ч, бэрхшээл ч үгүй.</p>
+            </FAQItem>
+            <FAQItem q="Үнэ нь хэд вэ?">
+              <p>Bordoo эхлэхэд үнэгүй, өдөр тутмын дадлагад үргэлжлүүлэн ашиглахад ч үнэгүй. Төлбөртэй багц нь гүн дурсамж, удирдсан аяллыг нэмдэг.</p>
             </FAQItem>
           </div>
         </div>
@@ -215,46 +236,43 @@ function Footer({ onBegin, onLogin }: { onBegin: () => void; onLogin: () => void
         <div className="footer-top">
           <div className="footer-brand">
             <LeafMark />
-            <p>A quiet garden for the mind — somewhere to talk, reflect and grow, whenever you need it.</p>
+            <p>Сэтгэл хөдлөлийн оюун ухаанаа өдөр бүр бяцхан дадлагаар хөгжүүлэх цэцэрлэг.</p>
           </div>
           <div className="footer-col">
-            <h4>The Garden</h4>
-            <a href="#how" onClick={scrollTo("how")}>How it grows</a>
-            <a href="#faq" onClick={scrollTo("faq")}>Questions</a>
-            <a href="#begin" onClick={(e) => { e.preventDefault(); onBegin(); }}>Begin free</a>
-            <a href="#login" onClick={(e) => { e.preventDefault(); onLogin(); }}>Log in</a>
+            <h4>Цэцэрлэг</h4>
+            <a href="#how" onClick={scrollTo("how")}>Хэрхэн хөгждөг</a>
+            <a href="#faq" onClick={scrollTo("faq")}>Асуултууд</a>
+            <a href="#begin" onClick={(e) => { e.preventDefault(); onBegin(); }}>Үнэгүй эхлэх</a>
+            <a href="#login" onClick={(e) => { e.preventDefault(); onLogin(); }}>Нэвтрэх</a>
           </div>
           <div className="footer-col">
-            <h4>Care</h4>
-            <a href="#privacy" onClick={(e) => e.preventDefault()}>Privacy promise</a>
-            <a href="#safety" onClick={(e) => e.preventDefault()}>How we keep you safe</a>
-            <a href="#crisis" onClick={(e) => e.preventDefault()}>Crisis resources</a>
+            <h4>Нөөц</h4>
+            <a href="/references">Эх сурвалж</a>
+            <a href="#privacy" onClick={(e) => e.preventDefault()}>Нууцлалын амлалт</a>
+            <a href="#terms" onClick={(e) => e.preventDefault()}>Үйлчилгээний нөхцөл</a>
           </div>
           <div className="footer-col">
-            <h4>Bloom</h4>
-            <a href="#about" onClick={(e) => e.preventDefault()}>Our story</a>
-            <a href="#contact" onClick={(e) => e.preventDefault()}>Contact</a>
-            <a href="#research" onClick={(e) => e.preventDefault()}>Research &amp; ethics</a>
+            <h4>Bordoo</h4>
+            <a href="#about" onClick={(e) => e.preventDefault()}>Бидний түүх</a>
+            <a href="#contact" onClick={(e) => e.preventDefault()}>Холбоо барих</a>
+            <a href="/references">Судалгаа</a>
           </div>
         </div>
 
         <div className="crisis">
           <span className="gem" />
           <span>
-            Bloom isn&apos;t an emergency service. If you&apos;re in crisis or thinking about harming yourself, please reach out now —
-            call or text your local crisis line, or dial{" "}
-            <a href="tel:988" onClick={(e) => e.preventDefault()}>988</a> (US) /{" "}
-            <a href="#crisis" onClick={(e) => e.preventDefault()}>your local line</a>.
-            You deserve real, human help.
+            Bordoo бол сэтгэл хөдлөлийн чадвараа дадлагажуулах хэрэгсэл — мэргэжлийн сэтгэцийн эрүүл мэндийн тусламжийг орлохгүй.
+            Хэрэв та хүндээр зовж, аюулд байгаа бол мэргэжлийн хүн эсвэл ойрын хүндээ нэн даруй хандаарай.
           </span>
         </div>
 
         <div className="footer-base">
-          <span>© 2026 Bloom. Made gently.</span>
+          <span>© 2026 Bordoo. Энхрийлэн бүтээв.</span>
           <span className="dots">
-            <a href="#privacy" onClick={(e) => e.preventDefault()}>Privacy</a>
-            <a href="#terms" onClick={(e) => e.preventDefault()}>Terms</a>
-            <a href="#accessibility" onClick={(e) => e.preventDefault()}>Accessibility</a>
+            <a href="#privacy" onClick={(e) => e.preventDefault()}>Нууцлал</a>
+            <a href="#terms" onClick={(e) => e.preventDefault()}>Үйлчилгээний нөхцөл</a>
+            <a href="#accessibility" onClick={(e) => e.preventDefault()}>Хүртээмж</a>
           </span>
         </div>
       </div>

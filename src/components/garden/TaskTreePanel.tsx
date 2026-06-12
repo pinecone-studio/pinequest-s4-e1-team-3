@@ -17,11 +17,11 @@ type Task = {
 };
 
 const EQ_DOMAINS: Record<string, { label: string; icon: string; color: string }> = {
-  daisy:     { label: "Self-Awareness",  icon: "🌼", color: "#f5c842" },
-  lavender:  { label: "Self-Regulation", icon: "🌿", color: "#a49bcf" },
-  sunflower: { label: "Motivation",      icon: "🌻", color: "#f09a2b" },
-  iris:      { label: "Empathy",         icon: "🪻", color: "#7e94c8" },
-  rose:      { label: "Social Skills",   icon: "🌸", color: "#e88fad" },
+  daisy:     { label: "Өөрийгөө таних",      icon: "🌼", color: "#f5c842" },
+  lavender:  { label: "Өөрийгөө зохицуулах", icon: "🌿", color: "#a49bcf" },
+  sunflower: { label: "Урам зориг",          icon: "🌻", color: "#f09a2b" },
+  iris:      { label: "Бусдыг ойлгох",       icon: "🪻", color: "#7e94c8" },
+  rose:      { label: "Бусадтай харилцах",   icon: "🌸", color: "#e88fad" },
 };
 
 function seededRandom(seed: string, salt: number) {
@@ -68,7 +68,7 @@ function TaskTag({
       onFocus={() => setHovered(true)}
       onBlur={() => setHovered(false)}
       onClick={() => onSelect(task)}
-      aria-label={`Task: ${task.title}`}
+      aria-label={`Даалгавар: ${task.title}`}
     >
       <span
         className="garden-memory-tag-art"
@@ -83,7 +83,7 @@ function TaskTag({
         <span>
           <span className="eyebrow">{domain.label}</span>
           <span className="content">{task.title}</span>
-          <span className="date">Tap to view task</span>
+          <span className="date">Даалгавар үзэхийн тулд дарна уу</span>
         </span>
       </span>
     </button>
@@ -142,7 +142,7 @@ function TaskDetail({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label="Хаах"
           style={{
             position: "absolute",
             top: 12,
@@ -219,7 +219,7 @@ function TaskDetail({
             boxShadow: busy ? "none" : "0 4px 14px rgba(122,158,114,0.35)",
           }}
         >
-          {busy ? "Saving…" : "✓ Mark as done"}
+          {busy ? "Хадгалж байна…" : "✓ Дууссан гэж тэмдэглэх"}
         </button>
       </div>
     </div>
@@ -283,23 +283,35 @@ export function TaskTreePanel({
   }
 
   const noteText = visible.length > 0
-    ? `${visible.length} task${visible.length > 1 ? "s" : ""} growing${queueCount > 0 ? ` · ${queueCount} more waiting` : ""}`
+    ? `${visible.length} даалгавар ургаж байна${queueCount > 0 ? ` · ${queueCount} хүлээгдэж байна` : ""}`
     : expectingTask
-    ? "Your new task is on the way…"
-    : "Complete a conversation to grow your first task";
+    ? "Таны шинэ даалгавар замдаа явж байна…"
+    : "Эхний даалгавраа ургуулахын тулд яриагаа дуусгаарай";
 
   return (
     <PanelShell
-      title="Task Tree"
+      title="Даалгаврын мод"
       banner="/garden/memory-tree-zoomed.png"
       note={noteText}
       onClose={onClose}
       loading={data === null}
       empty={data !== null && visible.length === 0 && !expectingTask}
-      emptyLabel="All caught up — complete more conversations to grow new tasks."
+      emptyLabel="Бүгд хийгдсэн — шинэ даалгавар ургуулахын тулд яриагаа үргэлжлүүлээрэй."
       overlay={
         visible.length > 0 || expectingTask ? (
           <>
+            {/* Tutorial anchor: frames the task tags for the spotlight (invisible). */}
+            <div
+              data-tutorial-target="task-tree-frame"
+              style={{
+                position: "absolute",
+                left: "12%",
+                top: "5%",
+                width: "76%",
+                height: "74%",
+                pointerEvents: "none",
+              }}
+            />
             {visible.map((task, i) => (
               <TaskTag
                 key={task.id}
@@ -321,13 +333,13 @@ export function TaskTreePanel({
             <div className="garden-scene-panel-caption">
               {expectingTask && visible.length === 0 ? (
                 <>
-                  <h3>Growing your next task…</h3>
-                  <p>It will appear here in a moment.</p>
+                  <h3>Дараагийн даалгаврыг ургуулж байна…</h3>
+                  <p>Тун удахгүй энд гарч ирнэ.</p>
                 </>
               ) : (
                 <>
-                  <h3>Your practice garden.</h3>
-                  <p>Hover a tag to preview — tap to open and mark done.</p>
+                  <h3>Таны дадлагын цэцэрлэг.</h3>
+                  <p>Урьдчилан үзэхийн тулд тэмдэг дээр хулганаа аваач — нээж дуусгахын тулд дарна уу.</p>
                 </>
               )}
             </div>

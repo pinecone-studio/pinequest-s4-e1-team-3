@@ -11,6 +11,7 @@
 import { UserButton } from "@clerk/nextjs";
 import { Leaf, MessageCircle, Waves, Sprout, ListTree, Bird, Sun, Moon, HeartHandshake } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import type { PanelKey } from "./GardenShell";
 
 type NavItem = {
@@ -20,12 +21,12 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { key: "garden",   label: "Garden",     Icon: Leaf          },
-  { key: "notes",    label: "Chat",       Icon: MessageCircle },
-  { key: "pond",     label: "Pond",       Icon: Waves         },
-  { key: "workshop", label: "Greenhouse", Icon: Sprout        },
-  { key: "tasks",    label: "Task Tree",  Icon: ListTree      },
-  { key: "reflection", label: "Check-in", Icon: HeartHandshake },
+  { key: "garden",   label: "Цэцэрлэг",        Icon: Leaf          },
+  { key: "notes",    label: "Чат",            Icon: MessageCircle },
+  { key: "pond",     label: "Нуур",            Icon: Waves         },
+  { key: "workshop", label: "Хүлэмж",          Icon: Sprout        },
+  { key: "tasks",    label: "Даалгаврын мод",  Icon: ListTree      },
+  { key: "reflection", label: "Эргэцүүлэл",    Icon: HeartHandshake },
 ];
 
 export function GardenTopNav({
@@ -43,13 +44,14 @@ export function GardenTopNav({
   onOpenBirds: () => void;
   birdDot?: boolean;
 }) {
+  const reduceMotion = useReducedMotion();
   return (
     <header className="garden-topbar">
       <span className="garden-brand">
         <span className="garden-brand-mark" aria-hidden>
           ⚘
         </span>
-        Bloom
+        Bordoo
       </span>
 
       <nav className="garden-nav">
@@ -74,30 +76,28 @@ export function GardenTopNav({
           type="button"
           className="garden-icon-pill"
           onClick={onToggleNight}
-          aria-label={nightMode ? "Switch to day" : "Switch to night"}
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: "0.04em",
-            padding: "0 14px",
-            width: "auto",
-            gap: 6,
-            display: "inline-flex",
-            alignItems: "center",
-          }}
+          aria-label={nightMode ? "Өдрийн горимд шилжих" : "Шөнийн горимд шилжих"}
         >
-          {nightMode ? (
-            <><Sun size={13} strokeWidth={2.2} aria-hidden /> Day</>
-          ) : (
-            <><Moon size={13} strokeWidth={2.2} aria-hidden /> Night</>
-          )}
+          {/* #6 — icon spins 180° as the lighting flips between day and night */}
+          <motion.span
+            aria-hidden
+            style={{ display: "inline-flex" }}
+            animate={reduceMotion ? undefined : { rotate: nightMode ? 180 : 0 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+          >
+            {nightMode ? (
+              <Sun size={18} strokeWidth={2.2} />
+            ) : (
+              <Moon size={18} strokeWidth={2.2} />
+            )}
+          </motion.span>
         </button>
 
         <button
           type="button"
           className="garden-icon-pill"
           onClick={onOpenBirds}
-          aria-label="Notifications"
+          aria-label="Мэдэгдэл"
           style={{ position: "relative" }}
         >
           <Bird size={20} strokeWidth={2} aria-hidden />

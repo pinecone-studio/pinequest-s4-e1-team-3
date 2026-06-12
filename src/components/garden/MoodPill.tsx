@@ -1,6 +1,16 @@
 "use client";
 
+<<<<<<< Updated upstream
 import { useState } from "react";
+=======
+import { useEffect, useRef, useState } from "react";
+import { motion, useAnimationControls, useReducedMotion } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
+import {
+  Sun, CloudSun, Cloudy, CloudFog,
+  Wind, CloudDrizzle, CloudRain, CloudRainWind, CloudLightning,
+} from "lucide-react";
+>>>>>>> Stashed changes
 import { useFetchJson } from "@/hooks/useFetchJson";
 import type { ForecastDay } from "./types";
 
@@ -18,16 +28,16 @@ const WEATHER_EMOJI: Record<string, string> = {
 };
 
 const WEATHER_PHRASES: Record<string, string> = {
-  sunny: "Bright skies",
-  partly_cloudy: "Calm skies",
-  clear_sky: "Clear skies",
-  rainy: "Soft rain",
-  light_rain: "Light drizzle",
-  heavy_rain: "Heavy rain",
-  windy: "Restless winds",
-  foggy: "Hazy mist",
-  cloudy: "Quiet clouds",
-  stormy: "Heavy storms",
+  sunny: "Тунгалаг тэнгэр",
+  partly_cloudy: "Тайван тэнгэр",
+  clear_sky: "Цэлмэг тэнгэр",
+  rainy: "Зөөлөн бороо",
+  light_rain: "Шиврээ бороо",
+  heavy_rain: "Их бороо",
+  windy: "Тогтворгүй салхи",
+  foggy: "Манантай",
+  cloudy: "Намуун үүлс",
+  stormy: "Хүчтэй шуурга",
 };
 
 // 1 = sunny (best, graph bottom)  5 = heavy storm (worst, graph top)
@@ -45,15 +55,15 @@ const WEATHER_SCORE: Record<string, number> = {
 };
 
 const MOOD_PHRASES: Record<string, string> = {
-  calm: "Calm & Hopeful",
-  happy: "Bright",
-  grateful: "Grateful",
-  sad: "A little heavy",
-  reflective: "Tender",
-  anxious: "Restless",
-  motivated: "Driven",
-  confused: "Hazy",
-  angry: "Fiery",
+  calm: "Тайван, найдвартай",
+  happy: "Гэгээлэг",
+  grateful: "Талархалтай",
+  sad: "Бага зэрэг хүнд",
+  reflective: "Эмзэг",
+  anxious: "Тайван бус",
+  motivated: "Урам зоригтой",
+  confused: "Эргэлзээтэй",
+  angry: "Уурласан",
 };
 
 function moodPhrase(mood: string) {
@@ -111,11 +121,32 @@ export function MoodPill() {
   const { data: apiData } = useFetchJson<ForecastDay[]>("/api/forecast?period=weekly");
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
+  const pulseControls = useAnimationControls();
 
   const dataMap = Object.fromEntries((apiData ?? []).map((d: ForecastDay) => [d.date, d]));
   const days = getCurrentWeekFromMonday();
   const todayStr = new Date().toISOString().slice(0, 10);
   const today = dataMap[todayStr] ?? null;
+
+  // #8 — pulse the pill whenever today's mood/weather actually changes
+  // (not on first load). `layout` on the button smooths the width change
+  // when the label text gets longer or shorter.
+  const prevWeather = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const w = today?.weather;
+    if (
+      prevWeather.current !== undefined &&
+      prevWeather.current !== w &&
+      !reduceMotion
+    ) {
+      pulseControls.start({
+        scale: [1, 1.08, 1],
+        transition: { duration: 0.4, ease: "easeInOut" },
+      });
+    }
+    prevWeather.current = w;
+  }, [today?.weather, reduceMotion, pulseControls]);
 
   type PtData = { x: number; y: number | null; day: ForecastDay | undefined; dateStr: string };
   const pts: PtData[] = days.map((dateStr: string, i: number) => {
@@ -133,22 +164,24 @@ export function MoodPill() {
 
   return (
     <div style={{ position: "relative" }} data-tutorial-target="mood-tracker">
-      <button
+      <motion.button
         type="button"
         className="garden-pill-btn"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
+        layout={!reduceMotion}
+        animate={pulseControls}
       >
         <span aria-hidden>{today ? (WEATHER_EMOJI[today.weather] ?? "🌥️") : "🌥️"}</span>
         <span className="value">
-          {today ? (WEATHER_PHRASES[today.weather] ?? "Calm skies") : "Calm skies"}
+          {today ? (WEATHER_PHRASES[today.weather] ?? "Тайван тэнгэр") : "Тайван тэнгэр"}
         </span>
-      </button>
+      </motion.button>
 
       {open && (
         <div className="garden-mood-dropdown" style={{ padding: "14px 14px 10px", minWidth: W + 28 }}>
           <p className="garden-mood-dropdown-eyebrow" style={{ marginBottom: 10 }}>
-            Past week
+            Өнгөрсөн долоо хоног
           </p>
 
           <div style={{ position: "relative", width: W, height: H }}>

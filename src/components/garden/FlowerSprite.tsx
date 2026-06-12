@@ -21,6 +21,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
+import { SPECIES_NAME_MN } from "./speciesText";
 import type { FlowerSummary, GrowthStage } from "./types";
 
 const STAGE_SCALE: Record<GrowthStage, { size: number; petals: number }> = {
@@ -60,6 +62,7 @@ export function FlowerSprite({
   dimmed = false,
   nightMode = false,
   tutorialTarget,
+  index = 0,
 }: {
   flower: FlowerSummary;
   onSelect: (flower: FlowerSummary) => void;
@@ -68,8 +71,11 @@ export function FlowerSprite({
   nightMode?: boolean;
   /** When set, applied as data-tutorial-target so the tutorial spotlight can find this flower. */
   tutorialTarget?: string;
+  /** Position in the flower list — drives the staggered entrance animation. */
+  index?: number;
 }) {
   const [hovered, setHovered] = useState(false);
+  const reduceMotion = useReducedMotion();
   const { size, petals } = STAGE_SCALE[flower.growthStage];
   const tint = flower.species.color;
   const art = SPECIES_ART[flower.species.key];
@@ -79,22 +85,47 @@ export function FlowerSprite({
   const swayDur   = 3 + (((flower.posX * 137 + flower.posY * 71) | 0) % 20) / 10;
 
   return (
-    <button
+    <motion.button
       type="button"
       className="garden-flower"
       data-tutorial-target={tutorialTarget}
+      // Dimming is expressed through `filter: opacity()` (not the opacity
+      // property) so Framer Motion can own `opacity` for the entrance fade
+      // without the two fighting over the same inline style.
       style={{
         left: `${flower.posX}%`,
         top: `${flower.posY}%`,
         filter: dimmed
-          ? "blur(3px) saturate(0.3)"
+          ? "blur(3px) saturate(0.3) opacity(0.4)"
           : nightMode
           ? "drop-shadow(0 0 10px rgba(255, 210, 70, 0.85)) drop-shadow(0 0 20px rgba(255, 180, 40, 0.5))"
           : undefined,
-        opacity: dimmed ? 0.35 : 1,
-        transition: "filter 0.3s ease, opacity 0.3s ease",
+        transition: "filter 0.3s ease",
         zIndex: dimmed ? 5 : 10,
       }}
+      // #3 — staggered entrance: each flower fades + scales up from 0.7,
+      // 0.12s apart after a 0.3s lead-in. Skipped under reduced motion.
+      initial={reduceMotion ? false : { opacity: 0, scale: 0.7 }}
+      animate={reduceMotion ? undefined : { opacity: 1, scale: 1 }}
+      transition={{
+        type: "spring",
+        stiffness: 260,
+        damping: 20,
+        delay: 0.3 + index * 0.12,
+      }}
+      // #2 — hover lift with a springy cubic-bezier feel; CSS pauses the
+      // idle sway on hover (see .garden-flower:hover .garden-flower-body).
+      whileHover={
+        reduceMotion
+          ? undefined
+          : { scale: 1.12, transition: { duration: 0.3, ease: [0.34, 1.56, 0.64, 1] } }
+      }
+      // #2 — click bloom burst. The existing onClick handler still fires.
+      whileTap={
+        reduceMotion
+          ? undefined
+          : { scale: 1.2, transition: { type: "spring", stiffness: 400, damping: 15 } }
+      }
       onClick={() => onSelect(flower)}
       onMouseEnter={() => { setHovered(true); onHoverStart?.(flower); }}
       onMouseLeave={() => setHovered(false)}
@@ -194,7 +225,7 @@ export function FlowerSprite({
         </span>
         <span>
           <span className="eyebrow">{eyebrow}</span>
-          <span className="name">{flower.species.name}</span>
+          <span className="name">{SPECIES_NAME_MN[flower.species.key] ?? flower.species.name}</span>
           <span className="date">
             {new Date(flower.plantedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
           </span>
@@ -208,6 +239,6 @@ export function FlowerSprite({
           )}
         </span>
       </span>
-    </button>
+    </motion.button>
   );
 }

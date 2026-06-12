@@ -42,7 +42,7 @@ const AREA_LABEL_MN: Record<EQArea, string> = {
   SELF_REGULATION: "Сэтгэлээ тайвшруулах",
   MOTIVATION: "Дотоод хүсэл эрмэлзэл",
   EMPATHY: "Бусдыг ойлгох",
-  SOCIAL_SKILLS: "Харилцааны ур чадвар",
+  SOCIAL_SKILLS: "Бусадтай харилцах",
 };
 
 export interface EQAnswer {

@@ -12,6 +12,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useFetchJson } from "@/hooks/useFetchJson";
+import { SPECIES_NAME_MN, SPECIES_DESC_MN } from "./speciesText";
 import type { Species } from "./types";
 
 const SPECIES_ART: Record<string, string> = {
@@ -36,13 +37,24 @@ const POT_POSITIONS = [
 // to keep the Greenhouse laid out as a deliberate progression.
 const SPECIES_ORDER = ["daisy", "lavender", "sunflower", "iris", "rose"];
 
+// What each flower represents — shown as a persistent label above every pot
+// so the choice reads as "pick any of these", not "pick the middle one".
+// Colors are darkened from the species palette for legibility on the chip.
+const SPECIES_DOMAIN: Record<string, { label: string; color: string }> = {
+  daisy: { label: "Өөрийгөө таних", color: "#a98a1f" },
+  lavender: { label: "Өөрийгөө зохицуулах", color: "#7e6fb0" },
+  sunflower: { label: "Урам зориг", color: "#cf8118" },
+  iris: { label: "Бусдыг ойлгох", color: "#6f63ad" },
+  rose: { label: "Бусадтай харилцах", color: "#c06384" },
+};
+
 
 export function WorkshopPanel({
   onClose,
   onPlanted,
 }: {
   onClose: () => void;
-  onPlanted: (flowerId?: string) => void;
+  onPlanted: (flowerId?: string, conversationId?: string) => void;
 }) {
   const { data: species, loading } = useFetchJson<Species[]>("/api/species");
   const [planting, setPlanting] = useState<string | null>(null);
@@ -66,11 +78,11 @@ export function WorkshopPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ speciesId: picked.id }),
       });
-      if (!res.ok) throw new Error("Could not plant that seed — try again.");
-      const planted = (await res.json()) as { id: string };
-      onPlanted(planted.id);
+      if (!res.ok) throw new Error("Энэ үрийг тарьж чадсангүй — дахин оролдоно уу.");
+      const planted = (await res.json()) as { id: string; conversationId?: string };
+      onPlanted(planted.id, planted.conversationId);
     } catch (err) {
-      setPlantError(err instanceof Error ? err.message : "Something went wrong");
+      setPlantError(err instanceof Error ? err.message : "Алдаа гарлаа");
       setPlanting(null);
     }
   }
@@ -92,27 +104,29 @@ export function WorkshopPanel({
           type="button"
           className="garden-scene-panel-back-btn"
           onClick={onClose}
-          aria-label="Back to garden"
+          aria-label="Цэцэрлэг рүү буцах"
         >
           ‹
         </button>
-        <h2 className="garden-scene-panel-title">Greenhouse</h2>
+        <h2 className="garden-scene-panel-title">Хүлэмж</h2>
       </div>
 
       <p className="garden-scene-panel-note">
         <span className="pin" aria-hidden/>
-        Choose what you want to grow today.
+        Өнөөдөр юу ургуулахаа сонгоорой.
       </p>
 
-      {/* Tutorial target: anchors the step-2 tooltip to the pot area */}
+      {/* Tutorial target: anchors the flower-picker spotlight. Covers the
+          flowers themselves (which rise well above the pots) plus their
+          labels, not just the pot row at the bottom. */}
       <div
         data-tutorial-target="flower-picker"
         style={{
           position: "absolute",
-          left: "8%",
-          top: "58%",
-          width: "84%",
-          height: "36%",
+          left: "4%",
+          top: "29%",
+          width: "92%",
+          height: "54%",
           pointerEvents: "none",
           zIndex: 0,
         }}
@@ -120,7 +134,7 @@ export function WorkshopPanel({
 
       {loading && (
         <p style={{ position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)", color: "var(--g-ivory)", fontSize: 13, zIndex: 3, whiteSpace: "nowrap" }}>
-          Loading…
+          Ачаалж байна…
         </p>
       )}
       {plantError && (
@@ -142,6 +156,7 @@ export function WorkshopPanel({
           <button
             key={s.id}
             type="button"
+            className="wp-flower-pick"
             disabled={isDisabled}
             onClick={() => plant(s)}
             onMouseEnter={() => setHovered(s.id)}
@@ -153,7 +168,7 @@ export function WorkshopPanel({
               transform: isHovered && !isDisabled
                 ? "translate(-50%, -100%) translateY(-8px)"
                 : "translate(-50%, -100%)",
-              zIndex: 3,
+              zIndex: isHovered ? 6 : 3,
               cursor: isDisabled ? "wait" : "pointer",
               opacity: planting && planting !== s.id ? 0.45 : 1,
               transition: "transform 0.2s ease, opacity 0.2s ease",
@@ -166,11 +181,17 @@ export function WorkshopPanel({
             }}
           >
             {art ? (
-              <span style={{ position: "relative", width: 148, height: 148, display: "block", filter: "drop-shadow(0 12px 18px rgba(20,20,10,.38))" }}>
+              <span
+                className="wp-flower-art"
+                style={{ position: "relative", width: 148, height: 148, display: "block", filter: "drop-shadow(0 12px 18px rgba(20,20,10,.38))", ['--bob-delay' as string]: `${-(i * 0.35).toFixed(2)}s`, ['--bob-dur' as string]: `${(2.8 + (i % 3) * 0.35).toFixed(2)}s` }}
+              >
                 <Image src={art} alt={s.name} fill sizes="148px" style={{ objectFit: "contain" }} />
               </span>
             ) : (
-              <span style={{ position: "relative", width: 44, height: 44, display: "block" }}>
+              <span
+                className="wp-flower-art"
+                style={{ position: "relative", width: 44, height: 44, display: "block", ['--bob-delay' as string]: `${-(i * 0.35).toFixed(2)}s`, ['--bob-dur' as string]: `${(2.8 + (i % 3) * 0.35).toFixed(2)}s` }}
+              >
                 {Array.from({ length: 10 }).map((_, j) => (
                   <span
                     key={j}
@@ -194,26 +215,42 @@ export function WorkshopPanel({
               <Image src="/garden/vase.png" alt="" fill sizes="114px" style={{ objectFit: "contain" }} />
             </span>
 
-            <span style={{
-              position: "absolute",
-              bottom: "calc(100% + 10px)",
-              left: "50%",
-              transform: "translateX(-50%)",
-              background: "rgba(247,241,228,0.95)",
-              backdropFilter: "blur(10px)",
-              borderRadius: 12,
-              padding: "8px 14px",
-              whiteSpace: "nowrap",
-              pointerEvents: "none",
-              opacity: isHovered && !isDisabled ? 1 : 0,
-              transition: "opacity 0.15s ease",
-              textAlign: "center",
-              boxShadow: "0 8px 24px rgba(40,34,18,0.18)",
-              zIndex: 4,
-            }}>
-              <span style={{ display: "block", fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600, fontSize: 15, color: "var(--g-ink)" }}>{s.name}</span>
-              <span style={{ display: "block", fontSize: 11, color: "var(--g-ink-soft)", marginTop: 2 }}>{s.description}</span>
-            </span>
+            {/* Persistent label: every flower shows its name + what it
+                represents, so all options read as choosable. The fuller
+                description fades in on hover. */}
+            {(() => {
+              const domain = SPECIES_DOMAIN[s.key];
+              const nameMn = SPECIES_NAME_MN[s.key] ?? s.name;
+              const descMn = SPECIES_DESC_MN[s.key];
+              return (
+                <span style={{
+                  position: "absolute",
+                  bottom: "calc(100% + 4px)",
+                  left: "50%",
+                  transform: isHovered && !isDisabled ? "translateX(-50%) translateY(-4px)" : "translateX(-50%)",
+                  background: "rgba(247,241,228,0.95)",
+                  backdropFilter: "blur(10px)",
+                  borderRadius: 12,
+                  padding: "6px 12px",
+                  maxWidth: 140,
+                  pointerEvents: "none",
+                  opacity: isDisabled && !isHovered ? 0.5 : 1,
+                  transition: "transform 0.18s ease, opacity 0.18s ease",
+                  textAlign: "center",
+                  boxShadow: "0 8px 22px rgba(40,34,18,0.18)",
+                  border: `1.5px solid ${domain?.color ?? s.color}40`,
+                  zIndex: 5,
+                }}>
+                  <span style={{ display: "block", fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600, fontSize: 15, color: "var(--g-ink)", lineHeight: 1.15 }}>{nameMn}</span>
+                  <span style={{ display: "block", fontSize: 9.5, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: domain?.color ?? "var(--g-ink-soft)", marginTop: 2 }}>
+                    {domain?.label ?? "Дэмжигч"}
+                  </span>
+                  {isHovered && !isDisabled && descMn && (
+                    <span style={{ display: "block", fontSize: 11, color: "var(--g-ink-soft)", marginTop: 5, lineHeight: 1.4, whiteSpace: "normal" }}>{descMn}</span>
+                  )}
+                </span>
+              );
+            })()}
           </button>
         );
       })}

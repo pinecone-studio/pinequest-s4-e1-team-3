@@ -16,7 +16,7 @@ export default async function ChatPage({
     const { species } = await searchParams;
     const name = species
       ? species.charAt(0).toUpperCase() + species.slice(1)
-      : "Companion";
+      : "Дэмжигч";
     return (
       <ChatWindow
         conversationId="preview"

@@ -14,9 +14,9 @@ const WEATHER_EMOJI: Record<string, string> = {
 };
 
 const MOOD_PHRASES: Record<string, string> = {
-  calm: "Calm & Hopeful", happy: "Bright", grateful: "Grateful",
-  sad: "A little heavy", reflective: "Tender", anxious: "Restless",
-  motivated: "Driven", confused: "Hazy", angry: "Fiery",
+  calm: "Тайван, найдвартай", happy: "Гэгээлэг", grateful: "Талархалтай",
+  sad: "Бага зэрэг хүнд", reflective: "Эмзэг", anxious: "Тайван бус",
+  motivated: "Урам зоригтой", confused: "Эргэлзээтэй", angry: "Уурласан",
 };
 
 type Phase = "idle" | "falling" | "settled" | "sinking";
@@ -46,7 +46,7 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
   const today = forecast?.[forecast.length - 1];
 
   async function handleAdd() {
-    const label = topic.trim() || `Stone ${localStones.length + 1 + (apiStones?.length ?? 0)}`;
+    const label = topic.trim() || `Чулуу ${localStones.length + 1 + (apiStones?.length ?? 0)}`;
     const note = [topic.trim(), stoneMessage.trim()].filter(Boolean).join(" · ");
     const tempId = `temp_${Date.now()}`;
 
@@ -157,11 +157,11 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
           type="button"
           className="garden-scene-panel-back-btn"
           onClick={onClose}
-          aria-label="Back to garden"
+          aria-label="Цэцэрлэг рүү буцах"
         >
           ‹
         </button>
-        <h2 className="garden-scene-panel-title">Mood Pond</h2>
+        <h2 className="garden-scene-panel-title">Сэтгэлийн нуур</h2>
       </div>
 
       {today && (
@@ -182,7 +182,7 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
           <span style={{ fontSize: 18 }}>{WEATHER_EMOJI[today.weather] ?? "🌥️"}</span>
           <div>
             <div style={{ fontSize: 11, color: "rgba(240,237,232,0.65)", letterSpacing: 0.3, lineHeight: 1 }}>
-              Today
+              Өнөөдөр
             </div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--g-ivory)", lineHeight: 1.3 }}>
               {MOOD_PHRASES[today.mood] ?? today.mood}
@@ -266,7 +266,7 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
             lineHeight: 1.2,
           }}
         >
-          {isSettled ? "Your stone has settled" : "Toss a stone into the water"}
+          {isSettled ? "Таны чулуу тогтлоо" : "Чулуу усанд хая"}
         </p>
         <p
           style={{
@@ -278,8 +278,13 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
           }}
         >
           {isSettled
+<<<<<<< Updated upstream
             ? "Тавьсан · долгион намжих хүртэл хара"
             : "Тавьж өгөхийг хүссэн зүйлээ чулуу болгон усанд хий"}
+=======
+            ? "Унасан газартаа амарч байна · долгио замхрахыг ажиглаарай"
+            : "Тайван мөч — нэг чулуу хая, долгисохыг нь үзээрэй"}
+>>>>>>> Stashed changes
         </p>
       </div>
 
@@ -348,7 +353,7 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
               letterSpacing: 0.1,
             }}
           >
-            Stone placed
+            Чулуу тавигдлаа
           </button>
         )}
         {selectedStoneId && phase === "idle" && (
@@ -373,14 +378,16 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
             }}
           >
             <Image src="/garden/stone.png" alt="" width={36} height={36} style={{ height: "auto", mixBlendMode: "multiply" }} />
-            Drop stone
+            Чулуу хаях
           </button>
         )}
       </div>
     </div>
 
     {/* Bottom section — form card + tab bar */}
-    <div style={{
+    <div
+      data-tutorial-target="pond-throw"
+      style={{
       width: "min(82vw, min(1100px, 85vh * 1328 / 752))",
       display: "flex",
       flexDirection: "column",
@@ -389,40 +396,40 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
       {/* Form card — shown when adding a stone */}
       {addingStone && phase === "idle" && (
         <div style={{
-          background: "rgba(28, 24, 18, 0.82)",
+          background: "rgba(247, 241, 228, 0.96)",
           backdropFilter: "blur(16px)",
           borderRadius: "16px 16px 0 0",
           padding: "18px 20px 14px",
           display: "flex",
           flexDirection: "column",
           gap: 12,
-          borderBottom: "1px solid rgba(247,241,228,0.08)",
+          borderBottom: "1px solid rgba(58,58,44,0.1)",
         }}>
           <div style={{ display: "flex", gap: 12 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(240,237,232,0.5)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Topic</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(58,58,44,0.5)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Сэдэв</div>
               <input
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                placeholder="e.g. work, friendship…"
+                placeholder="ж: ажил, нөхөрлөл…"
                 style={{
-                  width: "100%", background: "rgba(247,241,228,0.07)", border: "1px solid rgba(247,241,228,0.15)",
-                  borderRadius: 10, padding: "9px 12px", fontSize: 13.5, color: "#f0ede8",
+                  width: "100%", background: "rgba(255,255,255,0.7)", border: "1px solid rgba(58,58,44,0.18)",
+                  borderRadius: 10, padding: "9px 12px", fontSize: 13.5, color: "#3a3a2c",
                   outline: "none", boxSizing: "border-box", fontFamily: "inherit",
                 }}
               />
             </div>
             <div style={{ flex: 2 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(240,237,232,0.5)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>What&apos;s on your mind</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(58,58,44,0.5)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Юу бодож байна</div>
               <input
                 type="text"
                 value={stoneMessage}
                 onChange={(e) => setStoneMessage(e.target.value)}
-                placeholder="A thought, a feeling…"
+                placeholder="Бодол, мэдрэмж…"
                 style={{
-                  width: "100%", background: "rgba(247,241,228,0.07)", border: "1px solid rgba(247,241,228,0.15)",
-                  borderRadius: 10, padding: "9px 12px", fontSize: 13.5, color: "#f0ede8",
+                  width: "100%", background: "rgba(255,255,255,0.7)", border: "1px solid rgba(58,58,44,0.18)",
+                  borderRadius: 10, padding: "9px 12px", fontSize: 13.5, color: "#3a3a2c",
                   outline: "none", boxSizing: "border-box", fontFamily: "inherit",
                 }}
               />
@@ -432,8 +439,9 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
       )}
 
       {/* Tab bar */}
-      <div style={{
-        background: "rgba(20, 18, 14, 0.88)",
+      <div
+        style={{
+        background: "rgba(247, 241, 228, 0.95)",
         backdropFilter: "blur(12px)",
         borderRadius: addingStone ? "0 0 16px 16px" : 16,
         padding: "10px 12px",
@@ -441,15 +449,16 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
         gap: 6,
         alignItems: "center",
         flexWrap: "wrap",
+        boxShadow: "0 10px 30px rgba(40,34,18,0.18)",
       }}>
         <button
           type="button"
           onClick={() => { setAddingStone((v) => !v); setSelectedStoneId(null); }}
           style={{
-            background: addingStone ? "rgba(247,241,228,0.22)" : "rgba(247,241,228,0.10)",
-            border: "1px solid rgba(247,241,228,0.25)",
+            background: addingStone ? "rgba(154,168,127,0.35)" : "rgba(154,168,127,0.16)",
+            border: "1px solid rgba(154,168,127,0.5)",
             borderRadius: 10,
-            color: "#f0ede8",
+            color: "#3a3a2c",
             fontSize: 13.5,
             fontWeight: 700,
             padding: "8px 16px",
@@ -458,7 +467,7 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
             transition: "background 0.15s",
           }}
         >
-          +Add stone
+          + Чулуу нэмэх
         </button>
         {localStones.map((s) => (
           <div key={s.id} style={{ position: "relative" }}
@@ -489,10 +498,10 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
               type="button"
               onClick={() => { setSelectedStoneId((v) => v === s.id ? null : s.id); setAddingStone(false); }}
               style={{
-                background: selectedStoneId === s.id ? "rgba(247,241,228,0.28)" : "rgba(247,241,228,0.08)",
-                border: `1px solid ${selectedStoneId === s.id ? "rgba(247,241,228,0.5)" : "rgba(247,241,228,0.18)"}`,
+                background: selectedStoneId === s.id ? "rgba(154,168,127,0.32)" : "rgba(58,58,44,0.06)",
+                border: `1px solid ${selectedStoneId === s.id ? "rgba(154,168,127,0.55)" : "rgba(58,58,44,0.15)"}`,
                 borderRadius: 10,
-                color: selectedStoneId === s.id ? "#f0ede8" : "rgba(240,237,232,0.75)",
+                color: selectedStoneId === s.id ? "#3a3a2c" : "rgba(58,58,44,0.7)",
                 fontSize: 13,
                 fontWeight: selectedStoneId === s.id ? 600 : 500,
                 padding: "8px 14px",
@@ -502,7 +511,7 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
                 gap: 6,
               }}
             >
-              <Image src="/garden/stone.png" alt="" width={18} height={18} style={{ height: "auto", mixBlendMode: "screen", flexShrink: 0, filter: "invert(1)" }} />
+              <Image src="/garden/stone.png" alt="" width={18} height={18} style={{ height: "auto", mixBlendMode: "multiply", flexShrink: 0 }} />
               {s.label}
             </button>
           </div>
@@ -553,7 +562,7 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
                   gap: 6,
                 }}
               >
-                <Image src="/garden/stone.png" alt="" width={18} height={18} style={{ height: "auto", mixBlendMode: "screen", flexShrink: 0, filter: "invert(1)" }} />
+                <Image src="/garden/stone.png" alt="" width={18} height={18} style={{ height: "auto", mixBlendMode: "multiply", flexShrink: 0 }} />
                 {label}
               </button>
             </div>
@@ -565,8 +574,8 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
             onClick={handleAdd}
             style={{
               marginLeft: "auto",
-              background: "rgba(247,241,228,0.90)",
-              color: "#2a2720",
+              background: "#9aa87f",
+              color: "#fbf8f0",
               border: "none",
               borderRadius: 10,
               padding: "8px 22px",
@@ -574,11 +583,11 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
               fontWeight: 700,
               cursor: "pointer",
               letterSpacing: 0.2,
-              boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
+              boxShadow: "0 4px 14px rgba(122,158,114,0.4)",
               transition: "background 0.15s",
             }}
           >
-            Add
+            Нэмэх
           </button>
         )}
       </div>
