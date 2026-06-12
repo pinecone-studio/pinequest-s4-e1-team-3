@@ -19,8 +19,8 @@ const PREVIEW_MESSAGES: BirdMessage[] = [
     id: "preview-1",
     type: "milestone",
     icon: "🌸",
-    title: "Таны Лаванда дэлгэрлээ",
-    body: "7 хоногийн ярианы дараа таны Лаванда бүрэн дэлгэрч, таны мод дээр 3 дурсамж тээж байна.",
+    title: "Таны Лаванда цэцэг дэлгэрлээ",
+    body: "7 хоног ярилцсаны дараа таны Лаванда цэцэг бүрэн дэлгэрч, таны мод дээр даалгавар нэмэгдэнэ.",
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     color: "#b6a8cf",
   },
@@ -28,7 +28,7 @@ const PREVIEW_MESSAGES: BirdMessage[] = [
     id: "preview-2",
     type: "memory",
     icon: "🍃",
-    title: "Таны мод дээр дурсамж иржээ",
+    title: "Таны мод дээр даалгавар ирсэн байна",
     body: "«Би одоо байгаагаараа хангалттай» гэдэг үг таны Дурсамжийн мод дээр зөөлөн нэмэгдлээ.",
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
     color: "#9aa87f",
@@ -74,13 +74,22 @@ function relativeTime(iso: string): string {
   return `${Math.floor(d / 7)} долоо хоногийн өмнө`;
 }
 
-export function BirdMessagesPanel({ onClose, refetchSignal }: { onClose: () => void; refetchSignal?: number }) {
-  const { data, loading, error, refetch } = useFetchJson<BirdMessage[]>("/api/bird-messages");
+export function BirdMessagesPanel({
+  onClose,
+  refetchSignal,
+}: {
+  onClose: () => void;
+  refetchSignal?: number;
+}) {
+  const { data, loading, error, refetch } =
+    useFetchJson<BirdMessage[]>("/api/bird-messages");
   const usingPreview = !error && (!data || data.length === 0);
   const messages = usingPreview ? PREVIEW_MESSAGES : (data ?? []);
 
   const refetchRef = useRef(refetch);
-  useEffect(() => { refetchRef.current = refetch; }, [refetch]);
+  useEffect(() => {
+    refetchRef.current = refetch;
+  }, [refetch]);
 
   // When GardenShell gets an Ably event while this panel is open, it increments
   // refetchSignal — we immediately refetch to show the new message.
@@ -96,16 +105,23 @@ export function BirdMessagesPanel({ onClose, refetchSignal }: { onClose: () => v
 
   return (
     <PanelShell
-      title="Шувууны захиа"
+      title="Шувуудын мэдэгдэл"
       subtitle="Цэцэрлэгээс таньд авчирсан захианууд"
       banner="/garden/garden-bg.png"
-      note="Шувууд завгүй байжээ."
       onClose={onClose}
       loading={loading}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {error && (
-          <p style={{ fontSize: 12, color: "#c0392b", padding: "8px 12px", background: "rgba(192,57,43,0.08)", borderRadius: 10 }}>
+          <p
+            style={{
+              fontSize: 12,
+              color: "#c0392b",
+              padding: "8px 12px",
+              background: "rgba(192,57,43,0.08)",
+              borderRadius: 10,
+            }}
+          >
             {error}
           </p>
         )}
@@ -121,14 +137,34 @@ export function BirdMessagesPanel({ onClose, refetchSignal }: { onClose: () => v
               border: `1.5px solid ${msg.color}40`,
             }}
           >
-            <span style={{ fontSize: 22, lineHeight: 1, paddingTop: 2, flexShrink: 0 }}>
+            <span
+              style={{
+                fontSize: 22,
+                lineHeight: 1,
+                paddingTop: 2,
+                flexShrink: 0,
+              }}
+            >
               {msg.icon}
             </span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontWeight: 700, fontSize: 13.5, color: "var(--g-ink)", marginBottom: 3 }}>
+              <p
+                style={{
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  color: "var(--g-ink)",
+                  marginBottom: 3,
+                }}
+              >
                 {msg.title}
               </p>
-              <p style={{ fontSize: 13, color: "var(--g-ink-soft)", lineHeight: 1.55 }}>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: "var(--g-ink-soft)",
+                  lineHeight: 1.55,
+                }}
+              >
                 {msg.body}
               </p>
               <p
@@ -156,7 +192,7 @@ export function BirdMessagesPanel({ onClose, refetchSignal }: { onClose: () => v
               fontStyle: "italic",
             }}
           >
-Жинхэнэ захиануудаа ургуулахын тулд яриагаа дуусгаарай ✦
+            Жинхэнэ захиануудаа ургуулахын тулд яриагаа дуусгаарай ✦
           </p>
         )}
       </div>

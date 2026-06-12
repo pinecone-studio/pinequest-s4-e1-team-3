@@ -62,7 +62,7 @@ export function WeeklyCheckInBird() {
       {/* Notification card below the Clerk avatar button (top-right) */}
       <button
         type="button"
-        aria-label="7 хоногийн тест өгөөрэй"
+        aria-label="7 хоногийн тестээ өгөөрэй"
         onClick={() => setOpen(true)}
         style={{
           position: "fixed",
@@ -77,60 +77,80 @@ export function WeeklyCheckInBird() {
         }}
       >
         {/* Bird — text card anchored to its beak */}
-        <span style={{ position: "relative", display: "block", width: 80, height: 80 }}>
+        <span
+          style={{
+            position: "relative",
+            display: "block",
+            width: 80,
+            height: 80,
+          }}
+        >
           <Image
             src="/garden/bird.png"
             alt=""
             width={80}
             height={80}
             unoptimized
-            style={{ display: "block", objectFit: "contain", transform: "scaleX(-1)" }}
+            style={{
+              display: "block",
+              objectFit: "contain",
+              transform: "scaleX(-1)",
+            }}
           />
 
           {/* Text card — anchored to beak (left side, ~36px from top) */}
-          <span style={{
-            position: "absolute",
-            right: 86,
-            top: 10,
-            background: "rgba(253,248,234,0.96)",
-            border: "1.5px solid rgba(160,130,60,0.35)",
-            borderRadius: 14,
-            boxShadow: "0 6px 24px rgba(40,28,6,0.2)",
-            padding: "8px 14px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            textAlign: "right",
-            backdropFilter: "blur(6px)",
-            whiteSpace: "nowrap",
-          }}>
-            {/* right-pointing triangle toward beak */}
-            <span aria-hidden style={{
+          <span
+            style={{
               position: "absolute",
-              right: -7,
-              top: "50%",
-              transform: "translateY(-50%)",
-              width: 0,
-              height: 0,
-              borderTop: "6px solid transparent",
-              borderBottom: "6px solid transparent",
-              borderLeft: "7px solid rgba(253,248,234,0.96)",
-            }} />
-            <span style={{
-              fontSize: 12,
-              fontWeight: 800,
-              color: "#3a2a08",
-              fontFamily: "system-ui, sans-serif",
-              lineHeight: 1.3,
-            }}>
+              right: 86,
+              top: 10,
+              background: "rgba(253,248,234,0.96)",
+              border: "1.5px solid rgba(160,130,60,0.35)",
+              borderRadius: 14,
+              boxShadow: "0 6px 24px rgba(40,28,6,0.2)",
+              padding: "8px 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              textAlign: "right",
+              backdropFilter: "blur(6px)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {/* right-pointing triangle toward beak */}
+            <span
+              aria-hidden
+              style={{
+                position: "absolute",
+                right: -7,
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: 0,
+                height: 0,
+                borderTop: "6px solid transparent",
+                borderBottom: "6px solid transparent",
+                borderLeft: "7px solid rgba(253,248,234,0.96)",
+              }}
+            />
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 800,
+                color: "#3a2a08",
+                fontFamily: "system-ui, sans-serif",
+                lineHeight: 1.3,
+              }}
+            >
               7 хоногийн тест
             </span>
-            <span style={{
-              fontSize: 11,
-              color: "#8a6a28",
-              fontFamily: "system-ui, sans-serif",
-              lineHeight: 1.35,
-            }}>
+            <span
+              style={{
+                fontSize: 11,
+                color: "#8a6a28",
+                fontFamily: "system-ui, sans-serif",
+                lineHeight: 1.35,
+              }}
+            >
               Дарж тест өгөөрэй 🌿
             </span>
           </span>
@@ -167,7 +187,9 @@ export function WeeklyCheckInBird() {
             overflowY: "auto",
             padding: "24px 0",
           }}
-          onClick={(e) => { if (e.target === e.currentTarget) dismiss(); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) dismiss();
+          }}
         >
           <div
             style={{
@@ -201,23 +223,27 @@ export function WeeklyCheckInBird() {
             {submitted ? (
               <div style={{ textAlign: "center", padding: "32px 0" }}>
                 <div style={{ fontSize: 44, marginBottom: 14 }}>🌿</div>
-                <p style={{
-                  fontFamily: "'Cormorant Garamond', Georgia, serif",
-                  fontSize: 21,
-                  color: "#2c2516",
-                }}>
-                  Баярлалаа. Долоо хоногийн дараа уулзая.
+                <p
+                  style={{
+                    fontFamily: "'Cormorant Garamond', Georgia, serif",
+                    fontSize: 21,
+                    color: "#2c2516",
+                  }}
+                >
+                  Баярлалаа. Долоо хоногийн дараа уулзацгаая.
                 </p>
               </div>
             ) : (
               <>
-                <h2 style={{
-                  fontFamily: "'Cormorant Garamond', Georgia, serif",
-                  fontSize: 22,
-                  fontWeight: 600,
-                  color: "#2c2516",
-                  marginBottom: 6,
-                }}>
+                <h2
+                  style={{
+                    fontFamily: "'Cormorant Garamond', Georgia, serif",
+                    fontSize: 22,
+                    fontWeight: 600,
+                    color: "#2c2516",
+                    marginBottom: 6,
+                  }}
+                >
                   7 хоногийн тест
                 </h2>
                 <p style={{ fontSize: 13, color: "#8a7a5a", marginBottom: 28 }}>

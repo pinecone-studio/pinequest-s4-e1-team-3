@@ -31,15 +31,15 @@ const WEATHER_EMOJI: Record<string, string> = {
 };
 
 const WEATHER_PHRASES: Record<string, string> = {
-  sunny: "Тунгалаг тэнгэр",
+  sunny: "Цэлмэг тэнгэр",
   partly_cloudy: "Тайван тэнгэр",
   clear_sky: "Цэлмэг тэнгэр",
   rainy: "Зөөлөн бороо",
   light_rain: "Шиврээ бороо",
-  heavy_rain: "Их бороо",
+  heavy_rain: "Ширүүн бороо",
   windy: "Тогтворгүй салхи",
   foggy: "Манантай",
-  cloudy: "Намуун үүлс",
+  cloudy: "Намуухан үүлэрхэг",
   stormy: "Хүчтэй шуурга",
 };
 
