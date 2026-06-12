@@ -1,27 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { LucideIcon } from "lucide-react";
-import {
-  Sun, CloudSun, Cloudy, CloudFog,
-  Wind, CloudDrizzle, CloudRain, CloudRainWind, CloudLightning,
-} from "lucide-react";
 import { useFetchJson } from "@/hooks/useFetchJson";
 import type { ForecastDay } from "./types";
-
-type IconEntry = { Icon: LucideIcon; color: string };
-const WEATHER_ICON_MAP: Record<string, IconEntry> = {
-  clear_sky:     { Icon: Sun,            color: "#e8aa2a" },
-  sunny:         { Icon: Sun,            color: "#e8aa2a" },
-  partly_cloudy: { Icon: CloudSun,       color: "#7aaccc" },
-  cloudy:        { Icon: Cloudy,         color: "#7a8a8a" },
-  foggy:         { Icon: CloudFog,       color: "#8a9aa0" },
-  windy:         { Icon: Wind,           color: "#6aaac0" },
-  light_rain:    { Icon: CloudDrizzle,   color: "#5890d4" },
-  rainy:         { Icon: CloudRain,      color: "#4878c4" },
-  heavy_rain:    { Icon: CloudRainWind,  color: "#3860b4" },
-  stormy:        { Icon: CloudLightning, color: "#7060c0" },
-};
 
 const WEATHER_EMOJI: Record<string, string> = {
   sunny: "☀️",
@@ -145,17 +126,8 @@ export function MoodPill() {
     return { x, y, day, dateStr };
   });
 
-  const segments: Pt[][] = [];
-  let cur: Pt[] = [];
-  for (const p of pts) {
-    if (p.y !== null) {
-      cur.push({ x: p.x, y: p.y });
-    } else {
-      if (cur.length >= 2) segments.push(cur);
-      cur = [];
-    }
-  }
-  if (cur.length >= 2) segments.push(cur);
+  const allDataPts = pts.filter((p) => p.y !== null).map((p) => ({ x: p.x, y: p.y as number }));
+  const segments: Pt[][] = allDataPts.length >= 2 ? [allDataPts] : [];
 
   const yTicks = [1, 2, 3, 4, 5];
 
@@ -311,14 +283,13 @@ export function MoodPill() {
             })}
           </svg>
 
-          {/* Lucide weather icons overlay */}
+          {/* Emoji weather icons overlay */}
           {pts.map((p) => {
             if (p.y === null || !p.day) return null;
-            const iconDef = WEATHER_ICON_MAP[p.day.weather];
-            if (!iconDef) return null;
-            const { Icon, color } = iconDef;
+            const emoji = WEATHER_EMOJI[p.day.weather];
+            if (!emoji) return null;
             const isToday = p.dateStr === todayStr;
-            const size = isToday ? 18 : 15;
+            const size = isToday ? 18 : 14;
             return (
               <div
                 key={p.dateStr}
@@ -326,12 +297,12 @@ export function MoodPill() {
                   position: "absolute",
                   left: p.x - size / 2,
                   top: p.y - size - 7,
-                  width: size,
-                  height: size,
+                  fontSize: size,
+                  lineHeight: 1,
                   pointerEvents: "none",
                 }}
               >
-                <Icon size={size} color={color} strokeWidth={1.5} />
+                {emoji}
               </div>
             );
           })}
