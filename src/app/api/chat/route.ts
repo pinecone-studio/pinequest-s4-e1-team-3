@@ -13,7 +13,7 @@
 // ============================================
 
 import { openai } from "@ai-sdk/openai";
-import { generateText } from "ai";
+import { generateText, streamText } from "ai";
 import { Prisma } from "@prisma/client";
 import { type NextRequest } from "next/server";
 import OpenAI from "openai";
@@ -180,11 +180,23 @@ export async function POST(req: NextRequest) {
     .replace(/\[STONE_PROMPT\]/g, "")
     .trim();
 
+  // Whether this turn crosses a memory-checkpoint boundary (+2 for the two
+  // new messages). Computed now; the work itself runs in onFinish below.
+  const messageCount = conversation.messages.length + 2;
+  const shouldCheckpoint =
+    messageCount - conversation.lastMemoryCheckpoint >=
+    MEMORY_CHECKPOINT_INTERVAL;
+
   // --- STEP 2: GPT-5.4 translates the English draft to Mongolian ---
+  // STREAMED so the reply appears word-by-word for a real-time chat feel.
+  // The English draft (step 1) is internal and stays non-streamed; only this
+  // final Mongolian text is sent to the client. The browser already consumes
+  // the response as a stream (DeskChatPanel reads res.body via getReader()),
+  // so no client change is needed.
   // (Egune and the direct-Mongolian approach were both dropped — direct
   // generation produced inaccurate replies; translate-from-English is the
   // validated path.)
-  const translateGen = await generateText({
+  const result = streamText({
     model: openai("gpt-5.4-2026-03-05"),
     system: GPT_TRANSLATION_SYSTEM,
     prompt: draftForTranslation,
@@ -192,36 +204,38 @@ export async function POST(req: NextRequest) {
     providerOptions: {
       openai: { reasoningEffort: "low", textVerbosity: "low" },
     },
+    // Runs once the stream completes: persist the final reply and fire the
+    // periodic memory checkpoint. Streaming to the client doesn't change what
+    // we store — the user sees exactly what we save.
+    onFinish: async ({ text }) => {
+      // Fallback to the English draft if translation somehow came back empty.
+      const finalText = text.trim() || draft.text;
+      console.log("[chat] STEP 2 — GPT translation (Mongolian):", finalText);
+
+      try {
+        await prisma.message.create({
+          data: { conversationId, role: "assistant", content: finalText },
+        });
+      } catch (err) {
+        console.error(
+          `[chat] Failed to save assistant message for ${conversationId}:`,
+          err,
+        );
+      }
+
+      if (shouldCheckpoint) {
+        runMemoryCheckpoint(conversationId).catch((err) => {
+          console.error(
+            `[chat] Memory checkpoint failed for ${conversationId}:`,
+            err,
+          );
+        });
+      }
+    },
   });
 
-  const mongolianText = translateGen.text.trim();
-  console.log("[chat] STEP 2 — GPT translation (Mongolian):", mongolianText);
-
-  // Fallback to the English draft if translation somehow came back empty.
-  const finalText = mongolianText || draft.text;
-
-  // Save the assistant message (the text the user will actually see).
-  await prisma.message.create({
-    data: { conversationId, role: "assistant", content: finalText },
-  });
-
-  // Periodic memory checkpoint (+2 for this turn's two new messages).
-  const messageCount = conversation.messages.length + 2;
-  if (
-    messageCount - conversation.lastMemoryCheckpoint >=
-    MEMORY_CHECKPOINT_INTERVAL
-  ) {
-    runMemoryCheckpoint(conversationId).catch((err) => {
-      console.error(
-        `[chat] Memory checkpoint failed for ${conversationId}:`,
-        err,
-      );
-    });
-  }
-
-  return new Response(finalText, {
+  return result.toTextStreamResponse({
     headers: {
-      "Content-Type": "text/plain; charset=utf-8",
       ...(hasStonePrompt ? { "X-Stone-Prompt": "true" } : {}),
     },
   });

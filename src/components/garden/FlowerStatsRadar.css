@@ -1,0 +1,37 @@
+/* Styles for FlowerStatsRadar.tsx — kept beside the component so the
+   pentagon renders correctly wherever it's used (EQ dashboard, desk),
+   without depending on a parent stylesheet. Tuned for a light/cream card. */
+
+.fs-radar {
+  width: min(300px, 92%);
+  height: auto;
+  overflow: visible;
+}
+.fs-radar-ring {
+  fill: none;
+  stroke: rgba(74, 67, 52, 0.14);
+  stroke-width: 1;
+}
+.fs-radar-spoke {
+  stroke: rgba(74, 67, 52, 0.22);
+  stroke-width: 1;
+}
+.fs-radar-outline {
+  fill: none;
+  stroke: rgba(74, 67, 52, 0.5);
+  stroke-width: 2;
+}
+.fs-radar-area {
+  fill: rgba(120, 165, 110, 0.34);
+  stroke: rgba(95, 145, 85, 0.95);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.fs-radar-label {
+  fill: #4a4334;
+  font-size: 11px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: rgba(251, 246, 231, 0.9);
+  stroke-width: 2.5px;
+}
