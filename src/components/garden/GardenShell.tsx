@@ -24,6 +24,7 @@ import { WorkshopPanel } from "./WorkshopPanel";
 import { BirdMessagesPanel } from "./BirdMessagesPanel";
 import { TaskTreePanel } from "./TaskTreePanel";
 import { ReflectionPanel } from "./ReflectionPanel";
+import { WeeklyCheckInBird } from "./WeeklyCheckInBird";
 import {
   TutorialProvider,
   useTutorial,
@@ -69,7 +70,9 @@ function GardenShellContent({ userName }: { userName: string }) {
   const [birdRefetch, setBirdRefetch] = useState(0);
   const [gardenRefetch, setGardenRefetch] = useState(0);
   const [expectingTask, setExpectingTask] = useState(false);
-  const [taskConversationId, setTaskConversationId] = useState<string | null>(null);
+  const [taskConversationId, setTaskConversationId] = useState<string | null>(
+    null,
+  );
   const { user } = useUser();
   const panelRef = useRef(panel);
   useEffect(() => {
@@ -347,11 +350,14 @@ function GardenShellContent({ userName }: { userName: string }) {
             boxShadow: "0 6px 18px rgba(0,0,0,0.22)",
           }}
         >
-          <span aria-hidden style={{ fontSize: 13 }}>↻</span>
+          <span aria-hidden style={{ fontSize: 13 }}>
+            ↻
+          </span>
           Заавар дахин үзэх
         </button>
       )}
 
+      <WeeklyCheckInBird />
       <TutorialOverlay panel={panel} />
     </div>
   );

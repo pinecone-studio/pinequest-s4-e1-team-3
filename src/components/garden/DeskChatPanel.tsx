@@ -37,7 +37,6 @@ type ConvItem = {
   firstMessage: string | null;
 };
 
-
 // When the user has no flower yet, the desk chat starts a conversation
 // automatically on their first message using this species as the default
 // companion (matches "Sage"). Falls back to the first available species.
@@ -97,7 +96,6 @@ export function DeskChatPanel({
   const companionName = species
     ? (SPECIES_NAME_MN[species.key] ?? species.name)
     : "Дэмжигч";
-
 
   // Notes for the corkboard (newest two) + the drawer (archived).
   const { data: pinned, refetch: refetchNotes } =
@@ -319,6 +317,17 @@ export function DeskChatPanel({
       }
       return prev;
     });
+    // Tutorial: the companion has finished replying → now point at "end & save".
+    if (
+      tutorialActive &&
+      TUTORIAL_STEPS[currentStep]?.target === "chat-input"
+    ) {
+      advanceStep();
+    }
+
+    if (res.headers.get("X-Stone-Prompt") === "true") {
+      setShowStonePrompt(true);
+    }
 
     // Voice path: play TTS after reply arrives
     if (withVoice && fullReply) {
@@ -566,7 +575,9 @@ export function DeskChatPanel({
                           {conv.firstMessage ?? conv.summary ?? "—"}
                         </p>
                         <p className="dc-history-meta">
-                          {SPECIES_NAME_MN[conv.flower.species.key] ?? conv.flower.species.name} · {dateStr}
+                          {SPECIES_NAME_MN[conv.flower.species.key] ??
+                            conv.flower.species.name}{" "}
+                          · {dateStr}
                           {conv.isCompleted ? " · 🌸" : ""}
                         </p>
                       </div>
@@ -645,7 +656,10 @@ export function DeskChatPanel({
                   >
                     <div className="dc-bubble">
                       {m.content || (
-                        <span className="dc-typing" aria-label={`${companionName} бодож байна`}>
+                        <span
+                          className="dc-typing"
+                          aria-label={`${companionName} бодож байна`}
+                        >
                           <span />
                           <span />
                           <span />
@@ -937,7 +951,8 @@ export function DeskChatPanel({
             <div className="dc-drawer-open">
               {archivedCount === 0 ? (
                 <p className="dc-drawer-empty">
-                  Шургуулга хоосон байна — тэмдэглэлээ энд хадгалахын тулд хийгээрэй.
+                  Шургуулга хоосон байна — тэмдэглэлээ энд хадгалахын тулд
+                  хийгээрэй.
                 </p>
               ) : (
                 <div className="dc-drawer-notes">
@@ -985,7 +1000,8 @@ export function DeskChatPanel({
               <div className="dc-corkboard">
                 {pinnedNotes.length === 0 ? (
                   <p className="dc-cork-empty">
-                    Одоогоор тэмдэглэл алга — доорх “✎ Тэмдэглэл хавчуулах”-ыг ашиглана уу.
+                    Одоогоор тэмдэглэл алга — доорх “✎ Тэмдэглэл хавчуулах”-ыг
+                    ашиглана уу.
                   </p>
                 ) : (
                   pinnedNotes.map((note, i) => (

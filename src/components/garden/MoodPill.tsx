@@ -2,6 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useAnimationControls, useReducedMotion } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
+import {
+  Sun,
+  CloudSun,
+  Cloudy,
+  CloudFog,
+  Wind,
+  CloudDrizzle,
+  CloudRain,
+  CloudRainWind,
+  CloudLightning,
+} from "lucide-react";
 import { useFetchJson } from "@/hooks/useFetchJson";
 import type { ForecastDay } from "./types";
 
@@ -72,14 +84,17 @@ function getCurrentWeekFromMonday(): string[] {
   });
 }
 
-
 // SVG layout
-const W = 306, H = 118;
-const PL = 26, PR = 14, PT = 20, PB = 10;
+const W = 306,
+  H = 118;
+const PL = 26,
+  PR = 14,
+  PT = 20,
+  PB = 10;
 const DW = W - PL - PR;
 const DH = H - PT - PB;
-const AX = PL;           // x of Y-axis line
-const AY = PT + DH;      // y of X-axis line
+const AX = PL; // x of Y-axis line
+const AY = PT + DH; // y of X-axis line
 
 function scoreToY(score: number): number {
   // score 1 (sunny) → bottom (AY), score 5 (stormy) → top (PT)
@@ -109,13 +124,17 @@ function smoothPath(pts: Pt[]): string {
 }
 
 export function MoodPill() {
-  const { data: apiData } = useFetchJson<ForecastDay[]>("/api/forecast?period=weekly");
+  const { data: apiData } = useFetchJson<ForecastDay[]>(
+    "/api/forecast?period=weekly",
+  );
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const reduceMotion = useReducedMotion();
   const pulseControls = useAnimationControls();
 
-  const dataMap = Object.fromEntries((apiData ?? []).map((d: ForecastDay) => [d.date, d]));
+  const dataMap = Object.fromEntries(
+    (apiData ?? []).map((d: ForecastDay) => [d.date, d]),
+  );
   const days = getCurrentWeekFromMonday();
   const todayStr = new Date().toISOString().slice(0, 10);
   const today = dataMap[todayStr] ?? null;
@@ -139,7 +158,12 @@ export function MoodPill() {
     prevWeather.current = w;
   }, [today?.weather, reduceMotion, pulseControls]);
 
-  type PtData = { x: number; y: number | null; day: ForecastDay | undefined; dateStr: string };
+  type PtData = {
+    x: number;
+    y: number | null;
+    day: ForecastDay | undefined;
+    dateStr: string;
+  };
   const pts: PtData[] = days.map((dateStr: string, i: number) => {
     const day = dataMap[dateStr];
     const x = AX + (i / (days.length - 1)) * DW;
@@ -148,7 +172,9 @@ export function MoodPill() {
     return { x, y, day, dateStr };
   });
 
-  const allDataPts = pts.filter((p) => p.y !== null).map((p) => ({ x: p.x, y: p.y as number }));
+  const allDataPts = pts
+    .filter((p) => p.y !== null)
+    .map((p) => ({ x: p.x, y: p.y as number }));
   const segments: Pt[][] = allDataPts.length >= 2 ? [allDataPts] : [];
 
   const yTicks = [1, 2, 3, 4, 5];
@@ -163,183 +189,218 @@ export function MoodPill() {
         layout={!reduceMotion}
         animate={pulseControls}
       >
-        <span aria-hidden>{today ? (WEATHER_EMOJI[today.weather] ?? "🌥️") : "🌥️"}</span>
+        <span aria-hidden>
+          {today ? (WEATHER_EMOJI[today.weather] ?? "🌥️") : "🌥️"}
+        </span>
         <span className="value">
-          {today ? (WEATHER_PHRASES[today.weather] ?? "Тайван тэнгэр") : "Тайван тэнгэр"}
+          {today
+            ? (WEATHER_PHRASES[today.weather] ?? "Тайван тэнгэр")
+            : "Тайван тэнгэр"}
         </span>
       </motion.button>
 
       {open && (
-        <div className="garden-mood-dropdown" style={{ padding: "14px 14px 10px", minWidth: W + 28 }}>
-          <p className="garden-mood-dropdown-eyebrow" style={{ marginBottom: 10 }}>
+        <div
+          className="garden-mood-dropdown"
+          style={{ padding: "14px 14px 10px", minWidth: W + 28 }}
+        >
+          <p
+            className="garden-mood-dropdown-eyebrow"
+            style={{ marginBottom: 10 }}
+          >
             Өнгөрсөн долоо хоног
           </p>
 
           <div style={{ position: "relative", width: W, height: H }}>
-          <svg width={W} height={H} style={{ display: "block", overflow: "visible" }}>
+            <svg
+              width={W}
+              height={H}
+              style={{ display: "block", overflow: "visible" }}
+            >
+              {/* Horizontal grid lines + Y-axis tick labels */}
+              {yTicks.map((score) => {
+                const y = scoreToY(score);
+                return (
+                  <g key={score}>
+                    <line
+                      x1={AX}
+                      y1={y}
+                      x2={W - PR}
+                      y2={y}
+                      stroke="rgba(58,58,44,0.1)"
+                      strokeWidth={1}
+                    />
+                    {/* Tick mark on axis */}
+                    <line
+                      x1={AX - 3}
+                      y1={y}
+                      x2={AX}
+                      y2={y}
+                      stroke="rgba(58,58,44,0.4)"
+                      strokeWidth={1}
+                    />
+                    {/* Label */}
+                    <text
+                      x={AX - 6}
+                      y={y + 4}
+                      textAnchor="end"
+                      fontSize={9}
+                      fill="rgba(58,58,44,0.65)"
+                      style={{ userSelect: "none" }}
+                    >
+                      {score}
+                    </text>
+                  </g>
+                );
+              })}
 
-            {/* Horizontal grid lines + Y-axis tick labels */}
-            {yTicks.map((score) => {
-              const y = scoreToY(score);
-              return (
-                <g key={score}>
-                  <line
-                    x1={AX} y1={y} x2={W - PR} y2={y}
-                    stroke="rgba(58,58,44,0.1)"
-                    strokeWidth={1}
-                  />
-                  {/* Tick mark on axis */}
-                  <line
-                    x1={AX - 3} y1={y} x2={AX} y2={y}
-                    stroke="rgba(58,58,44,0.4)"
-                    strokeWidth={1}
-                  />
-                  {/* Label */}
-                  <text
-                    x={AX - 6}
-                    y={y + 4}
-                    textAnchor="end"
-                    fontSize={9}
-                    fill="rgba(58,58,44,0.65)"
-                    style={{ userSelect: "none" }}
-                  >
-                    {score}
-                  </text>
-                </g>
-              );
-            })}
-
-            {/* Vertical grid lines at each day */}
-            {pts.map((p) => (
-              <line
-                key={p.dateStr}
-                x1={p.x} y1={PT} x2={p.x} y2={AY}
-                stroke="rgba(58,58,44,0.07)"
-                strokeWidth={1}
-              />
-            ))}
-
-            {/* Y-axis line */}
-            <line
-              x1={AX} y1={PT - 10} x2={AX} y2={AY}
-              stroke="rgba(58,58,44,0.4)"
-              strokeWidth={1.5}
-            />
-            {/* Y-axis arrow (up) */}
-            <polygon
-              points={`${AX - 4},${PT - 8} ${AX},${PT - 16} ${AX + 4},${PT - 8}`}
-              fill="rgba(58,58,44,0.4)"
-            />
-
-            {/* X-axis line */}
-            <line
-              x1={AX} y1={AY} x2={W - PR + 10} y2={AY}
-              stroke="rgba(58,58,44,0.4)"
-              strokeWidth={1.5}
-            />
-            {/* X-axis arrow (right) */}
-            <polygon
-              points={`${W - PR + 8},${AY - 4} ${W - PR + 16},${AY} ${W - PR + 8},${AY + 4}`}
-              fill="rgba(58,58,44,0.4)"
-            />
-
-            {/* Smooth line through data points */}
-            {segments.map((seg, i) => (
-              <path
-                key={i}
-                d={smoothPath(seg)}
-                fill="none"
-                stroke="rgba(109,191,158,0.9)"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            ))}
-
-            {/* Dots + hover tooltip */}
-            {pts.map((p) => {
-              if (p.y === null) return null;
-              const isToday = p.dateStr === todayStr;
-              const isHov = hovered === p.dateStr;
-
-              return (
-                <g
+              {/* Vertical grid lines at each day */}
+              {pts.map((p) => (
+                <line
                   key={p.dateStr}
-                  onMouseEnter={() => setHovered(p.dateStr)}
-                  onMouseLeave={() => setHovered(null)}
-                  style={{ cursor: "default" }}
-                >
-                  {/* Dot */}
-                  <circle
-                    cx={p.x}
-                    cy={p.y}
-                    r={isToday ? 5.5 : 3.5}
-                    fill={p.day?.rippleColor ?? "#6dbf9e"}
-                    stroke={isToday ? "rgba(58,58,44,0.5)" : "rgba(58,58,44,0.15)"}
-                    strokeWidth={isToday ? 2 : 1}
-                  />
+                  x1={p.x}
+                  y1={PT}
+                  x2={p.x}
+                  y2={AY}
+                  stroke="rgba(58,58,44,0.07)"
+                  strokeWidth={1}
+                />
+              ))}
 
-                  {/* Hover tooltip */}
-                  {isHov && p.day && (
-                    <g>
-                      <rect
-                        x={p.x - 32}
-                        y={p.y + 9}
-                        width={64}
-                        height={18}
-                        rx={5}
-                        fill="rgba(58,58,44,0.88)"
-                      />
-                      <text
-                        x={p.x}
-                        y={p.y + 22}
-                        textAnchor="middle"
-                        fontSize={10}
-                        fill="#f7f1e4"
-                        style={{ userSelect: "none" }}
-                      >
-                        {moodPhrase(p.day.mood)}
-                      </text>
-                    </g>
-                  )}
-                </g>
+              {/* Y-axis line */}
+              <line
+                x1={AX}
+                y1={PT - 10}
+                x2={AX}
+                y2={AY}
+                stroke="rgba(58,58,44,0.4)"
+                strokeWidth={1.5}
+              />
+              {/* Y-axis arrow (up) */}
+              <polygon
+                points={`${AX - 4},${PT - 8} ${AX},${PT - 16} ${AX + 4},${PT - 8}`}
+                fill="rgba(58,58,44,0.4)"
+              />
+
+              {/* X-axis line */}
+              <line
+                x1={AX}
+                y1={AY}
+                x2={W - PR + 10}
+                y2={AY}
+                stroke="rgba(58,58,44,0.4)"
+                strokeWidth={1.5}
+              />
+              {/* X-axis arrow (right) */}
+              <polygon
+                points={`${W - PR + 8},${AY - 4} ${W - PR + 16},${AY} ${W - PR + 8},${AY + 4}`}
+                fill="rgba(58,58,44,0.4)"
+              />
+
+              {/* Smooth line through data points */}
+              {segments.map((seg, i) => (
+                <path
+                  key={i}
+                  d={smoothPath(seg)}
+                  fill="none"
+                  stroke="rgba(109,191,158,0.9)"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ))}
+
+              {/* Dots + hover tooltip */}
+              {pts.map((p) => {
+                if (p.y === null) return null;
+                const isToday = p.dateStr === todayStr;
+                const isHov = hovered === p.dateStr;
+
+                return (
+                  <g
+                    key={p.dateStr}
+                    onMouseEnter={() => setHovered(p.dateStr)}
+                    onMouseLeave={() => setHovered(null)}
+                    style={{ cursor: "default" }}
+                  >
+                    {/* Dot */}
+                    <circle
+                      cx={p.x}
+                      cy={p.y}
+                      r={isToday ? 5.5 : 3.5}
+                      fill={p.day?.rippleColor ?? "#6dbf9e"}
+                      stroke={
+                        isToday ? "rgba(58,58,44,0.5)" : "rgba(58,58,44,0.15)"
+                      }
+                      strokeWidth={isToday ? 2 : 1}
+                    />
+
+                    {/* Hover tooltip */}
+                    {isHov && p.day && (
+                      <g>
+                        <rect
+                          x={p.x - 32}
+                          y={p.y + 9}
+                          width={64}
+                          height={18}
+                          rx={5}
+                          fill="rgba(58,58,44,0.88)"
+                        />
+                        <text
+                          x={p.x}
+                          y={p.y + 22}
+                          textAnchor="middle"
+                          fontSize={10}
+                          fill="#f7f1e4"
+                          style={{ userSelect: "none" }}
+                        >
+                          {moodPhrase(p.day.mood)}
+                        </text>
+                      </g>
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+
+            {/* Emoji weather icons overlay */}
+            {pts.map((p) => {
+              if (p.y === null || !p.day) return null;
+              const emoji = WEATHER_EMOJI[p.day.weather];
+              if (!emoji) return null;
+              const isToday = p.dateStr === todayStr;
+              const size = isToday ? 18 : 14;
+              return (
+                <div
+                  key={p.dateStr}
+                  style={{
+                    position: "absolute",
+                    left: p.x - size / 2,
+                    top: p.y - size - 7,
+                    fontSize: size,
+                    lineHeight: 1,
+                    pointerEvents: "none",
+                  }}
+                >
+                  {emoji}
+                </div>
               );
             })}
-          </svg>
-
-          {/* Emoji weather icons overlay */}
-          {pts.map((p) => {
-            if (p.y === null || !p.day) return null;
-            const emoji = WEATHER_EMOJI[p.day.weather];
-            if (!emoji) return null;
-            const isToday = p.dateStr === todayStr;
-            const size = isToday ? 18 : 14;
-            return (
-              <div
-                key={p.dateStr}
-                style={{
-                  position: "absolute",
-                  left: p.x - size / 2,
-                  top: p.y - size - 7,
-                  fontSize: size,
-                  lineHeight: 1,
-                  pointerEvents: "none",
-                }}
-              >
-                {emoji}
-              </div>
-            );
-          })}
           </div>
 
           {/* Day labels — each centered exactly under its dot */}
-          <div style={{ position: "relative", width: W, height: 14, marginTop: 3 }}>
+          <div
+            style={{ position: "relative", width: W, height: 14, marginTop: 3 }}
+          >
             {days.map((dateStr: string, i: number) => {
               const x = AX + (i / (days.length - 1)) * DW;
               const isToday = dateStr === todayStr;
-              const label = new Date(dateStr + "T12:00:00").toLocaleDateString(undefined, {
-                weekday: "narrow",
-              });
+              const label = new Date(dateStr + "T12:00:00").toLocaleDateString(
+                undefined,
+                {
+                  weekday: "narrow",
+                },
+              );
               return (
                 <div
                   key={dateStr}

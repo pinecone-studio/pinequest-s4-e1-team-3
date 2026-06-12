@@ -67,16 +67,8 @@ export function ReflectionPanel({ onClose }: { onClose: () => void }) {
     );
   }
 
-  // --- Status / button states ---
   const available = data?.available ?? false;
-  const hasEverTaken = data?.hasEverTaken ?? false;
-  const days = data?.daysUntilNext ?? 0;
 
-  const buttonLabel = !hasEverTaken
-    ? "Долоо хоногийн эргэцүүлэл эхлүүлэх"
-    : available
-      ? "Энэ долоо хоногийн эргэцүүлэл эхлүүлэх"
-      : `Дараагийн эргэцүүлэл ${days} хоногийн дараа`;
 
   return (
     <PanelShell
@@ -101,14 +93,6 @@ export function ReflectionPanel({ onClose }: { onClose: () => void }) {
             : "Чи саяхан эргэцүүлсэн байна. Бяцхан амсхийгээд, дараа долоо хоногт дахин уулзъя."}
         </p>
 
-        <button
-          type="button"
-          onClick={() => available && setTaking(true)}
-          disabled={!available}
-          style={{ ...startBtn, ...(available ? null : startDisabled) }}
-        >
-          {buttonLabel}
-        </button>
       </div>
     </PanelShell>
   );
@@ -142,5 +126,3 @@ const cancel: React.CSSProperties = { display: "block", margin: "16px auto 0", b
 const statusWrap: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 16, alignItems: "center", textAlign: "center", padding: "8px 4px 4px" };
 const statusText: React.CSSProperties = { fontSize: 14.5, color: "#3a3228", lineHeight: 1.6, maxWidth: 460, margin: 0 };
 const doneNote: React.CSSProperties = { fontSize: 13.5, color: "#5a6e54", background: "rgba(122,158,114,0.14)", border: "1px solid rgba(122,158,114,0.3)", borderRadius: 12, padding: "10px 14px", lineHeight: 1.5, margin: 0, maxWidth: 460 };
-const startBtn: React.CSSProperties = { padding: "13px 26px", borderRadius: 14, border: "none", background: "#7a9e72", color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.02em", boxShadow: "0 6px 18px rgba(122,158,114,0.4)" };
-const startDisabled: React.CSSProperties = { background: "rgba(122,158,114,0.35)", cursor: "not-allowed", boxShadow: "none" };
