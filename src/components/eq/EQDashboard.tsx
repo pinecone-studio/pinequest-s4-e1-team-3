@@ -15,6 +15,7 @@
 
 import type { EQArea } from "@prisma/client";
 import { useFetchJson } from "@/hooks/useFetchJson";
+import { FlowerStatsRadar } from "@/components/garden/FlowerStatsRadar";
 
 type EQLevel = "needs_more_support" | "developing" | "stable" | "strong_area";
 
@@ -40,12 +41,6 @@ type ProfileData =
       trend: Record<string, Trend> | null;
     };
 
-const TREND_META: Record<Trend, { glyph: string; color: string }> = {
-  up: { glyph: "↑", color: "#5a8a4f" },
-  same: { glyph: "→", color: "#9a8f7d" },
-  down: { glyph: "↓", color: "#c2865a" },
-};
-
 const AREA_META: Record<EQArea, { label: string; color: string }> = {
   SELF_AWARENESS: { label: "Өөрийгөө таних", color: "#e0b32f" },
   SELF_REGULATION: { label: "Сэтгэлээ тайвшруулах", color: "#9a8fd0" },
@@ -54,14 +49,7 @@ const AREA_META: Record<EQArea, { label: string; color: string }> = {
   SOCIAL_SKILLS: { label: "Харилцаа", color: "#e07ea3" },
 };
 
-const LEVEL_MN: Record<EQLevel, string> = {
-  needs_more_support: "Дэмжлэг хэрэгтэй",
-  developing: "Хөгжиж буй",
-  stable: "Тогтвортой",
-  strong_area: "Хүчтэй тал",
-};
-
-// Level → number of filled segments (out of 4).
+// Level → how far the radar axis is filled (out of 4).
 const LEVEL_RANK: Record<EQLevel, number> = {
   needs_more_support: 1,
   developing: 2,
@@ -104,44 +92,16 @@ export function EQDashboard({ refreshKey = 0 }: { refreshKey?: number }) {
           </span>
         </div>
 
-        {/* Per-area level bars (4 segments each) */}
-        <div style={bars}>
-          {data.areas.map((a) => {
-            const meta = AREA_META[a.area];
-            const filled = LEVEL_RANK[a.level];
-            const tr = data.trend?.[a.key];
-            return (
-              <div key={a.key} style={barRow}>
-                <div style={barHead}>
-                  <span style={barLabel}>{meta.label}</span>
-                  <span style={barRight}>
-                    {tr && (
-                      <span
-                        style={{ ...trendGlyph, color: TREND_META[tr].color }}
-                        title="Өнгөрсөн долоо хоногтой харьцуулахад"
-                      >
-                        {TREND_META[tr].glyph}
-                      </span>
-                    )}
-                    <span style={{ ...barLevel, color: meta.color }}>
-                      {LEVEL_MN[a.level]}
-                    </span>
-                  </span>
-                </div>
-                <div style={segWrap}>
-                  {[0, 1, 2, 3].map((i) => (
-                    <span
-                      key={i}
-                      style={{
-                        ...seg,
-                        background: i < filled ? meta.color : "rgba(58,50,40,0.12)",
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+        {/* Pentagon radar — one axis per Goleman area, filled to its level */}
+        <div style={radarWrap}>
+          <FlowerStatsRadar
+            axes={data.areas.map((a) => ({
+              label: AREA_META[a.area].label,
+              value: LEVEL_RANK[a.level],
+              color: AREA_META[a.area].color,
+            }))}
+            max={4}
+          />
         </div>
       </div>
     </div>
@@ -196,12 +156,8 @@ const summary: React.CSSProperties = {
 };
 const summaryItem: React.CSSProperties = { fontSize: 12.5, color: "#3a3228" };
 
-const bars: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 11 };
-const barRow: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 5 };
-const barHead: React.CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "baseline" };
-const barLabel: React.CSSProperties = { fontSize: 13, fontWeight: 700, color: "#3a3228" };
-const barRight: React.CSSProperties = { display: "flex", alignItems: "baseline", gap: 6 };
-const trendGlyph: React.CSSProperties = { fontSize: 13, fontWeight: 800 };
-const barLevel: React.CSSProperties = { fontSize: 11, fontWeight: 700 };
-const segWrap: React.CSSProperties = { display: "flex", gap: 4 };
-const seg: React.CSSProperties = { flex: 1, height: 8, borderRadius: 4, transition: "background 0.3s ease" };
+const radarWrap: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "center",
+  margin: "2px 0 2px",
+};
