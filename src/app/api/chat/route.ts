@@ -28,12 +28,6 @@ import {
   MEMORY_CHECKPOINT_INTERVAL,
 } from "@/lib/memoryPipeline";
 
-// Egune client (OpenAI SDK pointed at Egune's chat completions API).
-const eguneClient = new OpenAI({
-  baseURL: process.env.EGUNE_BASE_URL, // https://api.egune.com/v1
-  apiKey: process.env.EGUNE_API_KEY,
-});
-
 // OpenAI client used ONLY for embeddings (memory retrieval). Do not remove.
 const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -44,23 +38,28 @@ const ENGLISH_OUTPUT_OVERRIDE = `
 OUTPUT LANGUAGE OVERRIDE (highest priority):
 Ignore all earlier instructions about writing in Mongolian. Write your reply in ENGLISH only. Your reply will be translated into Mongolian by another system afterwards. Keep everything else the same: stay short, warm, casual, follow the flower focus, use at most one emoji. Do not mention the translation step.`;
 
-const TRANSLATION_MARKER = "Монгол орчуулга:";
+// GPT-5.4 translates the English draft to natural spoken Mongolian.
+const GPT_TRANSLATION_SYSTEM = `Чи англи текстийг ярианы монгол руу орчуулна.
 
-// Remove leaked chain-of-thought from Egune's output.
-function cleanTranslation(raw: string): string {
-  let text = raw;
+Зорилго:
+- Үгчлэхгүй. Монгол хүн өдөр тутмын яриандаа хэлэхээр байгалийн болго.
+- Гэхдээ эх текстийн утга, мэдрэмж, өнгө аясыг яг хадгал.
 
-  // Qwen-style reasoning: everything before </think> is thinking.
-  const thinkEnd = text.lastIndexOf("</think>");
-  if (thinkEnd !== -1) text = text.slice(thinkEnd + "</think>".length);
+Дүрэм:
+- "чи/чамд/чиний" хэрэглэ, "Та/танд/таны" биш.
+- Эх текстэд байхгүй шинэ санаа, зөвлөгөө, дүгнэлт, мэдрэмж бүү нэм. Бүү драмжуул.
+- Өгүүлбэрийн тоог эхтэй ойролцоо байлга. Эхэд emoji байхгүй бол бүү нэм.
+- Сонголтын асуулт ("more like X, or more like Y") бол "эсвэл" хэрэглэж сонгуул. "X ч, Y ч" гэж хоёуланг нь баталж болохгүй.
+- Зөөлрүүлэгч бөөмс (даа/л доо/юм/шиг) нэг өгүүлбэрт хэт олон давхарлаж болохгүй. "байна уу даа" гэх давхар хэлбэрээс зайлсхий.
 
-  // If the model echoed our completion anchor, keep only what follows it.
-  const markerIdx = text.lastIndexOf(TRANSLATION_MARKER);
-  if (markerIdx !== -1)
-    text = text.slice(markerIdx + TRANSLATION_MARKER.length);
+Жишээ:
+EN: That sounds really uncomfortable. Does it feel more like fear, or more like shame?
+MN: Ёстой эвгүй л юм байна. Айдас шиг үү, эсвэл ичмээр санагдаж байна уу?
 
-  return text.trim();
-}
+EN: Ah... after saying that, it probably feels heavy inside. There may still be a way to fix it.
+MN: Өө... тэгж хэлснийхээ дараа дотор чинь хүндхэн байгаа байх. Гэсэн ч засах арга бий.
+
+Зөвхөн монгол орчуулгыг бич. Тайлбар, quotation mark бүү бич.`;
 
 export async function POST(req: NextRequest) {
   const { conversationId, message } = await req.json();
@@ -181,55 +180,24 @@ export async function POST(req: NextRequest) {
     .replace(/\[STONE_PROMPT\]/g, "")
     .trim();
 
-  // --- STEP 2: Egune translates to Mongolian (non-streaming) ---
-  const completion = await eguneClient.chat.completions.create({
-    model: "egune-nano",
-    temperature: 0.1,
-    max_tokens: maxTokens + 1024, // headroom in case thinking can't be disabled
-    messages: [
-      {
-        role: "user",
-        content: `Доорх англи текстийг ярианы монгол руу орчуул. Үгчлэхгүй — монгол хүн ярихдаа хэлэх жамаар, доорх жишээнүүдийн адил буулга.
-
-Дүрэм:
-- "чи/чамд" хэрэглэ, "Та" биш.
-- Утгыг яг хадгал: шинэ санаа/мэдрэмж бүү нэм, бүү драмжуул. Өгүүлбэр болон emoji-н тоог эхтэй ойролцоо байлга.
-- Сонголтын асуулт ("more like X, or more like Y") бол "эсвэл" хэрэглэж сонгуул — "X ч, Y ч" гэж хоёуланг нь батлахгүй.
-- Зөөлрүүлэгч бөөмс (даа/л доо/юм) нэг өгүүлбэрт нэгээс илүүгүй. "байна уу даа" гэж бүү давхарла.
-
-Жишээ:
-EN: That sounds really uncomfortable. Does it feel more like fear, or more like shame?
-MN: Ёстой эвгүй л юм байна. Айдас шиг мэдрэгдэж байна УУ, эсвэл ичмээр санагдаж байна уу?
-
-EN: Yeah, so it feels more like shame there. Do you feel like you understand the feeling a little better now?
-MN: Тийм ээ, жоохон ичиж байгаа юм байна. Одоо тэр мэдрэмжээ арай дээр ойлгож байна уу?
-
-EN: Ah... after saying that, it probably feels heavy inside. There may still be a way to fix it.
-MN: Өө... тэгж хэлснийхээ дараа дотор чинь хүндхэн байгаа байх. Гэсэн ч засах арга бий.
-
-Зөвхөн орчуулгыг бич, өөр юм бичихгүй.
-
-Англи текст:
-"""
-${draftForTranslation}
-"""
-
-${TRANSLATION_MARKER}`,
-      },
-    ],
-    // Standard vLLM/Qwen param to disable thinking — harmless if Egune ignores it.
-    // @ts-expect-error Egune-specific parameter
-    chat_template_kwargs: { enable_thinking: false },
+  // --- STEP 2: GPT-5.4 translates the English draft to Mongolian ---
+  // (Egune and the direct-Mongolian approach were both dropped — direct
+  // generation produced inaccurate replies; translate-from-English is the
+  // validated path.)
+  const translateGen = await generateText({
+    model: openai("gpt-5.4-2026-03-05"),
+    system: GPT_TRANSLATION_SYSTEM,
+    prompt: draftForTranslation,
+    maxOutputTokens: maxTokens + 256,
+    providerOptions: {
+      openai: { reasoningEffort: "low", textVerbosity: "low" },
+    },
   });
 
-  const mongolianText = cleanTranslation(
-    completion.choices[0]?.message?.content ?? "",
-  );
+  const mongolianText = translateGen.text.trim();
+  console.log("[chat] STEP 2 — GPT translation (Mongolian):", mongolianText);
 
-  console.log("[chat] STEP 2 — Egune translation (Mongolian):", mongolianText);
-
-  // Fallback: if cleaning somehow produced nothing, send the English draft
-  // rather than a blank bubble.
+  // Fallback to the English draft if translation somehow came back empty.
   const finalText = mongolianText || draft.text;
 
   // Save the assistant message (the text the user will actually see).
