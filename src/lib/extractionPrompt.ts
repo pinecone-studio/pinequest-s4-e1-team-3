@@ -43,7 +43,13 @@ export const FLOWER_KEY_TO_ENUM: Record<FlowerKey, FlowerEnum> = {
   rose: "ROSE",
 };
 
-const FLOWER_ENUMS: readonly FlowerEnum[] = ["DAISY", "LAVENDER", "SUNFLOWER", "IRIS", "ROSE"];
+const FLOWER_ENUMS: readonly FlowerEnum[] = [
+  "DAISY",
+  "LAVENDER",
+  "SUNFLOWER",
+  "IRIS",
+  "ROSE",
+];
 
 export type EQDomain =
   | "SELF_AWARENESS"
@@ -135,9 +141,20 @@ const THOUGHT_PATTERNS: readonly ThoughtPattern[] = [
   "none",
 ];
 
-export type RiskType = "self_harm" | "harm_to_others" | "abuse" | "crisis" | "none";
+export type RiskType =
+  | "self_harm"
+  | "harm_to_others"
+  | "abuse"
+  | "crisis"
+  | "none";
 
-const RISK_TYPES: readonly RiskType[] = ["self_harm", "harm_to_others", "abuse", "crisis", "none"];
+const RISK_TYPES: readonly RiskType[] = [
+  "self_harm",
+  "harm_to_others",
+  "abuse",
+  "crisis",
+  "none",
+];
 
 export interface SuggestedPracticeTask {
   shouldSuggest: boolean;
@@ -378,17 +395,45 @@ const INSIGHT_SECTION = `INSIGHT / NEXT STEP
 Both are null if the conversation didn't reach that point.`;
 
 const PRACTICE_TASK_SECTION = `SUGGESTED PRACTICE TASK
-This is NOT implementing the Task Tree — it is only preparing a possible tiny task for later. Set "suggestedPracticeTask.shouldSuggest" = true ONLY when a task would genuinely help. A task must be: tiny, optional, emotionally safe, connected to this conversation, based on the primary or a support flower, and doable within minutes or by the end of the day. Do not suggest a task when the user mainly needed emotional support and no action fits.
+This is NOT implementing the Task Tree — it is only preparing a possible tiny task for later. Set "suggestedPracticeTask.shouldSuggest" = true ONLY when a task would genuinely help.
 
-Examples by flower:
-  DAISY:     { "title": "Name the feeling", "description": "Write one sentence: 'I feel ___ because ___.'", "flower": "DAISY", "reason": "The user seemed unsure what they were feeling." }
-  LAVENDER:  { "title": "Pause before replying", "description": "Wait 10 minutes before sending the message.", "flower": "LAVENDER", "reason": "The user wanted to react while emotionally intense." }
-  SUNFLOWER: { "title": "One small next step", "description": "Choose one tiny action that would make tomorrow easier.", "flower": "SUNFLOWER", "reason": "The user felt directionless and unmotivated." }
-  IRIS:      { "title": "One other explanation", "description": "Write one possible explanation that is not self-blaming.", "flower": "IRIS", "reason": "The user assumed the other person's silence was personal." }
-  ROSE:      { "title": "Calm message draft", "description": "Draft one short message that is honest but not pressuring.", "flower": "ROSE", "reason": "The user wanted to communicate but needed calmer wording." }
+WHO THIS IS FOR: the task is something the USER will do in their own life — not an instruction for an AI, not a question to ask "in chat". It must be concrete, doable in under a minute, require no special skill, and (where a person is involved) reference the ACTUAL person/situation from this conversation — never generic.
 
-Never suggest harsh tasks, e.g. NOT { "title": "Stop overthinking", "description": "Do not overthink anymore." } and NOT { "title": "Confront them", "description": "Tell them exactly how badly they hurt you." }
-If shouldSuggest is false, set title/description/flower/reason to null.`;
+MATCH THE TASK TO WHERE THE USER ENDED UP (Goleman: every EQ skill is built through real-world practice of exactly the muscle just exercised — never one the user couldn't yet use):
+- If the conversation reached clarity (named a feeling, understood the other person, found a value, calmed down, drafted a message) → the task captures or extends that clarity.
+- If the conversation did NOT reach clarity → the task is a low-pressure NOTICING task (body, tone, timing, a moment) — never one requiring the insight the session couldn't reach. Never assign "name X" or "decide Y" to someone who just spent the conversation unable to do that.
+
+Examples by flower — each shows the CLARITY case and the STILL UNCLEAR case:
+
+DAISY (self-awareness):
+  Clarity:    { "title": "Write it down", "description": "Write one sentence: 'I felt ___ because ___.'", "flower": "DAISY", "reason": "The user named a clear feeling by the end." }
+  Unclear:    { "title": "Notice where it shows up", "description": "Next time that feeling comes back, just notice where you feel it in your body — nothing else.", "flower": "DAISY", "reason": "The user still wasn't sure what they were feeling." }
+
+LAVENDER (self-regulation):
+  Clarity:    { "title": "Wait before sending", "description": "Wait 10 minutes before sending that message to [person].", "flower": "LAVENDER", "reason": "The user wanted to react while emotionally intense." }
+  Unclear:    { "title": "Notice the first sign", "description": "Next time you feel that rising, notice the very first thing that changes — breath, jaw, hands.", "flower": "LAVENDER", "reason": "The user couldn't yet describe what the reaction felt like." }
+
+SUNFLOWER (motivation):
+  Clarity:    { "title": "One small step", "description": "Do that one small thing today that would make tomorrow feel a little more 'enough'.", "flower": "SUNFLOWER", "reason": "The user named what they actually want, not just the problem." }
+  Unclear:    { "title": "Notice one okay moment", "description": "Just notice one moment today that felt even slightly okay — you don't have to do anything with it.", "flower": "SUNFLOWER", "reason": "The user felt directionless and a step would feel like pressure right now." }
+
+IRIS (empathy):
+  Clarity:    { "title": "Check your guess", "description": "Next time you talk to [person], ask one small question to see if your guess about how they felt was close.", "flower": "IRIS", "reason": "The user made a specific guess about [person]'s feelings this session." }
+  Unclear:    { "title": "Notice their tone", "description": "Next time you're with [person], just notice their tone of voice or face — nothing else.", "flower": "IRIS", "reason": "The user couldn't yet imagine [person]'s side." }
+
+ROSE (social skills):
+  Clarity:    { "title": "Send the message", "description": "Send the message we wrote to [person] when you feel ready.", "flower": "ROSE", "reason": "The user drafted a message and felt good about it." }
+  Unclear:    { "title": "Notice what you want to say", "description": "Before your next talk with [person], just notice in your head what you'd actually want them to know.", "flower": "ROSE", "reason": "The user wasn't sure yet what they wanted to communicate." }
+
+Never suggest harsh, judgmental, or pressuring tasks — e.g. NOT { "title": "Stop overthinking", "description": "Do not overthink anymore." } and NOT { "title": "Confront them", "description": "Tell them exactly how badly they hurt you." }
+
+If a person is involved, replace "[person]" with how the user referred to them in the conversation (e.g. "your friend", "your mom", "your boss") — never leave the literal placeholder.
+
+If the conversation doesn't give enough specific material for either a clarity or noticing task, or if the user mainly needed emotional support and no action fits, set shouldSuggest = false. Returning nothing is better than a generic or premature task.
+
+If shouldSuggest is false, set title/description/flower/reason to null.
+
+LANGUAGE: Write "title" and "description" in ENGLISH only — even if the conversation was in Mongolian. They will be translated into natural Mongolian separately. Do not write Mongolian in these two fields.`;
 
 const SAFETY_SECTION = `SAFETY
 Set "safety" fields only when there is real risk: self-harm, wanting to die, immediate danger, abuse, or serious harm to others. Do NOT over-trigger this for ordinary sadness, stress, loneliness, anger, or venting — those are normal and belong in mood/mainEmotion instead.
@@ -461,30 +506,50 @@ export function sanitizeExtraction(raw: unknown): FullExtractionResult {
             !!m &&
             typeof m === "object" &&
             typeof (m as Record<string, unknown>).content === "string" &&
-            MEMORY_CATEGORIES.includes((m as Record<string, unknown>).category as MemoryCategory)
+            MEMORY_CATEGORIES.includes(
+              (m as Record<string, unknown>).category as MemoryCategory,
+            ),
         )
-        .map((m) => ({ content: m.content, category: m.category as MemoryCategory }))
+        .map((m) => ({
+          content: m.content,
+          category: m.category as MemoryCategory,
+        }))
     : [];
 
   const task = (r.suggestedPracticeTask ?? {}) as Record<string, unknown>;
   const safety = (r.safety ?? {}) as Record<string, unknown>;
 
-  const asEnum = <T extends string>(value: unknown, allowed: readonly T[]): T | null =>
-    typeof value === "string" && (allowed as readonly string[]).includes(value) ? (value as T) : null;
+  const asEnum = <T extends string>(
+    value: unknown,
+    allowed: readonly T[],
+  ): T | null =>
+    typeof value === "string" && (allowed as readonly string[]).includes(value)
+      ? (value as T)
+      : null;
 
-  const asEnumArray = <T extends string>(value: unknown, allowed: readonly T[]): T[] =>
+  const asEnumArray = <T extends string>(
+    value: unknown,
+    allowed: readonly T[],
+  ): T[] =>
     Array.isArray(value)
       ? (value as unknown[]).filter(
-          (v): v is T => typeof v === "string" && (allowed as readonly string[]).includes(v)
+          (v): v is T =>
+            typeof v === "string" && (allowed as readonly string[]).includes(v),
         )
       : [];
 
-  const asNullableString = (value: unknown): string | null => (typeof value === "string" && value.trim() ? value : null);
+  const asNullableString = (value: unknown): string | null =>
+    typeof value === "string" && value.trim() ? value : null;
 
   return {
     mood: typeof r.mood === "string" ? r.mood : "",
-    intensity: typeof r.intensity === "number" && r.intensity >= 1 && r.intensity <= 5 ? Math.round(r.intensity) : 3,
-    tags: Array.isArray(r.tags) ? (r.tags as unknown[]).filter((t): t is string => typeof t === "string") : [],
+    intensity:
+      typeof r.intensity === "number" && r.intensity >= 1 && r.intensity <= 5
+        ? Math.round(r.intensity)
+        : 3,
+    tags: Array.isArray(r.tags)
+      ? (r.tags as unknown[]).filter((t): t is string => typeof t === "string")
+      : [],
     memories,
 
     shouldStoreMemory: r.shouldStoreMemory === true,
