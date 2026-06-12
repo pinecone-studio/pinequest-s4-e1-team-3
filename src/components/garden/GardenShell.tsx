@@ -24,6 +24,7 @@ import { WorkshopPanel } from "./WorkshopPanel";
 import { BirdMessagesPanel } from "./BirdMessagesPanel";
 import { TaskTreePanel } from "./TaskTreePanel";
 import { ReflectionPanel } from "./ReflectionPanel";
+import { WeeklyCheckInBird } from "./WeeklyCheckInBird";
 import {
   TutorialProvider,
   useTutorial,
@@ -69,7 +70,9 @@ function GardenShellContent({ userName }: { userName: string }) {
   const [birdRefetch, setBirdRefetch] = useState(0);
   const [gardenRefetch, setGardenRefetch] = useState(0);
   const [expectingTask, setExpectingTask] = useState(false);
-  const [taskConversationId, setTaskConversationId] = useState<string | null>(null);
+  const [taskConversationId, setTaskConversationId] = useState<string | null>(
+    null,
+  );
   const { user } = useUser();
   const panelRef = useRef(panel);
   useEffect(() => {
@@ -285,19 +288,6 @@ function GardenShellContent({ userName }: { userName: string }) {
         />
       )}
       {panel === "pond" && <PondPanel onClose={close} />}
-<<<<<<< Updated upstream
-      {panel === "notes" && (
-        <DeskChatPanel
-          onClose={close}
-          flowerId={selectedFlowerId}
-          onOpenTasks={(convId: string) => {
-            setTaskConversationId(convId);
-            setExpectingTask(true);
-            setPanel("tasks");
-          }}
-        />
-      )}
-=======
       {/* #4 — AnimatePresence keeps the desk chat mounted long enough to play
           its slide-out exit when the user closes it. */}
       <AnimatePresence>
@@ -313,7 +303,6 @@ function GardenShellContent({ userName }: { userName: string }) {
           />
         )}
       </AnimatePresence>
->>>>>>> Stashed changes
       {panel === "birds" && (
         <BirdMessagesPanel onClose={close} refetchSignal={birdRefetch} />
       )}
@@ -360,11 +349,14 @@ function GardenShellContent({ userName }: { userName: string }) {
             boxShadow: "0 6px 18px rgba(0,0,0,0.22)",
           }}
         >
-          <span aria-hidden style={{ fontSize: 13 }}>↻</span>
+          <span aria-hidden style={{ fontSize: 13 }}>
+            ↻
+          </span>
           Заавар дахин үзэх
         </button>
       )}
 
+      <WeeklyCheckInBird />
       <TutorialOverlay panel={panel} />
     </div>
   );
