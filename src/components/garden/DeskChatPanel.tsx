@@ -18,7 +18,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useFetchJson } from "@/hooks/useFetchJson";
+import { useTutorial } from "@/components/tutorial/TutorialContext";
+import { TUTORIAL_STEPS } from "@/components/tutorial/steps";
+import { SPECIES_NAME_MN } from "./speciesText";
 import type { FlowerSummary, Note, Species } from "./types";
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -33,7 +37,6 @@ type ConvItem = {
   firstMessage: string | null;
 };
 
-const COMPANION_NAME = "Sage";
 
 // When the user has no flower yet, the desk chat starts a conversation
 // automatically on their first message using this species as the default
@@ -42,11 +45,11 @@ const DEFAULT_SPECIES_KEY = "lavender";
 
 // species.key → the EQ domain shown in the chat header pill
 const TOPIC_BY_SPECIES: Record<string, string> = {
-  daisy: "Self-Awareness",
-  lavender: "Self-Regulation",
-  sunflower: "Motivation",
-  iris: "Empathy",
-  rose: "Social Skills",
+  daisy: "Өөрийгөө таних",
+  lavender: "Өөрийгөө зохицуулах",
+  sunflower: "Урам зориг",
+  iris: "Бусдыг ойлгох",
+  rose: "Бусадтай харилцах",
 };
 
 export function DeskChatPanel({
@@ -58,6 +61,8 @@ export function DeskChatPanel({
   flowerId?: string;
   onOpenTasks?: (conversationId: string) => void;
 }) {
+  const reduceMotion = useReducedMotion();
+  const { tutorialActive, currentStep, advanceStep } = useTutorial();
   const { data: flowers, refetch: refetchFlowers } =
     useFetchJson<FlowerSummary[]>("/api/flowers");
   const { data: speciesList } = useFetchJson<Species[]>("/api/species");
@@ -86,7 +91,13 @@ export function DeskChatPanel({
   const conversationId =
     overrideConvId ?? activeFlower?.conversationId ?? createdConversationId;
   const species = activeFlower?.species;
-  const topic = species ? (TOPIC_BY_SPECIES[species.key] ?? "Companion") : "";
+  const topic = species ? (TOPIC_BY_SPECIES[species.key] ?? "Дэмжигч") : "";
+  // The companion is the flower itself — show its (Mongolian) species name +
+  // what it represents (its EQ domain), not a fixed assistant name.
+  const companionName = species
+    ? (SPECIES_NAME_MN[species.key] ?? species.name)
+    : "Дэмжигч";
+
 
   // Notes for the corkboard (newest two) + the drawer (archived).
   const { data: pinned, refetch: refetchNotes } =
@@ -241,7 +252,7 @@ export function DeskChatPanel({
 
     const convId = await ensureConversation();
     if (!convId) {
-      setError("Couldn't start a conversation — please try again.");
+      setError("Яриа эхлүүлж чадсангүй — дахин оролдоно уу.");
       setLoading(false);
       return;
     }
@@ -260,7 +271,7 @@ export function DeskChatPanel({
 
     if (!res.ok || !res.body) {
       setMessages((prev) => prev.slice(0, -1));
-      setError("Something went wrong — please try again.");
+      setError("Алдаа гарлаа — дахин оролдоно уу.");
       setLoading(false);
       return;
     }
@@ -280,6 +291,7 @@ export function DeskChatPanel({
       });
     }
 
+<<<<<<< Updated upstream
     if (res.headers.get("X-Stone-Prompt") === "true") setShowStonePrompt(true);
 
     setMessages((prev) => {
@@ -301,6 +313,16 @@ export function DeskChatPanel({
       }
       return prev;
     });
+=======
+    // Tutorial: the companion has finished replying → now point at "end & save".
+    if (tutorialActive && TUTORIAL_STEPS[currentStep]?.target === "chat-input") {
+      advanceStep();
+    }
+
+    if (res.headers.get("X-Stone-Prompt") === "true") {
+      setShowStonePrompt(true);
+    }
+>>>>>>> Stashed changes
 
     // Voice path: play TTS after reply arrives
     if (withVoice && fullReply) {
@@ -339,7 +361,7 @@ export function DeskChatPanel({
       recorderRef.current = recorder;
       setMicState("recording");
     } catch {
-      setError("Microphone access denied.");
+      setError("Микрофон ашиглах зөвшөөрөл олгогдсонгүй.");
     }
   }
 
@@ -356,7 +378,7 @@ export function DeskChatPanel({
           await sendText(text.trim(), true);
         }
       } catch {
-        setError("Voice recognition failed — please try again.");
+        setError("Дуу таних амжилтгүй боллоо — дахин оролдоно уу.");
       } finally {
         setMicState("idle");
       }
@@ -382,6 +404,12 @@ export function DeskChatPanel({
     if (!conversationId || completing || completed) return;
     setCompleting(true);
     setError("");
+    // Tutorial: advance the instant the user hits save, so the chat-end
+    // spotlight disappears immediately while the pipeline runs in the
+    // background (the task tree step then polls for the new task).
+    if (tutorialActive && TUTORIAL_STEPS[currentStep]?.target === "chat-end") {
+      advanceStep();
+    }
     try {
       const res = await fetch(`/api/conversations/${conversationId}/complete`, {
         method: "POST",
@@ -394,7 +422,7 @@ export function DeskChatPanel({
       setHistoryLoaded(false);
       refetchFlowers();
     } catch {
-      setError("Couldn't save this conversation — please try again.");
+      setError("Энэ яриаг хадгалж чадсангүй — дахин оролдоно уу.");
     } finally {
       setCompleting(false);
     }
@@ -433,7 +461,15 @@ export function DeskChatPanel({
   }
 
   return (
-    <div className="desk-chat">
+    <motion.div
+      className="desk-chat"
+      // #4 — slide in from the right when opened, slide back out on close.
+      // The AnimatePresence that drives the exit lives in GardenShell.
+      initial={reduceMotion ? false : { x: "100%", opacity: 0 }}
+      animate={reduceMotion ? undefined : { x: 0, opacity: 1 }}
+      exit={reduceMotion ? undefined : { x: "100%", opacity: 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+    >
       <Image
         src="/garden/garden-bg.png"
         alt=""
@@ -453,38 +489,39 @@ export function DeskChatPanel({
               type="button"
               className="dc-back"
               onClick={onClose}
-              aria-label="Back to garden"
+              aria-label="Цэцэрлэг рүү буцах"
             >
               ‹
             </button>
             <span className="dc-avatar" aria-hidden>
               ⚘
             </span>
-            <div className="dc-head-text">
-              <h2>{COMPANION_NAME}</h2>
-              <p>Your companion{species ? ` · by the ${species.name}` : ""}</p>
+            <div className="dc-head-text" data-tutorial-target="chat-companion">
+              <h2>{companionName}</h2>
+              <p>{topic || "Таны дэмжигч"}</p>
             </div>
             <button
               type="button"
               className={"dc-history-btn" + (showHistory ? " active" : "")}
               onClick={openHistory}
-              title="View past conversations"
+              title="Өмнөх яриануудыг харах"
             >
-              {showHistory ? "← Chat" : "History"}
+              {showHistory ? "← Яриа" : "Түүх"}
             </button>
             {completed ? (
               <span className="dc-saved" aria-live="polite">
-                Saved 🌸
+                Хадгалсан 🌸
               </span>
-            ) : conversationId && messages.length > 0 ? (
+            ) : conversationId && (messages.length > 0 || tutorialActive) ? (
               <button
                 type="button"
                 className="dc-end"
+                data-tutorial-target="chat-end"
                 onClick={endConversation}
                 disabled={completing}
-                title="Save this conversation — its memories grow your flower"
+                title="Энэ яриаг хадгал — дурсамж нь таны цэцгийг ургуулна"
               >
-                {completing ? "Saving…" : "End & save"}
+                {completing ? "Хадгалж байна…" : "Дуусгаж хадгалах"}
               </button>
             ) : (
               <span className="dc-leaf" aria-hidden>
@@ -495,17 +532,17 @@ export function DeskChatPanel({
 
           {showHistory ? (
             <div className="dc-history">
-              <p className="dc-history-head">Past conversations</p>
+              <p className="dc-history-head">Өмнөх ярианууд</p>
               {historyLoading ? (
                 <div className="dc-history-empty">
-                  <span className="dc-typing" aria-label="Loading">
+                  <span className="dc-typing" aria-label="Ачаалж байна">
                     <span />
                     <span />
                     <span />
                   </span>
                 </div>
               ) : historyConvs.length === 0 ? (
-                <p className="dc-history-empty">No past conversations yet.</p>
+                <p className="dc-history-empty">Одоогоор өмнөх яриа алга.</p>
               ) : (
                 historyConvs.map((conv) => {
                   const d = new Date(conv.createdAt);
@@ -533,7 +570,7 @@ export function DeskChatPanel({
                           {conv.firstMessage ?? conv.summary ?? "—"}
                         </p>
                         <p className="dc-history-meta">
-                          {conv.flower.species.name} · {dateStr}
+                          {SPECIES_NAME_MN[conv.flower.species.key] ?? conv.flower.species.name} · {dateStr}
                           {conv.isCompleted ? " · 🌸" : ""}
                         </p>
                       </div>
@@ -547,7 +584,7 @@ export function DeskChatPanel({
                             className="dc-history-confirm-yes"
                             onClick={(e) => confirmDelete(conv.id, e)}
                           >
-                            Delete
+                            Устгах
                           </button>
                           <button
                             type="button"
@@ -557,7 +594,7 @@ export function DeskChatPanel({
                               setPendingDeleteId(null);
                             }}
                           >
-                            Cancel
+                            Болих
                           </button>
                         </div>
                       ) : (
@@ -568,8 +605,8 @@ export function DeskChatPanel({
                             e.stopPropagation();
                             setPendingDeleteId(conv.id);
                           }}
-                          title="Delete conversation"
-                          aria-label="Delete"
+                          title="Яриа устгах"
+                          aria-label="Устгах"
                         >
                           ×
                         </button>
@@ -588,32 +625,40 @@ export function DeskChatPanel({
               {topic && (
                 <div className="dc-topic">
                   {topic}
-                  {species ? ` · ${species.name}` : ""}
+                  {species ? ` · ${companionName}` : ""}
                 </div>
               )}
 
               {messages.length === 0 && (
                 <p className="dc-empty">
-                  Let’s breathe — what’s been weighing on you?
+                  Амьсгаа аваад — таныг юу зовоож байна вэ?
                 </p>
               )}
 
-              {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={"dc-msg " + (m.role === "user" ? "me" : "them")}
-                >
-                  <div className="dc-bubble">
-                    {m.content || (
-                      <span className="dc-typing" aria-label="Sage is thinking">
-                        <span />
-                        <span />
-                        <span />
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+              {/* #4 — each bubble animates in as it appears. popLayout means a
+                  new message slots in without shoving the others around. */}
+              <AnimatePresence mode="popLayout" initial={false}>
+                {messages.map((m, i) => (
+                  <motion.div
+                    key={i}
+                    layout={!reduceMotion}
+                    className={"dc-msg " + (m.role === "user" ? "me" : "them")}
+                    initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                    animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                  >
+                    <div className="dc-bubble">
+                      {m.content || (
+                        <span className="dc-typing" aria-label={`${companionName} бодож байна`}>
+                          <span />
+                          <span />
+                          <span />
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
               <div ref={bottomRef} />
             </div>
           )}
@@ -737,7 +782,7 @@ export function DeskChatPanel({
           {completed && (
             <div className="dc-saved-note">
               <p>
-                This reflection is saved — your flower is blooming in the garden
+                Энэ эргэцүүлэл хадгалагдлаа — таны цэцэг цэцэрлэгт дэлгэрч байна
                 🌸
               </p>
               {onOpenTasks && (
@@ -760,29 +805,29 @@ export function DeskChatPanel({
                     width: "100%",
                   }}
                 >
-                  🌳 View your new task
+                  🌳 Шинэ даалгавраа харах
                 </button>
               )}
             </div>
           )}
 
-          <div className="dc-input">
+          <div className="dc-input" data-tutorial-target="chat-input">
             {voiceMode ? (
               <>
                 <div
                   className={`dc-voice-orb${micState === "recording" ? " dc-voice-orb--recording" : micState === "processing" || loading ? " dc-voice-orb--thinking" : ""}`}
                   onClick={handleMicClick}
                   role="button"
-                  aria-label={micState === "recording" ? "Stop" : "Speak"}
+                  aria-label={micState === "recording" ? "Зогсоох" : "Ярих"}
                 />
                 <span className="dc-voice-status">
                   {micState === "recording"
-                    ? "Listening… tap to stop"
+                    ? "Сонсож байна… зогсоохын тулд дарна уу"
                     : micState === "processing"
-                      ? "Transcribing…"
+                      ? "Хөрвүүлж байна…"
                       : loading
-                        ? "Thinking…"
-                        : "Tap the circle to speak"}
+                        ? "Бодож байна…"
+                        : "Ярихын тулд тойрог дээр дарна уу"}
                 </span>
                 <button
                   type="button"
@@ -791,7 +836,7 @@ export function DeskChatPanel({
                     setVoiceMode(false);
                     setMicState("idle");
                   }}
-                  aria-label="Exit voice mode"
+                  aria-label="Дуут горимоос гарах"
                 >
                   ✕
                 </button>
@@ -804,10 +849,10 @@ export function DeskChatPanel({
                   onKeyDown={onKeyDown}
                   placeholder={
                     showHistory
-                      ? "Select a conversation above…"
+                      ? "Дээрээс яриа сонгоно уу…"
                       : completed
-                        ? "This reflection is saved"
-                        : "Write your message…"
+                        ? "Энэ эргэцүүлэл хадгалагдсан"
+                        : "Зурвасаа бичнэ үү…"
                   }
                   disabled={loading || completed || showHistory}
                 />
@@ -816,8 +861,8 @@ export function DeskChatPanel({
                   className="dc-mic-btn"
                   onClick={() => setVoiceMode(true)}
                   disabled={completed || showHistory}
-                  aria-label="Enter voice mode"
-                  title="Voice chat"
+                  aria-label="Дуут горимд орох"
+                  title="Дуут яриа"
                 >
                   <svg
                     width="20"
@@ -843,7 +888,7 @@ export function DeskChatPanel({
                   disabled={
                     loading || !input.trim() || completed || showHistory
                   }
-                  aria-label="Send message"
+                  aria-label="Зурвас илгээх"
                 >
                   ➤
                 </button>
@@ -875,18 +920,18 @@ export function DeskChatPanel({
               type="button"
               className="dc-back light"
               onClick={drawerOpen ? () => setDrawerOpen(false) : onClose}
-              aria-label={drawerOpen ? "Close the drawer" : "Back to garden"}
+              aria-label={drawerOpen ? "Шургуулга хаах" : "Цэцэрлэг рүү буцах"}
             >
               ‹
             </button>
             <div>
-              <h2>Botanist’s Desk</h2>
+              <h2>Ургамал судлаачийн ширээ</h2>
               <p>
                 {drawerOpen
-                  ? `The drawer · ${archivedCount} old ${archivedCount === 1 ? "note" : "notes"}`
+                  ? `Шургуулга · ${archivedCount} хуучин тэмдэглэл`
                   : pinnedNotes.length > 0
-                    ? `${pinnedNotes.length === 1 ? "One note" : `${pinnedNotes.length} notes`} pinned · open the drawer to keep old ones`
-                    : "No notes pinned yet"}
+                    ? `${pinnedNotes.length} тэмдэглэл хадгалсан · хуучныг хадгалахын тулд шургуулгаа нээ`
+                    : "Одоогоор тэмдэглэл алга"}
               </p>
             </div>
           </header>
@@ -896,7 +941,7 @@ export function DeskChatPanel({
             <div className="dc-drawer-open">
               {archivedCount === 0 ? (
                 <p className="dc-drawer-empty">
-                  The drawer is empty — tuck a note away to keep it here.
+                  Шургуулга хоосон байна — тэмдэглэлээ энд хадгалахын тулд хийгээрэй.
                 </p>
               ) : (
                 <div className="dc-drawer-notes">
@@ -917,14 +962,14 @@ export function DeskChatPanel({
                           type="button"
                           onClick={() => setArchived(note.id, false)}
                         >
-                          Restore
+                          Сэргээх
                         </button>
                         <button
                           type="button"
                           className="danger"
                           onClick={() => deleteNote(note.id)}
                         >
-                          Delete
+                          Устгах
                         </button>
                       </div>
                     </article>
@@ -936,7 +981,7 @@ export function DeskChatPanel({
                 className="dc-drawer-close"
                 onClick={() => setDrawerOpen(false)}
               >
-                Close drawer
+                Шургуулга хаах
               </button>
             </div>
           ) : (
@@ -944,7 +989,7 @@ export function DeskChatPanel({
               <div className="dc-corkboard">
                 {pinnedNotes.length === 0 ? (
                   <p className="dc-cork-empty">
-                    No notes pinned yet — use “✎ Pin a note” below.
+                    Одоогоор тэмдэглэл алга — доорх “✎ Тэмдэглэл хавчуулах”-ыг ашиглана уу.
                   </p>
                 ) : (
                   pinnedNotes.map((note, i) => (
@@ -959,8 +1004,8 @@ export function DeskChatPanel({
                         type="button"
                         className="dc-pin-archive"
                         onClick={() => setArchived(note.id, true)}
-                        aria-label="Tuck into the drawer"
-                        title="Tuck into the drawer"
+                        aria-label="Шургуулга руу хийх"
+                        title="Шургуулга руу хийх"
                       >
                         ⤓
                       </button>
@@ -978,7 +1023,7 @@ export function DeskChatPanel({
                 type="button"
                 className="dc-drawer-hotspot"
                 onClick={() => setDrawerOpen(true)}
-                aria-label="Open the drawer to see old notes"
+                aria-label="Хуучин тэмдэглэл харахын тулд шургуулгаа нээ"
               />
 
               <div className="dc-desk-actions">
@@ -987,15 +1032,14 @@ export function DeskChatPanel({
                   className="dc-add-note"
                   onClick={() => setComposing((c) => !c)}
                 >
-                  ✎ Pin a note
+                  ✎ Тэмдэглэл хавчуулах
                 </button>
                 <button
                   type="button"
                   className="dc-drawer"
                   onClick={() => setDrawerOpen(true)}
                 >
-                  The drawer · {archivedCount} old{" "}
-                  {archivedCount === 1 ? "note" : "notes"}
+                  Шургуулга · {archivedCount} хуучин тэмдэглэл
                 </button>
               </div>
 
@@ -1004,13 +1048,13 @@ export function DeskChatPanel({
                   <input
                     value={noteTitle}
                     onChange={(e) => setNoteTitle(e.target.value)}
-                    placeholder="Note title…"
+                    placeholder="Тэмдэглэлийн гарчиг…"
                     autoFocus
                   />
                   <textarea
                     value={noteBody}
                     onChange={(e) => setNoteBody(e.target.value)}
-                    placeholder="What's on your mind?"
+                    placeholder="Юу бодож байна?"
                     rows={3}
                   />
                   <div className="dc-note-form-actions">
@@ -1019,7 +1063,7 @@ export function DeskChatPanel({
                       className="ghost"
                       onClick={() => setComposing(false)}
                     >
-                      Cancel
+                      Болих
                     </button>
                     <button
                       type="button"
@@ -1028,7 +1072,7 @@ export function DeskChatPanel({
                         savingNote || !noteTitle.trim() || !noteBody.trim()
                       }
                     >
-                      {savingNote ? "Pinning…" : "Pin to desk"}
+                      {savingNote ? "Хавчуулж байна…" : "Ширээнд хавчуулах"}
                     </button>
                   </div>
                 </div>
@@ -1037,6 +1081,6 @@ export function DeskChatPanel({
           )}
         </section>
       </div>
-    </div>
+    </motion.div>
   );
 }

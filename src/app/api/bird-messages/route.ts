@@ -19,6 +19,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/getUser";
+import { SPECIES_NAME_MN } from "@/components/garden/speciesText";
 
 type BirdMessage = {
   id: string;
@@ -28,6 +29,18 @@ type BirdMessage = {
   body: string;
   createdAt: string;
   color: string;
+};
+
+const MOOD_MN: Record<string, string> = {
+  calm: "тайван",
+  happy: "баяр баясгалантай",
+  grateful: "талархалтай",
+  sad: "гунигтай",
+  reflective: "эргэцүүлэнгэ",
+  anxious: "түгшүүртэй",
+  motivated: "урам зоригтой",
+  confused: "эргэлзээтэй",
+  angry: "ууртай",
 };
 
 export async function GET() {
@@ -65,7 +78,7 @@ async function buildMessages() {
   const allFlowers = await prisma.flower.findMany({
     where: { userId: user.id },
     include: {
-      species: { select: { name: true, color: true } },
+      species: { select: { name: true, color: true, key: true } },
       conversation: {
         select: { _count: { select: { memories: true } } },
       },
@@ -76,15 +89,16 @@ async function buildMessages() {
 
   for (const flower of allFlowers) {
     const memCount = flower.conversation?._count.memories ?? 0;
+    const flowerName = SPECIES_NAME_MN[flower.species.key] ?? flower.species.name;
     if (flower.growthStage === "BLOOMING") {
       messages.push({
         id: `bloom-${flower.id}`,
         type: "milestone",
         icon: "🌸",
-        title: `Your ${flower.species.name} has bloomed`,
-        body: `Your ${flower.species.name} reached full bloom${
+        title: `Таны ${flowerName} дэлгэрлээ`,
+        body: `Таны ${flowerName} бүрэн дэлгэрлээ${
           memCount > 0
-            ? ` and carries ${memCount} memor${memCount === 1 ? "y" : "ies"} in your tree`
+            ? ` бөгөөд таны мод дээр ${memCount} дурсамж тээж байна`
             : ""
         }.`,
         createdAt: (flower.completedAt ?? flower.plantedAt).toISOString(),
@@ -95,8 +109,8 @@ async function buildMessages() {
         id: `planted-${flower.id}`,
         type: "milestone",
         icon: "🌱",
-        title: `Your ${flower.species.name} was planted`,
-        body: `Your ${flower.species.name} is growing — keep talking to help it bloom.`,
+        title: `Таны ${flowerName} таригдлаа`,
+        body: `Таны ${flowerName} ургаж байна — дэлгэрэхэд нь туслахын тулд үргэлжлүүлэн ярилцаарай.`,
         createdAt: flower.plantedAt.toISOString(),
         color: flower.species.color,
       });
@@ -130,8 +144,8 @@ async function buildMessages() {
       id: `memory-${memory.id}`,
       type: "memory",
       icon: "🍃",
-      title: "A memory arrived in your tree",
-      body: `"${excerpt}"`,
+      title: "Таны мод дээр дурсамж иржээ",
+      body: `«${excerpt}»`,
       createdAt: memory.createdAt.toISOString(),
       color,
     });
@@ -151,8 +165,8 @@ async function buildMessages() {
       id: "mood-recap",
       type: "mood",
       icon: "🌤️",
-      title: "Your week in the garden",
-      body: `You had ${moodEntries.length} conversation${moodEntries.length !== 1 ? "s" : ""} this week. Your garden felt mostly ${dominant}.`,
+      title: "Цэцэрлэг дэх таны долоо хоног",
+      body: `Та энэ долоо хоногт ${moodEntries.length} яриа өрнүүлжээ. Таны цэцэрлэг ихэвчлэн ${MOOD_MN[dominant] ?? dominant} байлаа.`,
       createdAt: now.toISOString(),
       color: "#d8c27a",
     });
@@ -173,8 +187,8 @@ async function buildMessages() {
       id: "insight",
       type: "insight",
       icon: "✨",
-      title: "A pattern noticed",
-      body: `Your conversations most often carry ${topType}s. Your garden is quietly learning who you are.`,
+      title: "Нэгэн хэв маяг ажиглагдлаа",
+      body: `Таны яриа ихэвчлэн ${topType} төрлийн санаа агуулдаг. Таны цэцэрлэг чамайг чимээгүйхэн таньж байна.`,
       createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
       color: "#cf8aa0",
     });
@@ -196,8 +210,8 @@ async function buildMessages() {
         id: "nudge",
         type: "nudge",
         icon: "🌱",
-        title: "Your garden misses you",
-        body: `It's been ${daysSince} day${daysSince !== 1 ? "s" : ""} since your last conversation. Your flowers are waiting quietly.`,
+        title: "Таны цэцэрлэг чамайг санаж байна",
+        body: `Сүүлийн ярианаас хойш ${daysSince} хоног өнгөрлөө. Таны цэцэгс чимээгүйхэн хүлээж байна.`,
         createdAt: lastConversation.updatedAt.toISOString(),
         color: "#6b7c5a",
       });

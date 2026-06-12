@@ -23,10 +23,18 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useFetchJson } from "@/hooks/useFetchJson";
 import { FlowerSprite } from "./FlowerSprite";
 import { MoodPill } from "./MoodPill";
 import type { FlowerSummary } from "./types";
+
+// Lazy: the particle bundle only loads the first time night mode turns on,
+// keeping it out of the initial garden payload.
+const FirefliesLayer = dynamic(() => import("./FirefliesLayer"), {
+  ssr: false,
+});
 
 const SPECIES_CATEGORY: Record<string, string> = {
   daisy: "self-awareness",
@@ -37,25 +45,25 @@ const SPECIES_CATEGORY: Record<string, string> = {
 };
 
 const FILTERS: { key: string; label: string; color?: string }[] = [
-  { key: "all", label: "All" },
-  { key: "self-awareness", label: "Self-Awareness", color: "#d8c27a" },
-  { key: "self-regulation", label: "Self-Regulation", color: "#b6a8cf" },
-  { key: "motivation", label: "Motivation", color: "#F9A825" },
-  { key: "empathy", label: "Empathy", color: "#9b8ec4" },
-  { key: "social-skills", label: "Social Skills", color: "#cf8aa0" },
+  { key: "all", label: "Бүгд" },
+  { key: "self-awareness", label: "Өөрийгөө таних", color: "#d8c27a" },
+  { key: "self-regulation", label: "Өөрийгөө зохицуулах", color: "#b6a8cf" },
+  { key: "motivation", label: "Урам зориг", color: "#F9A825" },
+  { key: "empathy", label: "Бусдыг ойлгох", color: "#9b8ec4" },
+  { key: "social-skills", label: "Бусадтай харилцах", color: "#cf8aa0" },
 ];
 
 const TIME_PRESETS = [
   {
     key: "golden",
-    label: "Golden hour",
+    label: "Алтан цаг",
     icon: "☀️",
     filter: "none",
     tint: "transparent",
   },
   {
     key: "evening",
-    label: "Evening",
+    label: "Үдэш",
     icon: "🌙",
     filter: "brightness(0.52) saturate(0.6) hue-rotate(215deg)",
     tint: "rgba(12, 28, 72, 0.42)",
@@ -192,6 +200,8 @@ export function GardenScene({
   userName,
   nightMode = false,
   tutorialFlowerId,
+  centerFlowerId,
+  centerWorldXPct,
   refetchKey = 0,
 }: {
   onOpenWorkshop: () => void;
@@ -200,11 +210,16 @@ export function GardenScene({
   onOpenFlowerChat: (flowerId: string) => void;
   userName: string;
   nightMode?: boolean;
-  /** When set, marks that flower with data-tutorial-target="flower-planted" for step 3. */
+  /** When set, marks that flower with data-tutorial-target="flower-planted". */
   tutorialFlowerId?: string;
+  /** When set, pans the garden so this flower is horizontally centered. */
+  centerFlowerId?: string;
+  /** When set (0–100), pans the garden so this world-x% is centered. */
+  centerWorldXPct?: number;
   /** Increment to trigger a refetch of the flower list (e.g. after planting). */
   refetchKey?: number;
 }) {
+  const reduceMotion = useReducedMotion();
   const {
     data: flowers,
     loading,
@@ -319,6 +334,28 @@ export function GardenScene({
     };
   }, []);
 
+  // Tutorial: pan the world so the given flower is horizontally centered.
+  // We set `target` and let the easing RAF loop glide there.
+  useEffect(() => {
+    if (!centerFlowerId) return;
+    const flower = (flowers ?? []).find((f) => f.id === centerFlowerId);
+    if (!flower) return;
+    const vpW = vpRef.current?.clientWidth ?? window.innerWidth;
+    const worldPx = worldW.current || Math.round(window.innerHeight * WORLD_RATIO);
+    const desired = vpW / 2 - (flower.posX / 100) * worldPx;
+    target.current = clampX(desired, worldPx, vpW);
+  }, [centerFlowerId, flowers]);
+
+  // Tutorial: pan to a fixed world-x% (e.g. the greenhouse, which sits off the
+  // right edge at the default pan position).
+  useEffect(() => {
+    if (centerWorldXPct == null) return;
+    const vpW = vpRef.current?.clientWidth ?? window.innerWidth;
+    const worldPx = worldW.current || Math.round(window.innerHeight * WORLD_RATIO);
+    const desired = vpW / 2 - (centerWorldXPct / 100) * worldPx;
+    target.current = clampX(desired, worldPx, vpW);
+  }, [centerWorldXPct]);
+
   // ---- pointer handlers ----
 
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
@@ -391,11 +428,15 @@ export function GardenScene({
   };
 
   return (
-    <div
+    <motion.div
       ref={vpRef}
       className="garden-scene"
       style={{ cursor: "grab" }}
       data-tutorial-target="garden-scene"
+      // #3 — whole scene fades + rises in on load.
+      initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+      animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, ease: "easeOut" }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -407,7 +448,7 @@ export function GardenScene({
         style={{
           ...worldLayer,
           filter: time.filter,
-          transition: "filter 1.2s ease",
+          transition: "filter 1.5s ease",
         }}
       >
         <Image
@@ -455,6 +496,30 @@ export function GardenScene({
         }}
       />
 
+      {/* #7 — fireflies: night-mode only, lazy-loaded, fade in/out with the
+          lighting change. z-index 8 sits above the background/tint/drifters
+          but below the flowers (z-index 10) and all UI. pointer-events:none
+          so it never intercepts flower clicks. Skipped under reduced motion. */}
+      <AnimatePresence>
+        {nightMode && !reduceMotion && (
+          <motion.div
+            key="fireflies"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 8,
+              pointerEvents: "none",
+            }}
+          >
+            <FirefliesLayer />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Layer 2 — flowers + tree hotspot (same fx = 1, locked to the painting) */}
       <div ref={objRef} style={{ ...worldLayer, zIndex: 10 }}>
         {/* Invisible clickable region over the Task Tree */}
@@ -463,19 +528,22 @@ export function GardenScene({
           className="garden-tree-hotspot"
           style={{ left: "28%", top: "8%", width: "26%", height: "80%" }}
           onClick={onOpenTaskTree}
-          aria-label="Open the Task Tree"
-          title="Open the Task Tree"
+          aria-label="Даалгаврын мод нээх"
+          title="Даалгаврын мод нээх"
           data-tutorial-target="task-tree"
         />
 
-        {/* Invisible clickable region over the Greenhouse */}
+        {/* Invisible clickable region over the Greenhouse.
+            Bounds hug the painted glass house (≈8–53% tall) rather than
+            running down into the empty grass, so the tutorial spotlight —
+            which centres on this element — lands on the building. */}
         <button
           type="button"
           className="garden-tree-hotspot"
-          style={{ left: "74%", top: "10%", width: "20%", height: "72%" }}
+          style={{ left: "73%", top: "8%", width: "20%", height: "45%" }}
           onClick={onOpenWorkshop}
-          aria-label="Open the Greenhouse"
-          title="Open the Greenhouse"
+          aria-label="Хүлэмж нээх"
+          title="Хүлэмж нээх"
           data-tutorial-target="greenhouse"
         />
 
@@ -485,18 +553,19 @@ export function GardenScene({
           className="garden-tree-hotspot"
           style={{ left: "50%", top: "68%", width: "50%", height: "30%" }}
           onClick={onOpenPond}
-          aria-label="Open the Pond"
-          title="Open the Pond"
+          aria-label="Нуур нээх"
+          title="Нуур нээх"
           data-tutorial-target="pond"
         />
 
-        {(flowers ?? []).map((flower) => {
+        {(flowers ?? []).map((flower, i) => {
           const category = SPECIES_CATEGORY[flower.species.key] ?? "";
           const dimmed = activeFilter !== "all" && category !== activeFilter;
           return (
             <FlowerSprite
               key={flower.id}
               flower={flower}
+              index={i}
               onSelect={selectFlower}
               onHoverStart={handleFlowerHover}
               dimmed={dimmed}
@@ -538,9 +607,9 @@ export function GardenScene({
 
 
 
-      {loading && <p className="garden-hint">Loading your garden…</p>}
+      {loading && <p className="garden-hint">Таны цэцэрлэгийг ачаалж байна…</p>}
       {error && (
-        <p className="garden-hint">Couldn&apos;t load your garden — {error}</p>
+        <p className="garden-hint">Цэцэрлэгийг ачаалж чадсангүй — {error}</p>
       )}
 
       {/* Idle contextual hints — only appear after 5 s of no interaction */}
@@ -550,12 +619,12 @@ export function GardenScene({
           className="garden-hint garden-hint--idle"
           onClick={() => { dismissIdle(); onOpenWorkshop(); }}
         >
-          Your garden is empty &nbsp;·&nbsp; visit the Greenhouse to plant your first flower →
+          Таны цэцэрлэг хоосон байна &nbsp;·&nbsp; эхний цэцгээ тарихын тулд Хүлэмж рүү очно уу →
         </button>
       )}
       {idleHint === "explore" && (
         <p className="garden-hint garden-hint--idle">
-          ← Drag to explore your garden &nbsp;·&nbsp; click a flower to chat
+          ← Чирж цэцэрлэгээ тойрон үзээрэй &nbsp;·&nbsp; яриа эхлүүлэхийн тулд цэцэг дээр дарна уу
         </p>
       )}
 
@@ -619,6 +688,6 @@ export function GardenScene({
           ))}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

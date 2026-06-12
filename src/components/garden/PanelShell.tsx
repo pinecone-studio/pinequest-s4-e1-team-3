@@ -62,7 +62,7 @@ export function PanelShell({
       )}
 
       <div className="garden-scene-panel-back">
-        <button type="button" className="garden-scene-panel-back-btn" onClick={onClose} aria-label="Back to garden">
+        <button type="button" className="garden-scene-panel-back-btn" onClick={onClose} aria-label="Цэцэрлэг рүү буцах">
           ‹
         </button>
         <div>
@@ -81,8 +81,8 @@ export function PanelShell({
       {(hasSheetContent || !overlay) && (
         <div className="garden-scene-panel-sheet">
           {headerExtra}
-          {loading && <p className="garden-empty">Loading…</p>}
-          {error && <p className="garden-empty">Something went wrong — {error}</p>}
+          {loading && <p className="garden-empty">Ачаалж байна…</p>}
+          {error && <p className="garden-empty">Алдаа гарлаа — {error}</p>}
           {!loading && !error && empty && <p className="garden-empty">{emptyLabel}</p>}
           {!loading && !error && !empty && children}
         </div>

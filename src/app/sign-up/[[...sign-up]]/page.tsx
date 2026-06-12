@@ -286,7 +286,7 @@ export default function SignUpPage() {
                     By planting a seed you agree to our{" "}
                     <a href="#" onClick={(e) => e.preventDefault()}>Terms</a> &amp;{" "}
                     <a href="#" onClick={(e) => e.preventDefault()}>Privacy promise</a>.
-                    Bloom is a companion, not a clinic.
+                    Bordoo is a companion, not a clinic.
                   </p>
                 </>
               )}

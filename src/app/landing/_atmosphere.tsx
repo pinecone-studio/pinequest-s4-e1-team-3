@@ -7,7 +7,7 @@ interface LeafMarkProps {
   word?: string;
 }
 
-export function LeafMark({ showWord = true, word = "Bloom" }: LeafMarkProps) {
+export function LeafMark({ showWord = true, word = "Bordoo" }: LeafMarkProps) {
   return (
     <span className="mark">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">

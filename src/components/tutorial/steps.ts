@@ -1,108 +1,148 @@
+// ============================================
+//  steps.ts
+//
+//  Ordered, hands-on tutorial. The user actually uses each feature:
+//  open the greenhouse, plant a flower, have a tiny chat, end & save it
+//  (which grows a task), see the task on the tree, then throw a stone in
+//  the pond. Anything created along the way (flower, conversation, task)
+//  is cleaned up when the tutorial finishes or is skipped.
+//
+//  Steps are matched by `target` (not index) throughout the app, so this
+//  order can change without breaking the advancement wiring.
+//
+//  advanceOn:
+//    action  — a real interaction advances it (GardenShell / the panels call
+//              advanceStep when the matching action fires: click Greenhouse,
+//              pick a flower, click the flower, send a message, end & save,
+//              throw a stone)
+//    got-it  — explanatory beat; the "Ойлголоо →" button advances
+//    auto    — the closing celebration; auto-dismisses after timerMs or tap
+// ============================================
+
+export type StepPanel = "garden" | "workshop" | "notes" | "tasks" | "pond" | null;
+
 export interface TutorialStepDef {
   step: number;
   /** data-tutorial-target value, or null for the celebration step */
   target: string | null;
-  headline: string;
+  /** Panel this step lives in — drives visibility + GardenShell panel sync */
+  panel: StepPanel;
   headlineMn: string;
-  instruction: string;
   instructionMn: string;
-  /**
-   * button       — only a labelled button advances the step (step 0)
-   * pulse        — spotlight + pulse dot; the user must click the target element (steps 1–3)
-   * click-or-timer — clicking the target OR a timer advances (step 4)
-   * got-it        — "Got it →" button only (step 5)
-   * auto          — auto-dismiss after timerMs (celebration, step 6)
-   */
-  advanceOn: "button" | "pulse" | "click-or-timer" | "got-it" | "auto";
+  /** Smaller secondary line (used by the closing step) */
+  sublineMn?: string;
+  advanceOn: "action" | "got-it" | "auto";
   buttonLabel?: string;
+  /** "large" = bigger glow; "wide" = full-width UI (pond controls);
+   *  "none" = tooltip only, no spotlight cutout. */
+  spotlight?: "normal" | "large" | "wide" | "none";
   timerMs?: number;
 }
 
 export const TUTORIAL_STEPS: TutorialStepDef[] = [
+  // 0 — Open the Greenhouse
   {
     step: 0,
-    target: "garden-scene",
-    headline: "Welcome to Bloom 🌸",
-    headlineMn: "Bloom-д тавтай морил 🌸",
-    instruction: "This is your garden. Your companions live here. Let's plant your first one.",
-    instructionMn:
-      "Энэ бол таны цэцэрлэг. Таны хамтрагчид энд амьдардаг. Эхнийхээ цэцгийг тарицгаая.",
-    advanceOn: "button",
-    buttonLabel: "Let's go →",
+    target: "greenhouse",
+    panel: "garden",
+    headlineMn: "Хүлэмж",
+    instructionMn: "Таны цэцгүүд энд төрдөг. Эхлэхийн тулд дарна уу.",
+    advanceOn: "action",
+    spotlight: "large",
   },
+  // 1 — Pick a flower
   {
     step: 1,
-    target: "greenhouse",
-    headline: "The Greenhouse",
-    headlineMn: "Хүлэмж",
-    instruction: "This is where your flowers are born. Click it to begin.",
-    instructionMn: "Таны цэцгүүд энд төрдөг. Эхлэхийн тулд дарна уу.",
-    advanceOn: "pulse",
+    target: "flower-picker",
+    panel: "workshop",
+    headlineMn: "Анхны дэмжигчээ сонгоно уу",
+    instructionMn:
+      "Тус бүр өөр төрлийн яриа. Өнөөдөр өөрт тохирсон цэцгээ дарж тарина уу.",
+    advanceOn: "action",
+    spotlight: "large",
   },
+  // 2 — Click the planted flower (garden pans to it)
   {
     step: 2,
-    target: "flower-picker",
-    headline: "Choose your first companion",
-    headlineMn: "Анхны хамтрагчаа сонгоно уу",
-    instruction:
-      "Each flower is a different kind of conversation. Pick the one that feels right today.",
+    target: "flower-planted",
+    panel: "garden",
+    headlineMn: "Дэмжигчтэйгээ уулз",
     instructionMn:
-      "Тус бүр өөр төрлийн яриа. Өнөөдөр тохирсоноо сонгоно уу.",
-    advanceOn: "pulse",
+      "Энэ таны шинэ цэцэг. Яриа эхлүүлэхийн тулд дээр нь дарна уу.",
+    advanceOn: "action",
   },
+  // 3 — Have a small chat (send a message, wait for the reply)
   {
     step: 3,
-    target: "flower-planted",
-    headline: "Meet your companion",
-    headlineMn: "Хамтрагчтайгаа уулз",
-    instruction: "Click your flower to open a conversation. They're ready to listen.",
-    instructionMn: "Яриа эхлүүлэхийн тулд цэцгээ дарна уу. Тэд сонсоход бэлэн.",
-    advanceOn: "pulse",
+    target: "chat-input",
+    panel: "notes",
+    headlineMn: "Бяцхан яриа",
+    instructionMn:
+      "Дэмжигчтэйгээ хэдэн үг бичээд илгээгээрэй. Хариултыг нь хүлээгээрэй.",
+    advanceOn: "action",
   },
+  // 4 — End & save (grows a task)
   {
     step: 4,
-    target: "task-tree",
-    headline: "The Task Tree",
-    headlineMn: "Даалгаврын мод",
-    instruction:
-      "Your tasks and goals grow here. Everything you're working toward lives in this tree.",
+    target: "chat-end",
+    panel: "notes",
+    headlineMn: "Яриагаа хадгал",
     instructionMn:
-      "Таны даалгавар, зорилтууд энд ургадаг. Ажиллаж буй бүх зүйл энэ моданд байдаг.",
-    advanceOn: "click-or-timer",
-    buttonLabel: "Got it →",
-    timerMs: 4000,
+      "Сайн байна. Одоо «Дуусгаж хадгалах» товчийг дарж яриагаа хадгалаарай — үүнээс даалгавар ургана.",
+    advanceOn: "action",
   },
+  // 5 — Click the Task Tree (garden landmark → opens the panel)
   {
     step: 5,
-    target: "pond",
-    headline: "The Pond",
-    headlineMn: "Нуур",
-    instruction: "A quiet place for reflection. Visit the pond anytime to record how you feel.",
-    instructionMn: "Тайван тунгаан бодох газар. Сэтгэлийн байдлаа тэмдэглэхийн тулд нуур руу очно уу.",
-    advanceOn: "click-or-timer",
-    buttonLabel: "Got it →",
-    timerMs: 4000,
+    target: "task-tree",
+    panel: "garden",
+    headlineMn: "Даалгаврын мод",
+    instructionMn:
+      "Энэ бол таны Даалгаврын мод. Нээхийн тулд дээр нь дарна уу.",
+    advanceOn: "action",
   },
+  // 6 — Explain the task tags (inside the task panel)
   {
     step: 6,
-    target: "mood-tracker",
-    headline: "How are you feeling?",
-    headlineMn: "Та ямар байна?",
-    instruction:
-      "Track your mood here. The more you share, the better Bloom understands you.",
+    target: "task-tree-frame",
+    panel: "tasks",
+    headlineMn: "Таны даалгаврууд",
     instructionMn:
-      "Сэтгэлийн байдлаа энд хянаарай. Хуваалцах тусам Bloom таныг илүү ойлгоно.",
+      "Яриа бүрээс ургасан даалгавар, сурсан зүйлс эдгээр шошго дээр харагдана. Шошго дээр дарж дэлгэрэнгүйг нь үзэж, дууссан үед нь тэмдэглэх боломжтой.",
     advanceOn: "got-it",
-    buttonLabel: "Got it →",
+    buttonLabel: "Ойлголоо →",
   },
+  // 7 — Click the Pond (garden landmark → opens the panel)
   {
     step: 7,
+    target: "pond",
+    panel: "garden",
+    headlineMn: "Нуур",
+    instructionMn: "Энэ бол таны Нуур. Нээхийн тулд дээр нь дарна уу.",
+    advanceOn: "action",
+  },
+  // 8 — Explain rock throwing (inside the pond panel)
+  {
+    step: 8,
+    target: "pond-throw",
+    panel: "pond",
+    headlineMn: "Чулуу шидэх",
+    instructionMn:
+      "Стресс, санаа зовнил мэдрэгдвэл «Чулуу нэмэх» дээр дарж чулуу үүсгээд нуур руу шидээрэй. Энэ нь санаагаа тавьж өгөх бэлгэдэл юм.",
+    advanceOn: "got-it",
+    buttonLabel: "Ойлголоо →",
+    spotlight: "wide",
+  },
+  // 9 — Closing (precise-language message)
+  {
+    step: 9,
     target: null,
-    headline: "You're all set.",
-    headlineMn: "Бүгд бэлэн боллоо.",
-    instruction: "Your garden is waiting. 🌿",
-    instructionMn: "Таны цэцэрлэг хүлээж байна. 🌿",
+    panel: null,
+    headlineMn: "Бэлэн боллоо 🌿",
+    instructionMn:
+      "Дэмжигчтэйгээ ярихдаа нарийн тодорхой байгаарай. Яг одоо юу мэдэрч байгаагаа, яг юу болсныг хэлэх тусам дэмжигч таны хэрэгцээг илүү сайн ойлгоно. «Муу байна» биш — «ажил дээрээ шийдвэр гаргахдаа өөртөө итгэлгүй байна» гэх мэт.",
+    sublineMn: "Нарийн үг = гүнзгий яриа = илүү хурдан өсөлт",
     advanceOn: "auto",
-    timerMs: 2500,
+    timerMs: 3000,
   },
 ];

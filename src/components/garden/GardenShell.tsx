@@ -14,6 +14,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { GardenTopNav } from "./GardenTopNav";
 import { GardenScene } from "./GardenScene";
@@ -28,6 +29,7 @@ import {
   useTutorial,
 } from "@/components/tutorial/TutorialContext";
 import { TutorialOverlay } from "@/components/tutorial/TutorialOverlay";
+import { TUTORIAL_STEPS } from "@/components/tutorial/steps";
 
 export type PanelKey =
   | "garden"
@@ -37,6 +39,14 @@ export type PanelKey =
   | "birds"
   | "tasks"
   | "reflection";
+
+// World-x% to pan to when a garden-landmark tutorial step is active, so the
+// landmark is centered on screen (the greenhouse/pond sit off the default view).
+const TUTORIAL_PAN_PCT: Record<string, number> = {
+  greenhouse: 83,
+  "task-tree": 41,
+  pond: 75,
+};
 
 // Public export: wraps the inner component with TutorialProvider so the
 // inner component can call useTutorial() as a descendant.
@@ -66,7 +76,82 @@ function GardenShellContent({ userName }: { userName: string }) {
     panelRef.current = panel;
   }, [panel]);
 
-  const { tutorialActive, currentStep, advanceStep } = useTutorial();
+  const {
+    tutorialActive,
+    tutorialComplete,
+    currentStep,
+    advanceStep,
+    restartTutorial,
+  } = useTutorial();
+
+  // The active step's target — used to gate action-based advancement so the
+  // wiring is robust to step reordering.
+  const curTarget = tutorialActive
+    ? TUTORIAL_STEPS[currentStep]?.target
+    : undefined;
+
+  // The flower-conversation created *during* the tutorial, so it (and any task
+  // grown from it) can be deleted when the tutorial finishes or is skipped —
+  // keeping the real garden clean. Ref: never needs to trigger a render.
+  const tutorialConvId = useRef<string | null>(null);
+  const cleanedUp = useRef(false);
+
+  // During the tutorial, keep the on-screen panel in sync with the active
+  // step's declared panel (greenhouse → chat → garden landmarks) without
+  // fighting the interactive steps, whose user actions set the same panel.
+  useEffect(() => {
+    if (!tutorialActive) return;
+    const step = TUTORIAL_STEPS[currentStep];
+    if (step?.panel && step.panel !== panelRef.current) {
+      setPanel(step.panel as PanelKey);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, tutorialActive]);
+
+  // Reset cleanup tracking each time the tutorial (re)starts.
+  const prevActiveRef = useRef(false);
+  useEffect(() => {
+    if (tutorialActive && !prevActiveRef.current) {
+      tutorialConvId.current = null;
+      cleanedUp.current = false;
+    }
+    prevActiveRef.current = tutorialActive;
+  }, [tutorialActive]);
+
+  // When the tutorial ends (finished OR skipped), delete anything it created.
+  useEffect(() => {
+    if (!tutorialComplete || cleanedUp.current) return;
+    cleanedUp.current = true;
+    setPanel("garden");
+    const convId = tutorialConvId.current;
+    if (!convId) return;
+    (async () => {
+      // Delete any task grown from the tutorial conversation first (its
+      // conversation FK is SetNull, so it would otherwise survive), then the
+      // conversation itself — which cascades the flower, messages and memories.
+      try {
+        const res = await fetch("/api/tasks");
+        if (res.ok) {
+          const tasks = (await res.json()) as {
+            id: string;
+            conversationId: string | null;
+          }[];
+          for (const t of tasks) {
+            if (t.conversationId === convId) {
+              try {
+                await fetch(`/api/tasks/${t.id}`, { method: "DELETE" });
+              } catch {}
+            }
+          }
+        }
+      } catch {}
+      try {
+        await fetch(`/api/conversations/${convId}`, { method: "DELETE" });
+      } catch {}
+      tutorialConvId.current = null;
+      setGardenRefetch((k) => k + 1);
+    })();
+  }, [tutorialComplete]);
 
   // Global Ably subscription — lives for the full garden session, not just
   // while the bird messages panel is open.
@@ -108,8 +193,8 @@ function GardenShellContent({ userName }: { userName: string }) {
   function openFlowerChat(flowerId: string) {
     setSelectedFlowerId(flowerId);
     setPanel("notes");
-    // Step 3: user clicked their planted flower → advance to Memory Tree step
-    if (tutorialActive && currentStep === 3) advanceStep();
+    // flower-planted: clicking the flower opens chat → advance into the chat
+    if (tutorialActive && curTarget === "flower-planted") advanceStep();
   }
 
   function openBirds() {
@@ -119,18 +204,23 @@ function GardenShellContent({ userName }: { userName: string }) {
 
   function openWorkshop() {
     setPanel("workshop");
-    // Step 1: user clicked the Greenhouse → advance to flower-picker step
-    if (tutorialActive && currentStep === 1) advanceStep();
+    // greenhouse: clicking the Greenhouse → advance to flower-picker
+    if (tutorialActive && curTarget === "greenhouse") advanceStep();
   }
 
   function openMemoryTree() {
     setPanel("tasks");
-    if (tutorialActive && currentStep === 4) advanceStep();
+    // task-tree: clicking the tree opens the panel → explain the task tags.
+    if (tutorialActive && curTarget === "task-tree") {
+      setExpectingTask(true); // poll for the freshly-grown tutorial task
+      advanceStep();
+    }
   }
 
   function openPond() {
     setPanel("pond");
-    if (tutorialActive && currentStep === 5) advanceStep();
+    // pond: clicking the pond opens the panel → explain rock throwing.
+    if (tutorialActive && curTarget === "pond") advanceStep();
   }
 
   // data-tutorial-step on the root element drives CSS glow animations
@@ -146,9 +236,21 @@ function GardenShellContent({ userName }: { userName: string }) {
         onOpenFlowerChat={openFlowerChat}
         userName={userName}
         nightMode={nightMode}
-        // Tutorial: highlight the newly-planted flower in the garden for step 3
+        // Tutorial: highlight the newly-planted flower in the garden
         tutorialFlowerId={
-          tutorialActive && currentStep === 3 ? selectedFlowerId : undefined
+          tutorialActive && curTarget === "flower-planted"
+            ? selectedFlowerId
+            : undefined
+        }
+        // Tutorial: pan the garden so the planted flower is centered
+        centerFlowerId={
+          tutorialActive && curTarget === "flower-planted"
+            ? selectedFlowerId
+            : undefined
+        }
+        // Tutorial: pan to the active garden landmark (greenhouse / tree / pond)
+        centerWorldXPct={
+          tutorialActive && curTarget ? TUTORIAL_PAN_PCT[curTarget] : undefined
         }
         // Tutorial: refetch flowers after planting while in tutorial mode
         refetchKey={gardenRefetch}
@@ -165,11 +267,14 @@ function GardenShellContent({ userName }: { userName: string }) {
       {panel === "workshop" && (
         <WorkshopPanel
           onClose={close}
-          onPlanted={(flowerId) => {
+          onPlanted={(flowerId, conversationId) => {
             if (flowerId) setSelectedFlowerId(flowerId);
-            if (tutorialActive && currentStep === 2) {
-              // Step 2 complete: stay in garden so user can see their flower (step 3).
-              // Force an immediate flower refetch so the planted flower appears.
+            if (tutorialActive && curTarget === "flower-picker") {
+              // flower-picker complete: remember the created flower's
+              // conversation for cleanup, then return to the garden so the
+              // user can see + click their new flower. Force a refetch so the
+              // planted flower appears immediately.
+              if (conversationId) tutorialConvId.current = conversationId;
               setGardenRefetch((k) => k + 1);
               setPanel("garden");
               advanceStep();
@@ -180,6 +285,7 @@ function GardenShellContent({ userName }: { userName: string }) {
         />
       )}
       {panel === "pond" && <PondPanel onClose={close} />}
+<<<<<<< Updated upstream
       {panel === "notes" && (
         <DeskChatPanel
           onClose={close}
@@ -191,6 +297,23 @@ function GardenShellContent({ userName }: { userName: string }) {
           }}
         />
       )}
+=======
+      {/* #4 — AnimatePresence keeps the desk chat mounted long enough to play
+          its slide-out exit when the user closes it. */}
+      <AnimatePresence>
+        {panel === "notes" && (
+          <DeskChatPanel
+            key="desk-chat"
+            onClose={close}
+            flowerId={selectedFlowerId}
+            onOpenTasks={() => {
+              setExpectingTask(true);
+              setPanel("tasks");
+            }}
+          />
+        )}
+      </AnimatePresence>
+>>>>>>> Stashed changes
       {panel === "birds" && (
         <BirdMessagesPanel onClose={close} refetchSignal={birdRefetch} />
       )}
@@ -206,6 +329,41 @@ function GardenShellContent({ userName }: { userName: string }) {
         />
       )}
       {panel === "reflection" && <ReflectionPanel onClose={close} />}
+
+      {/* Replay the tutorial — sits just above the mood pill (bottom-left),
+          hidden while the tutorial is already running. */}
+      {!tutorialActive && (
+        <button
+          type="button"
+          onClick={restartTutorial}
+          title="Заавар дахин үзэх"
+          style={{
+            position: "fixed",
+            left: 28,
+            bottom: 82,
+            zIndex: 30,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            background: "rgba(35,39,27,0.55)",
+            color: "rgba(247,241,228,0.92)",
+            border: "1px solid rgba(247,241,228,0.18)",
+            borderRadius: 999,
+            padding: "7px 13px",
+            fontSize: 12,
+            fontWeight: 600,
+            fontFamily: "'Mulish', system-ui, sans-serif",
+            letterSpacing: "0.02em",
+            cursor: "pointer",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            boxShadow: "0 6px 18px rgba(0,0,0,0.22)",
+          }}
+        >
+          <span aria-hidden style={{ fontSize: 13 }}>↻</span>
+          Заавар дахин үзэх
+        </button>
+      )}
 
       <TutorialOverlay panel={panel} />
     </div>

@@ -143,7 +143,7 @@ export default function SignInPage() {
             </a>
             {mode === "login" && (
               <span className="auth-top-alt">
-                New to Bloom?{" "}
+                New to Bordoo?{" "}
                 <button onClick={() => router.push("/sign-up")}>sign up</button>
               </span>
             )}

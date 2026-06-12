@@ -731,6 +731,36 @@
   }
 }
 
+/* ---- Greenhouse flowers: gentle idle bob + warm glow so each pot invites a
+   click even before hover. Staggered per flower via --bob-dur / --bob-delay
+   (set inline in WorkshopPanel) so they don't move in lockstep. ---- */
+@keyframes wp-flower-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+    filter: drop-shadow(0 12px 18px rgba(20, 20, 10, 0.38));
+  }
+  50% {
+    transform: translateY(-6px);
+    filter: drop-shadow(0 17px 22px rgba(20, 20, 10, 0.3))
+      drop-shadow(0 0 16px rgba(255, 224, 150, 0.5));
+  }
+}
+.wp-flower-art {
+  animation: wp-flower-bob var(--bob-dur, 3s) ease-in-out var(--bob-delay, 0s)
+    infinite;
+  will-change: transform, filter;
+}
+/* hold still while hovered — the button itself lifts on hover */
+.wp-flower-pick:hover .wp-flower-art {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wp-flower-art {
+    animation: none;
+  }
+}
+
 .dc-error {
   text-align: center;
   color: #b4534f;

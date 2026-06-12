@@ -19,8 +19,8 @@ const PREVIEW_MESSAGES: BirdMessage[] = [
     id: "preview-1",
     type: "milestone",
     icon: "🌸",
-    title: "Your Lavender has bloomed",
-    body: "After 7 days of conversations, your Lavender reached full bloom and carries 3 memories in your tree.",
+    title: "Таны Лаванда дэлгэрлээ",
+    body: "7 хоногийн ярианы дараа таны Лаванда бүрэн дэлгэрч, таны мод дээр 3 дурсамж тээж байна.",
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     color: "#b6a8cf",
   },
@@ -28,8 +28,8 @@ const PREVIEW_MESSAGES: BirdMessage[] = [
     id: "preview-2",
     type: "memory",
     icon: "🍃",
-    title: "A memory arrived in your tree",
-    body: "\"I am enough, just as I am\" has been gently added to your Memory Tree.",
+    title: "Таны мод дээр дурсамж иржээ",
+    body: "«Би одоо байгаагаараа хангалттай» гэдэг үг таны Дурсамжийн мод дээр зөөлөн нэмэгдлээ.",
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
     color: "#9aa87f",
   },
@@ -37,8 +37,8 @@ const PREVIEW_MESSAGES: BirdMessage[] = [
     id: "preview-3",
     type: "mood",
     icon: "🌤️",
-    title: "Your week in the garden",
-    body: "This week, you had 4 conversations. Your garden felt mostly calm.",
+    title: "Цэцэрлэг дэх таны долоо хоног",
+    body: "Энэ долоо хоногт чи 4 яриа өрнүүлжээ. Таны цэцэрлэг ихэвчлэн тайван байлаа.",
     createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     color: "#d8c27a",
   },
@@ -46,8 +46,8 @@ const PREVIEW_MESSAGES: BirdMessage[] = [
     id: "preview-4",
     type: "insight",
     icon: "✨",
-    title: "A pattern noticed",
-    body: "Your conversations most often carry reflections. Your garden is quietly learning who you are.",
+    title: "Нэгэн хэв маяг ажиглагдлаа",
+    body: "Таны яриа ихэвчлэн эргэцүүллээр дүүрэн байдаг. Таны цэцэрлэг чамайг чимээгүйхэн таньж байна.",
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     color: "#cf8aa0",
   },
@@ -55,8 +55,8 @@ const PREVIEW_MESSAGES: BirdMessage[] = [
     id: "preview-5",
     type: "nudge",
     icon: "🌱",
-    title: "Your garden misses you",
-    body: "It's been a little while. Your flowers are waiting quietly for a new conversation.",
+    title: "Таны цэцэрлэг чамайг санаж байна",
+    body: "Багахан хугацаа өнгөрлөө. Таны цэцэгс шинэ яриаг чимээгүйхэн хүлээж байна.",
     createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     color: "#6b7c5a",
   },
@@ -66,12 +66,12 @@ function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const h = diff / (1000 * 60 * 60);
   const d = h / 24;
-  if (h < 1) return "just now";
-  if (h < 24) return `${Math.floor(h)}h ago`;
-  if (d < 2) return "yesterday";
-  if (d < 7) return `${Math.floor(d)} days ago`;
-  if (d < 14) return "1 week ago";
-  return `${Math.floor(d / 7)} weeks ago`;
+  if (h < 1) return "дөнгөж сая";
+  if (h < 24) return `${Math.floor(h)} цагийн өмнө`;
+  if (d < 2) return "өчигдөр";
+  if (d < 7) return `${Math.floor(d)} хоногийн өмнө`;
+  if (d < 14) return "1 долоо хоногийн өмнө";
+  return `${Math.floor(d / 7)} долоо хоногийн өмнө`;
 }
 
 export function BirdMessagesPanel({ onClose, refetchSignal }: { onClose: () => void; refetchSignal?: number }) {
@@ -96,10 +96,10 @@ export function BirdMessagesPanel({ onClose, refetchSignal }: { onClose: () => v
 
   return (
     <PanelShell
-      title="Bird Messages"
-      subtitle="Notes carried to you from the garden"
+      title="Шувууны захиа"
+      subtitle="Цэцэрлэгээс таньд авчирсан захианууд"
       banner="/garden/garden-bg.png"
-      note="The birds have been busy."
+      note="Шувууд завгүй байжээ."
       onClose={onClose}
       loading={loading}
     >
@@ -156,7 +156,7 @@ export function BirdMessagesPanel({ onClose, refetchSignal }: { onClose: () => v
               fontStyle: "italic",
             }}
           >
-            Complete conversations to grow your real messages ✦
+Жинхэнэ захиануудаа ургуулахын тулд яриагаа дуусгаарай ✦
           </p>
         )}
       </div>
