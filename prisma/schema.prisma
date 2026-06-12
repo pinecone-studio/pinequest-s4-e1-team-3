@@ -158,6 +158,7 @@ model ConversationEQSignal {
   conversationId  String
   eqArea          EQArea
   emotions        String[] @default([])
+  skillsPracticed String[] @default([])
   pattern         String?
   confidence      Float    @default(0)
   gentleInsight   String?
