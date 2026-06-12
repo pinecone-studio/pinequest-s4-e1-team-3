@@ -291,8 +291,14 @@ export function DeskChatPanel({
       });
     }
 
-<<<<<<< Updated upstream
-    if (res.headers.get("X-Stone-Prompt") === "true") setShowStonePrompt(true);
+    // Tutorial: the companion has finished replying → now point at "end & save".
+    if (tutorialActive && TUTORIAL_STEPS[currentStep]?.target === "chat-input") {
+      advanceStep();
+    }
+
+    if (res.headers.get("X-Stone-Prompt") === "true") {
+      setShowStonePrompt(true);
+    }
 
     setMessages((prev) => {
       const last = prev[prev.length - 1];
@@ -313,16 +319,6 @@ export function DeskChatPanel({
       }
       return prev;
     });
-=======
-    // Tutorial: the companion has finished replying → now point at "end & save".
-    if (tutorialActive && TUTORIAL_STEPS[currentStep]?.target === "chat-input") {
-      advanceStep();
-    }
-
-    if (res.headers.get("X-Stone-Prompt") === "true") {
-      setShowStonePrompt(true);
-    }
->>>>>>> Stashed changes
 
     // Voice path: play TTS after reply arrives
     if (withVoice && fullReply) {

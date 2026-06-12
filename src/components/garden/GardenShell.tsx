@@ -285,19 +285,6 @@ function GardenShellContent({ userName }: { userName: string }) {
         />
       )}
       {panel === "pond" && <PondPanel onClose={close} />}
-<<<<<<< Updated upstream
-      {panel === "notes" && (
-        <DeskChatPanel
-          onClose={close}
-          flowerId={selectedFlowerId}
-          onOpenTasks={(convId: string) => {
-            setTaskConversationId(convId);
-            setExpectingTask(true);
-            setPanel("tasks");
-          }}
-        />
-      )}
-=======
       {/* #4 — AnimatePresence keeps the desk chat mounted long enough to play
           its slide-out exit when the user closes it. */}
       <AnimatePresence>
@@ -306,14 +293,14 @@ function GardenShellContent({ userName }: { userName: string }) {
             key="desk-chat"
             onClose={close}
             flowerId={selectedFlowerId}
-            onOpenTasks={() => {
+            onOpenTasks={(convId: string) => {
+              setTaskConversationId(convId);
               setExpectingTask(true);
               setPanel("tasks");
             }}
           />
         )}
       </AnimatePresence>
->>>>>>> Stashed changes
       {panel === "birds" && (
         <BirdMessagesPanel onClose={close} refetchSignal={birdRefetch} />
       )}

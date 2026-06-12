@@ -18,12 +18,13 @@ import {
   getAreaLevel,
   assessmentAreaScores,
 } from "@/lib/eqScoring";
+import { loadCombinedEQProfile } from "@/lib/eqSignals";
 
 export async function GET() {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const [latest, recentWeeklies] = await Promise.all([
+  const [latest, recentWeeklies, combined] = await Promise.all([
     prisma.eQAssessment.findFirst({
       where: { userId: user.id },
       orderBy: { completedAt: "desc" },
@@ -33,6 +34,7 @@ export async function GET() {
       orderBy: { completedAt: "desc" },
       take: 2,
     }),
+    loadCombinedEQProfile(user.id),
   ]);
 
   if (!latest) return NextResponse.json({ hasProfile: false });
@@ -80,5 +82,7 @@ export async function GET() {
     },
     areas,
     trend,
+    blendedScores: combined.blendedScores,
+    blendedBreakdown: combined.blendedBreakdown,
   });
 }

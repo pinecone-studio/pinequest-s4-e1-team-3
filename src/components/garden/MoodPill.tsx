@@ -1,16 +1,7 @@
 "use client";
 
-<<<<<<< Updated upstream
-import { useState } from "react";
-=======
 import { useEffect, useRef, useState } from "react";
 import { motion, useAnimationControls, useReducedMotion } from "framer-motion";
-import type { LucideIcon } from "lucide-react";
-import {
-  Sun, CloudSun, Cloudy, CloudFog,
-  Wind, CloudDrizzle, CloudRain, CloudRainWind, CloudLightning,
-} from "lucide-react";
->>>>>>> Stashed changes
 import { useFetchJson } from "@/hooks/useFetchJson";
 import type { ForecastDay } from "./types";
 
