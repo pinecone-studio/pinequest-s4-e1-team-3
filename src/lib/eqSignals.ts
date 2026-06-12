@@ -11,7 +11,7 @@
 
 import type { EQArea } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import type { FullExtractionResult } from "@/lib/extractionPrompt";
+import type { EQSkill, FullExtractionResult } from "@/lib/extractionPrompt";
 import { calculateCombinedEQProfile } from "@/lib/eqScoring";
 
 // The mapped, ready-to-store signal (matches the ConversationEQSignal model).
@@ -20,6 +20,7 @@ export interface MappedEQSignal {
   conversationId: string;
   eqArea: EQArea;
   emotions: string[];
+  skillsPracticed: EQSkill[];
   pattern: string | null;
   confidence: number;
   gentleInsight: string | null;
@@ -44,6 +45,7 @@ export function extractEQSignalsFromConversation(
     // EQDomain and EQArea share the same string values by design.
     eqArea: extracted.eqDomain as unknown as EQArea,
     emotions,
+    skillsPracticed: extracted.skillsPracticed,
     pattern: extracted.thoughtPattern ?? extracted.insight,
     confidence: extracted.confidence,
     gentleInsight: extracted.insight,
@@ -69,6 +71,7 @@ export async function persistConversationEQSignal(
         conversationId: signal.conversationId,
         eqArea: signal.eqArea,
         emotions: signal.emotions,
+        skillsPracticed: signal.skillsPracticed,
         pattern: signal.pattern,
         confidence: signal.confidence,
         gentleInsight: signal.gentleInsight,
@@ -88,6 +91,7 @@ export async function persistConversationEQSignal(
       {
         eqArea: signal.eqArea,
         emotions: signal.emotions,
+        skillsPracticed: signal.skillsPracticed,
         pattern: signal.pattern,
         confidence: signal.confidence,
         gentleInsight: signal.gentleInsight,
@@ -106,7 +110,7 @@ export async function loadAndLogCombinedEQProfile(
   userId: string,
   logTag = "pipeline",
 ) {
-  const [onboarding, latestWeekly, signals] = await Promise.all([
+  const [onboarding, latestWeekly, signals, tasks] = await Promise.all([
     prisma.eQAssessment.findFirst({
       where: { userId, type: "onboarding" },
       orderBy: { completedAt: "desc" },
@@ -120,13 +124,21 @@ export async function loadAndLogCombinedEQProfile(
       orderBy: { createdAt: "desc" },
       take: 50,
     }),
+    prisma.task.findMany({
+      where: { userId },
+      select: { flowerKey: true, isCompleted: true },
+    }),
   ]);
 
   const combined = calculateCombinedEQProfile({
     userId,
     onboarding,
     latestWeekly,
-    signals,
+    signals: signals.map((s) => ({
+      ...s,
+      skillsPracticed: s.skillsPracticed as EQSkill[],
+    })),
+    tasks,
   });
   console.log(`[${logTag}] combined_eq_profile:`, combined);
   return combined;
