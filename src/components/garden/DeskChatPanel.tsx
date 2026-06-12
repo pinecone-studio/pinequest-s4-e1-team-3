@@ -612,7 +612,7 @@ export function DeskChatPanel({
                             e.stopPropagation();
                             setPendingDeleteId(conv.id);
                           }}
-                          title="Яриа устгах"
+                          title="Яриаг устгах"
                           aria-label="Устгах"
                         >
                           ×
@@ -637,9 +637,7 @@ export function DeskChatPanel({
               )}
 
               {messages.length === 0 && (
-                <p className="dc-empty">
-                  Амьсгаа аваад — таныг юу зовоож байна вэ?
-                </p>
+                <p className="dc-empty">Юуны тухай ярилцмаар байна?</p>
               )}
 
               {/* #4 — each bubble animates in as it appears. popLayout means a
@@ -678,7 +676,7 @@ export function DeskChatPanel({
           {showStonePrompt && !completed && (
             <div className="dc-stone-prompt">
               <span className="dc-stone-prompt-text">
-                🪨 Энэ яриагаас тавьж өгөхийг хүссэн зүйл байна уу?
+                🪨 Энэ ярианаас тавьж явуулахыг хүссэн зүйл байна уу?
               </span>
               <div className="dc-stone-prompt-actions">
                 <button
@@ -696,7 +694,7 @@ export function DeskChatPanel({
                     }
                   }}
                 >
-                  Тавьж өгье
+                  Тавьж явуулъя
                 </button>
                 <button
                   className="dc-stone-no"
@@ -837,7 +835,7 @@ export function DeskChatPanel({
                       ? "Хөрвүүлж байна…"
                       : loading
                         ? "Бодож байна…"
-                        : "Ярихын тулд тойрог дээр дарна уу"}
+                        : "Ярихын тулд ногоон товч дээр дарна уу"}
                 </span>
                 <button
                   type="button"
@@ -935,12 +933,12 @@ export function DeskChatPanel({
               ‹
             </button>
             <div>
-              <h2>Ургамал судлаачийн ширээ</h2>
+              <h2>Таны тэмдэглэлийн булан</h2>
               <p>
                 {drawerOpen
                   ? `Шургуулга · ${archivedCount} хуучин тэмдэглэл`
                   : pinnedNotes.length > 0
-                    ? `${pinnedNotes.length} тэмдэглэл хадгалсан · хуучныг хадгалахын тулд шургуулгаа нээ`
+                    ? `${pinnedNotes.length} тэмдэглэл хадгалсан · хуучин тэмдэглэлийг хадгалахын тулд шургуулгаа нээ`
                     : "Одоогоор тэмдэглэл алга"}
               </p>
             </div>
@@ -951,8 +949,8 @@ export function DeskChatPanel({
             <div className="dc-drawer-open">
               {archivedCount === 0 ? (
                 <p className="dc-drawer-empty">
-                  Шургуулга хоосон байна — тэмдэглэлээ энд хадгалахын тулд
-                  хийгээрэй.
+                  Шургуулга хоосон байна — тэмдэглэлээ энд хадгалахыг хүсвэл
+                  шинээр хийгээрэй
                 </p>
               ) : (
                 <div className="dc-drawer-notes">
@@ -1000,7 +998,7 @@ export function DeskChatPanel({
               <div className="dc-corkboard">
                 {pinnedNotes.length === 0 ? (
                   <p className="dc-cork-empty">
-                    Одоогоор тэмдэглэл алга — доорх “✎ Тэмдэглэл хавчуулах”-ыг
+                    Одоогоор тэмдэглэл алга — доорх “✎ Тэмдэглэл бичих”-ыг
                     ашиглана уу.
                   </p>
                 ) : (
@@ -1044,7 +1042,7 @@ export function DeskChatPanel({
                   className="dc-add-note"
                   onClick={() => setComposing((c) => !c)}
                 >
-                  ✎ Тэмдэглэл хавчуулах
+                  ✎ Тэмдэглэл бичих
                 </button>
                 <button
                   type="button"
@@ -1084,7 +1082,7 @@ export function DeskChatPanel({
                         savingNote || !noteTitle.trim() || !noteBody.trim()
                       }
                     >
-                      {savingNote ? "Хавчуулж байна…" : "Ширээнд хавчуулах"}
+                      {savingNote ? "Бичиж байна…" : "Ширээнд хавчуулах"}
                     </button>
                   </div>
                 </div>

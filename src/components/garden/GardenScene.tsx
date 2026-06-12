@@ -83,14 +83,94 @@ const BIRDS = [
 
 // Night-mode drifters — cool blue/silver tones, only rendered in night mode
 const NIGHT_DRIFTERS = [
-  { left: "8%",  color: "rgba(160,195,235,0.42)", w: 5, h: 8,  angle: -15, dur: "26s", delay: "0s",    dx: "60px",  rot: "320deg" },
-  { left: "22%", color: "rgba(200,225,250,0.35)", w: 4, h: 7,  angle:  18, dur: "31s", delay: "-8s",   dx: "-50px", rot: "280deg" },
-  { left: "38%", color: "rgba(140,175,220,0.48)", w: 6, h: 10, angle: -22, dur: "22s", delay: "-4s",   dx: "80px",  rot: "350deg" },
-  { left: "52%", color: "rgba(190,210,240,0.38)", w: 5, h: 8,  angle:  10, dur: "28s", delay: "-12s",  dx: "-40px", rot: "300deg" },
-  { left: "66%", color: "rgba(165,200,238,0.44)", w: 4, h: 7,  angle:  -8, dur: "24s", delay: "-6s",   dx: "55px",  rot: "330deg" },
-  { left: "79%", color: "rgba(210,230,255,0.32)", w: 6, h: 9,  angle:  20, dur: "35s", delay: "-3s",   dx: "-70px", rot: "290deg" },
-  { left: "91%", color: "rgba(155,190,230,0.40)", w: 5, h: 8,  angle: -12, dur: "27s", delay: "-9s",   dx: "45px",  rot: "360deg" },
-  { left: "45%", color: "rgba(180,215,245,0.35)", w: 4, h: 7,  angle:  25, dur: "32s", delay: "-16s",  dx: "-35px", rot: "310deg" },
+  {
+    left: "8%",
+    color: "rgba(160,195,235,0.42)",
+    w: 5,
+    h: 8,
+    angle: -15,
+    dur: "26s",
+    delay: "0s",
+    dx: "60px",
+    rot: "320deg",
+  },
+  {
+    left: "22%",
+    color: "rgba(200,225,250,0.35)",
+    w: 4,
+    h: 7,
+    angle: 18,
+    dur: "31s",
+    delay: "-8s",
+    dx: "-50px",
+    rot: "280deg",
+  },
+  {
+    left: "38%",
+    color: "rgba(140,175,220,0.48)",
+    w: 6,
+    h: 10,
+    angle: -22,
+    dur: "22s",
+    delay: "-4s",
+    dx: "80px",
+    rot: "350deg",
+  },
+  {
+    left: "52%",
+    color: "rgba(190,210,240,0.38)",
+    w: 5,
+    h: 8,
+    angle: 10,
+    dur: "28s",
+    delay: "-12s",
+    dx: "-40px",
+    rot: "300deg",
+  },
+  {
+    left: "66%",
+    color: "rgba(165,200,238,0.44)",
+    w: 4,
+    h: 7,
+    angle: -8,
+    dur: "24s",
+    delay: "-6s",
+    dx: "55px",
+    rot: "330deg",
+  },
+  {
+    left: "79%",
+    color: "rgba(210,230,255,0.32)",
+    w: 6,
+    h: 9,
+    angle: 20,
+    dur: "35s",
+    delay: "-3s",
+    dx: "-70px",
+    rot: "290deg",
+  },
+  {
+    left: "91%",
+    color: "rgba(155,190,230,0.40)",
+    w: 5,
+    h: 8,
+    angle: -12,
+    dur: "27s",
+    delay: "-9s",
+    dx: "45px",
+    rot: "360deg",
+  },
+  {
+    left: "45%",
+    color: "rgba(180,215,245,0.35)",
+    w: 4,
+    h: 7,
+    angle: 25,
+    dur: "32s",
+    delay: "-16s",
+    dx: "-35px",
+    rot: "310deg",
+  },
 ];
 
 // Ambient petal/leaf drifters — viewport-fixed, never panned
@@ -244,7 +324,9 @@ export function GardenScene({
   useEffect(() => {
     if (loading) return;
     scheduleIdle();
-    return () => { if (idleTimer.current) clearTimeout(idleTimer.current); };
+    return () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+    };
   }, [loading, scheduleIdle]);
 
   function dismissIdle() {
@@ -341,7 +423,8 @@ export function GardenScene({
     const flower = (flowers ?? []).find((f) => f.id === centerFlowerId);
     if (!flower) return;
     const vpW = vpRef.current?.clientWidth ?? window.innerWidth;
-    const worldPx = worldW.current || Math.round(window.innerHeight * WORLD_RATIO);
+    const worldPx =
+      worldW.current || Math.round(window.innerHeight * WORLD_RATIO);
     const desired = vpW / 2 - (flower.posX / 100) * worldPx;
     target.current = clampX(desired, worldPx, vpW);
   }, [centerFlowerId, flowers]);
@@ -351,7 +434,8 @@ export function GardenScene({
   useEffect(() => {
     if (centerWorldXPct == null) return;
     const vpW = vpRef.current?.clientWidth ?? window.innerWidth;
-    const worldPx = worldW.current || Math.round(window.innerHeight * WORLD_RATIO);
+    const worldPx =
+      worldW.current || Math.round(window.innerHeight * WORLD_RATIO);
     const desired = vpW / 2 - (centerWorldXPct / 100) * worldPx;
     target.current = clampX(desired, worldPx, vpW);
   }, [centerWorldXPct]);
@@ -605,11 +689,11 @@ export function GardenScene({
         />
       ))}
 
-
-
-      {loading && <p className="garden-hint">Таны цэцэрлэгийг ачаалж байна…</p>}
+      {loading && (
+        <p className="garden-hint">Таны цэцэрлэгийг ачааллаж байна…</p>
+      )}
       {error && (
-        <p className="garden-hint">Цэцэрлэгийг ачаалж чадсангүй — {error}</p>
+        <p className="garden-hint">Цэцэрлэгийг ачааллаж чадсангүй — {error}</p>
       )}
 
       {/* Idle contextual hints — only appear after 5 s of no interaction */}
@@ -617,14 +701,19 @@ export function GardenScene({
         <button
           type="button"
           className="garden-hint garden-hint--idle"
-          onClick={() => { dismissIdle(); onOpenWorkshop(); }}
+          onClick={() => {
+            dismissIdle();
+            onOpenWorkshop();
+          }}
         >
-          Таны цэцэрлэг хоосон байна &nbsp;·&nbsp; эхний цэцгээ тарихын тулд Хүлэмж рүү очно уу →
+          Таны цэцэрлэг хоосон байна &nbsp;·&nbsp; эхний цэцгээ тарихын тулд
+          Хүлэмж рүү очно уу →
         </button>
       )}
       {idleHint === "explore" && (
         <p className="garden-hint garden-hint--idle">
-          ← Чирж цэцэрлэгээ тойрон үзээрэй &nbsp;·&nbsp; яриа эхлүүлэхийн тулд цэцэг дээр дарна уу
+          ← Чирж цэцэрлэгээ тойрон үзээрэй &nbsp;·&nbsp; яриа эхлүүлэхийн тулд
+          цэцэг дээр дарна уу
         </p>
       )}
 

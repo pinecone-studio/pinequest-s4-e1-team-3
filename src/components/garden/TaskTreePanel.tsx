@@ -16,12 +16,15 @@ type Task = {
   createdAt: string;
 };
 
-const EQ_DOMAINS: Record<string, { label: string; icon: string; color: string }> = {
-  daisy:     { label: "Өөрийгөө таних",      icon: "🌼", color: "#f5c842" },
-  lavender:  { label: "Өөрийгөө зохицуулах", icon: "🌿", color: "#a49bcf" },
-  sunflower: { label: "Урам зориг",          icon: "🌻", color: "#f09a2b" },
-  iris:      { label: "Бусдыг ойлгох",       icon: "🪻", color: "#7e94c8" },
-  rose:      { label: "Бусадтай харилцах",   icon: "🌸", color: "#e88fad" },
+const EQ_DOMAINS: Record<
+  string,
+  { label: string; icon: string; color: string }
+> = {
+  daisy: { label: "Өөрийгөө таних", icon: "🌼", color: "#f5c842" },
+  lavender: { label: "Өөрийгөө зохицуулах", icon: "🌿", color: "#a49bcf" },
+  sunflower: { label: "Урам зориг", icon: "🌻", color: "#f09a2b" },
+  iris: { label: "Бусдыг ойлгох", icon: "🪻", color: "#7e94c8" },
+  rose: { label: "Бусадтай харилцах", icon: "🌸", color: "#e88fad" },
 };
 
 function seededRandom(seed: string, salt: number) {
@@ -56,7 +59,11 @@ function TaskTag({
 }) {
   const [hovered, setHovered] = useState(false);
   const { left, top } = tagLayout(task, index, total);
-  const domain = EQ_DOMAINS[task.flowerKey] ?? { label: task.flowerKey, icon: "🌿", color: "#7a9e72" };
+  const domain = EQ_DOMAINS[task.flowerKey] ?? {
+    label: task.flowerKey,
+    icon: "🌿",
+    color: "#7a9e72",
+  };
 
   return (
     <button
@@ -74,12 +81,22 @@ function TaskTag({
         className="garden-memory-tag-art"
         style={{ filter: `drop-shadow(0 8px 14px ${domain.color}88)` }}
       >
-        <Image src="/garden/tag-memory-tree.png" alt="" fill sizes="84px" style={{ objectFit: "contain" }} />
+        <Image
+          src="/garden/tag-memory-tree.png"
+          alt=""
+          fill
+          sizes="84px"
+          style={{ objectFit: "contain" }}
+        />
       </span>
 
       {/* Hover preview — title only, no buttons */}
       <span className={"garden-memory-card" + (hovered ? " visible" : "")}>
-        <span className="garden-memory-card-dot" style={{ background: domain.color }} aria-hidden />
+        <span
+          className="garden-memory-card-dot"
+          style={{ background: domain.color }}
+          aria-hidden
+        />
         <span>
           <span className="eyebrow">{domain.label}</span>
           <span className="content">{task.title}</span>
@@ -101,7 +118,11 @@ function TaskDetail({
   onComplete: (id: string) => Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
-  const domain = EQ_DOMAINS[task.flowerKey] ?? { label: task.flowerKey, icon: "🌿", color: "#7a9e72" };
+  const domain = EQ_DOMAINS[task.flowerKey] ?? {
+    label: task.flowerKey,
+    icon: "🌿",
+    color: "#7a9e72",
+  };
 
   async function handleDone() {
     setBusy(true);
@@ -159,42 +180,61 @@ function TaskDetail({
         </button>
 
         {/* Domain badge */}
-        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 14 }}>
-          <span style={{
-            fontSize: 22,
-            lineHeight: 1,
-          }}>{domain.icon}</span>
-          <span style={{
-            fontSize: 11,
-            fontWeight: 800,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            color: domain.color,
-            background: `${domain.color}18`,
-            border: `1px solid ${domain.color}33`,
-            borderRadius: 20,
-            padding: "3px 9px",
-          }}>{domain.label}</span>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            marginBottom: 14,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 22,
+              lineHeight: 1,
+            }}
+          >
+            {domain.icon}
+          </span>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: domain.color,
+              background: `${domain.color}18`,
+              border: `1px solid ${domain.color}33`,
+              borderRadius: 20,
+              padding: "3px 9px",
+            }}
+          >
+            {domain.label}
+          </span>
         </div>
 
         {/* Title */}
-        <p style={{
-          fontWeight: 800,
-          fontSize: 16,
-          color: "var(--g-ink, #3a3228)",
-          lineHeight: 1.35,
-          marginBottom: 10,
-        }}>
+        <p
+          style={{
+            fontWeight: 800,
+            fontSize: 16,
+            color: "var(--g-ink, #3a3228)",
+            lineHeight: 1.35,
+            marginBottom: 10,
+          }}
+        >
           {task.title}
         </p>
 
         {/* Description */}
-        <p style={{
-          fontSize: 13.5,
-          color: "var(--g-ink-soft, #7a6e60)",
-          lineHeight: 1.6,
-          marginBottom: 20,
-        }}>
+        <p
+          style={{
+            fontSize: 13.5,
+            color: "var(--g-ink-soft, #7a6e60)",
+            lineHeight: 1.6,
+            marginBottom: 20,
+          }}
+        >
           {task.description}
         </p>
 
@@ -259,8 +299,11 @@ export function TaskTreePanel({
       refetch();
       if (attempts >= 25) clearInterval(id);
     }, 2000);
-    return () => { clearTimeout(first); clearInterval(id); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      clearTimeout(first);
+      clearInterval(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expectingTask]);
 
   // Detect arrival: look for a pending task with the expected conversationId
@@ -282,11 +325,12 @@ export function TaskTreePanel({
     refetch();
   }
 
-  const noteText = visible.length > 0
-    ? `${visible.length} даалгавар ургаж байна${queueCount > 0 ? ` · ${queueCount} хүлээгдэж байна` : ""}`
-    : expectingTask
-    ? "Таны шинэ даалгавар замдаа явж байна…"
-    : "Эхний даалгавраа ургуулахын тулд яриагаа дуусгаарай";
+  const noteText =
+    visible.length > 0
+      ? `${visible.length} даалгавар ирсэн байна${queueCount > 0 ? ` · ${queueCount} хүлээгдэж байна` : ""}`
+      : expectingTask
+        ? "Таны шинэ даалгавар замдаа явж байна…"
+        : "Эхний даалгавраа авахын тулд яриагаа дуусгаарай";
 
   return (
     <PanelShell
@@ -338,8 +382,11 @@ export function TaskTreePanel({
                 </>
               ) : (
                 <>
-                  <h3>Таны дадлагын цэцэрлэг.</h3>
-                  <p>Урьдчилан үзэхийн тулд тэмдэг дээр хулганаа аваач — нээж дуусгахын тулд дарна уу.</p>
+                  <h3>Таны дасгал даалгаврын мод.</h3>
+                  <p>
+                    Урьдчилан үзэхийн тулд тэмдэг дээр хулганаа аваач — тэмдэг
+                    дээр дарж нээн даалгавар гүйцэтгэсэн эсэхээ тэмдэглэ.
+                  </p>
                 </>
               )}
             </div>

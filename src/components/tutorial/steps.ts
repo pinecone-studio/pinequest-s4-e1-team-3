@@ -19,7 +19,13 @@
 //    auto    — the closing celebration; auto-dismisses after timerMs or tap
 // ============================================
 
-export type StepPanel = "garden" | "workshop" | "notes" | "tasks" | "pond" | null;
+export type StepPanel =
+  | "garden"
+  | "workshop"
+  | "notes"
+  | "tasks"
+  | "pond"
+  | null;
 
 export interface TutorialStepDef {
   step: number;
@@ -55,7 +61,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
     step: 1,
     target: "flower-picker",
     panel: "workshop",
-    headlineMn: "Анхны дэмжигчээ сонгоно уу",
+    headlineMn: "Анхны ярилцах төрлөө сонгоно уу",
     instructionMn:
       "Тус бүр өөр төрлийн яриа. Өнөөдөр өөрт тохирсон цэцгээ дарж тарина уу.",
     advanceOn: "action",
@@ -66,7 +72,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
     step: 2,
     target: "flower-planted",
     panel: "garden",
-    headlineMn: "Дэмжигчтэйгээ уулз",
+    headlineMn: "Сонгосон төрлийн яриагаа эхлүүл",
     instructionMn:
       "Энэ таны шинэ цэцэг. Яриа эхлүүлэхийн тулд дээр нь дарна уу.",
     advanceOn: "action",
@@ -78,7 +84,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
     panel: "notes",
     headlineMn: "Бяцхан яриа",
     instructionMn:
-      "Дэмжигчтэйгээ хэдэн үг бичээд илгээгээрэй. Хариултыг нь хүлээгээрэй.",
+      "Яриа эхлүүж хэдэн үг бичээд илгээгээрэй. Хариултыг нь хүлээгээрэй.",
     advanceOn: "action",
   },
   // 4 — End & save (grows a task)
@@ -128,7 +134,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
     panel: "pond",
     headlineMn: "Чулуу шидэх",
     instructionMn:
-      "Стресс, санаа зовнил мэдрэгдвэл «Чулуу нэмэх» дээр дарж чулуу үүсгээд нуур руу шидээрэй. Энэ нь санаагаа тавьж өгөх бэлгэдэл юм.",
+      "Тавьж явуулахыг хүссэн зүйлс байвал «Чулуу нэмэх» дээр дарж чулуу үүсгээд нуур руу шидээрэй. Энэ нь санаагаа тавьж өгөх бэлгэдэл юм.",
     advanceOn: "got-it",
     buttonLabel: "Ойлголоо →",
     spotlight: "wide",
@@ -140,7 +146,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
     panel: null,
     headlineMn: "Бэлэн боллоо 🌿",
     instructionMn:
-      "Дэмжигчтэйгээ ярихдаа нарийн тодорхой байгаарай. Яг одоо юу мэдэрч байгаагаа, яг юу болсныг хэлэх тусам дэмжигч таны хэрэгцээг илүү сайн ойлгоно. «Муу байна» биш — «ажил дээрээ шийдвэр гаргахдаа өөртөө итгэлгүй байна» гэх мэт.",
+      "Нарийн тодорхой яриа эхлүүлээрэй. Яг одоо юу мэдэрч байгаагаа, яг юу болсныг хэлэх тусам дэмжигч таны хэрэгцээг илүү сайн ойлгоно. «Муу байна» биш — «ажил дээрээ шийдвэр гаргахдаа өөртөө итгэлгүй байна» гэх мэт.",
     sublineMn: "Нарийн үг = гүнзгий яриа = илүү хурдан өсөлт",
     advanceOn: "auto",
     timerMs: 3000,
