@@ -17,7 +17,8 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/getUser";
 import {
   resolveAnswers,
-  calculateOnboardingEQResult,
+  calculateWeeklyEQResult,
+  assessmentAreaScores,
   AREA_KEY,
   type RawAnswer,
 } from "@/lib/eqScoring";
@@ -96,14 +97,15 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const rawAnswers: RawAnswer[] = Array.isArray(body?.answers) ? body.answers : [];
   const resolved = resolveAnswers(rawAnswers).filter((a) =>
-    a.questionId.startsWith("onboarding_"),
+    a.questionId.startsWith("weekly_"),
   );
 
   if (resolved.length === 0) {
     return NextResponse.json({ error: "No valid answers submitted" }, { status: 400 });
   }
 
-  const result = calculateOnboardingEQResult(resolved);
+  const previousScores = previous ? assessmentAreaScores(previous) : null;
+  const result = calculateWeeklyEQResult(resolved, previousScores);
 
   const areaCols = {
     selfAwarenessScore: result.areaScores.SELF_AWARENESS,

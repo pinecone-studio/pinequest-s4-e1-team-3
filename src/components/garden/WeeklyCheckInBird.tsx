@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ONBOARDING_QUESTIONS } from "@/lib/eqQuestions";
+import { getWeeklySet } from "@/lib/eqQuestions";
 import { EQTestStepper } from "@/components/eq/EQTestStepper";
 import type { EQAnswer } from "@/components/eq/EQTestStepper";
 
@@ -15,12 +15,15 @@ export function WeeklyCheckInBird() {
   const [visible, setVisible] = useState(false);
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [setIndex, setSetIndex] = useState(0);
+
   useEffect(() => {
     let cancelled = false;
     fetch("/api/eq/weekly")
       .then((r) => r.json())
       .then((data: WeeklyStatus) => {
         if (cancelled || !data.available) return;
+        setSetIndex(data.setIndex ?? 0);
         setTimeout(() => setVisible(true), 1200);
       })
       .catch(() => {});
@@ -241,7 +244,7 @@ export function WeeklyCheckInBird() {
                   Долоо хоног тутам нэг удаа.
                 </p>
                 <EQTestStepper
-                  questions={ONBOARDING_QUESTIONS}
+                  questions={getWeeklySet(setIndex)}
                   onSubmit={handleSubmit}
                   submitLabel="Дуусгах"
                 />
