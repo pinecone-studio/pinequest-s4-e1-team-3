@@ -6,44 +6,35 @@ import { ONBOARDING_QUESTIONS } from "@/lib/eqQuestions";
 import { EQTestStepper } from "@/components/eq/EQTestStepper";
 import type { EQAnswer } from "@/components/eq/EQTestStepper";
 
-const STORAGE_KEY = "pinequest_checkin_last";
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-
-function shouldShow(): boolean {
-  try {
-    if (new URLSearchParams(window.location.search).has("bird")) return true;
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return true;
-    return Date.now() - Number(raw) >= SEVEN_DAYS_MS;
-  } catch {
-    return false;
-  }
-}
-
-function markDone() {
-  try {
-    localStorage.setItem(STORAGE_KEY, String(Date.now()));
-  } catch {}
-}
+type WeeklyStatus = {
+  available: boolean;
+  setIndex: number;
+};
 
 export function WeeklyCheckInBird() {
   const [visible, setVisible] = useState(false);
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-
   useEffect(() => {
-    if (!shouldShow()) return;
-    const t = setTimeout(() => setVisible(true), 1200);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    fetch("/api/eq/weekly")
+      .then((r) => r.json())
+      .then((data: WeeklyStatus) => {
+        if (cancelled || !data.available) return;
+        setTimeout(() => setVisible(true), 1200);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function handleSubmit(answers: EQAnswer[]) {
-    await fetch("/api/eq/onboarding", {
+    await fetch("/api/eq/weekly", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ answers }),
     });
-    markDone();
     setSubmitted(true);
     setTimeout(() => {
       setOpen(false);

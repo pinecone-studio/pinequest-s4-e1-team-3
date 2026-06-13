@@ -17,8 +17,7 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/getUser";
 import {
   resolveAnswers,
-  calculateWeeklyEQResult,
-  assessmentAreaScores,
+  calculateOnboardingEQResult,
   AREA_KEY,
   type RawAnswer,
 } from "@/lib/eqScoring";
@@ -33,39 +32,51 @@ async function latestWeekly(userId: string) {
   });
 }
 
+async function latestOnboarding(userId: string) {
+  return prisma.eQAssessment.findFirst({
+    where: { userId, type: "onboarding" },
+    orderBy: { completedAt: "desc" },
+  });
+}
+
 export async function GET() {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const [last, weeklyCount] = await Promise.all([
+  const [lastWeekly, onboarding, weeklyCount] = await Promise.all([
     latestWeekly(user.id),
+    latestOnboarding(user.id),
     prisma.eQAssessment.count({ where: { userId: user.id, type: "weekly" } }),
   ]);
+
+  // Onboarding must be complete before any weekly becomes available
+  if (!onboarding) {
+    return NextResponse.json({
+      hasEverTaken: false,
+      available: false,
+      daysUntilNext: null,
+      lastTakenAt: null,
+      setIndex: 0,
+    });
+  }
 
   // Rotation: which set to show this week. A set repeats only every 3 weeks.
   const setIndex = weeklyCount % 3;
 
-  if (!last) {
-    return NextResponse.json({
-      hasEverTaken: false,
-      available: true,
-      daysUntilNext: 0,
-      lastTakenAt: null,
-      setIndex,
-    });
-  }
-
-  const elapsed = Date.now() - last.completedAt.getTime();
+  // First weekly unlocks 7 days after onboarding; subsequent ones 7 days after
+  // the previous weekly. lastWeekly wins if it exists.
+  const referenceDate = lastWeekly?.completedAt ?? onboarding.completedAt;
+  const elapsed = Date.now() - referenceDate.getTime();
   const available = elapsed >= SEVEN_DAYS_MS;
   const daysUntilNext = available
     ? 0
     : Math.ceil((SEVEN_DAYS_MS - elapsed) / (24 * 60 * 60 * 1000));
 
   return NextResponse.json({
-    hasEverTaken: true,
+    hasEverTaken: !!lastWeekly,
     available,
     daysUntilNext,
-    lastTakenAt: last.completedAt.toISOString(),
+    lastTakenAt: lastWeekly?.completedAt.toISOString() ?? null,
     setIndex,
   });
 }
@@ -85,15 +96,14 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const rawAnswers: RawAnswer[] = Array.isArray(body?.answers) ? body.answers : [];
   const resolved = resolveAnswers(rawAnswers).filter((a) =>
-    a.questionId.startsWith("weekly_"),
+    a.questionId.startsWith("onboarding_"),
   );
 
   if (resolved.length === 0) {
     return NextResponse.json({ error: "No valid answers submitted" }, { status: 400 });
   }
 
-  const previousScores = previous ? assessmentAreaScores(previous) : null;
-  const result = calculateWeeklyEQResult(resolved, previousScores);
+  const result = calculateOnboardingEQResult(resolved);
 
   const areaCols = {
     selfAwarenessScore: result.areaScores.SELF_AWARENESS,
