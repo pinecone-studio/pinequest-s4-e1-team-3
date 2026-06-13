@@ -52,7 +52,9 @@ export function ReflectionPanel({ onClose }: { onClose: () => void }) {
           <header style={head}>
             <span style={eyebrow}>Долоо хоногийн эргэцүүлэл</span>
             <h2 style={title}>Энэ долоо хоног чи хэр байв?</h2>
-            <p style={sub}>10 богино асуулт. Өөрт чинь ойр санагдсанаа сонго.</p>
+            <p style={sub}>
+              10 богино асуулт. Өөрт чинь ойр санагдсанаа сонго.
+            </p>
           </header>
           <EQTestStepper
             questions={getWeeklySet(data?.setIndex ?? 0)}
@@ -69,7 +71,6 @@ export function ReflectionPanel({ onClose }: { onClose: () => void }) {
 
   const available = data?.available ?? false;
 
-
   return (
     <PanelShell
       title="Долоо хоногийн эргэцүүлэл"
@@ -79,7 +80,7 @@ export function ReflectionPanel({ onClose }: { onClose: () => void }) {
       loading={data === null}
       overlay={<EQDashboard refreshKey={dashKey} />}
     >
-      <div style={statusWrap}>
+      {/* <div style={statusWrap}>
         {done && (
           <p style={doneNote}>
             Баярлалаа 🌱 Энэ долоо хоногийн эргэцүүлэл хадгалагдлаа. Дараагийн
@@ -93,7 +94,7 @@ export function ReflectionPanel({ onClose }: { onClose: () => void }) {
             : "Чи саяхан эргэцүүлсэн байна. Бяцхан амсхийгээд, дараа долоо хоногт дахин уулзъя."}
         </p>
 
-      </div>
+      </div> */}
     </PanelShell>
   );
 }
@@ -118,11 +119,61 @@ const card: React.CSSProperties = {
   boxShadow: "0 24px 70px rgba(0,0,0,0.4)",
 };
 const head: React.CSSProperties = { textAlign: "center", marginBottom: 22 };
-const eyebrow: React.CSSProperties = { fontSize: 11.5, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase", color: "#7a9e72" };
-const title: React.CSSProperties = { fontSize: 21, fontWeight: 800, color: "#3a3228", margin: "7px 0 8px", lineHeight: 1.3 };
-const sub: React.CSSProperties = { fontSize: 13.5, color: "#7a6e60", lineHeight: 1.55, margin: 0 };
-const cancel: React.CSSProperties = { display: "block", margin: "16px auto 0", background: "none", border: "none", color: "#9a8f7d", fontSize: 13, cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" };
+const eyebrow: React.CSSProperties = {
+  fontSize: 11.5,
+  fontWeight: 800,
+  letterSpacing: "0.07em",
+  textTransform: "uppercase",
+  color: "#7a9e72",
+};
+const title: React.CSSProperties = {
+  fontSize: 21,
+  fontWeight: 800,
+  color: "#3a3228",
+  margin: "7px 0 8px",
+  lineHeight: 1.3,
+};
+const sub: React.CSSProperties = {
+  fontSize: 13.5,
+  color: "#7a6e60",
+  lineHeight: 1.55,
+  margin: 0,
+};
+const cancel: React.CSSProperties = {
+  display: "block",
+  margin: "16px auto 0",
+  background: "none",
+  border: "none",
+  color: "#9a8f7d",
+  fontSize: 13,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  textDecoration: "underline",
+};
 
-const statusWrap: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 16, alignItems: "center", textAlign: "center", padding: "8px 4px 4px" };
-const statusText: React.CSSProperties = { fontSize: 14.5, color: "#3a3228", lineHeight: 1.6, maxWidth: 460, margin: 0 };
-const doneNote: React.CSSProperties = { fontSize: 13.5, color: "#5a6e54", background: "rgba(122,158,114,0.14)", border: "1px solid rgba(122,158,114,0.3)", borderRadius: 12, padding: "10px 14px", lineHeight: 1.5, margin: 0, maxWidth: 460 };
+const statusWrap: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 16,
+  alignItems: "center",
+  textAlign: "center",
+  padding: "8px 4px 4px",
+};
+const statusText: React.CSSProperties = {
+  fontSize: 14.5,
+  color: "#3a3228",
+  lineHeight: 1.6,
+  maxWidth: 460,
+  margin: 0,
+};
+const doneNote: React.CSSProperties = {
+  fontSize: 13.5,
+  color: "#5a6e54",
+  background: "rgba(122,158,114,0.14)",
+  border: "1px solid rgba(122,158,114,0.3)",
+  borderRadius: 12,
+  padding: "10px 14px",
+  lineHeight: 1.5,
+  margin: 0,
+  maxWidth: 460,
+};

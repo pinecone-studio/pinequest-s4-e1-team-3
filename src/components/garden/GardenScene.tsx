@@ -712,8 +712,8 @@ export function GardenScene({
       )}
       {idleHint === "explore" && (
         <p className="garden-hint garden-hint--idle">
-          ← Чирж цэцэрлэгээ тойрон үзээрэй &nbsp;·&nbsp; яриа эхлүүлэхийн тулд
-          цэцэг дээр дарна уу
+          ← Цэцэрлэгээ тойрон үзээрэй &nbsp;·&nbsp; яриа эхлүүлэхийн тулд цэцгэн
+          дээр дарна уу
         </p>
       )}
 

@@ -71,7 +71,7 @@ export function EQDashboard({ refreshKey = 0 }: { refreshKey?: number }) {
     <div style={positioner}>
       <div style={card}>
         <div style={cardTitle}>Чиний EQ зураглал</div>
-        <div style={cardSub}>Шүүлт биш — өсөлтийнхөө эхлэлийн цэг</div>
+        {/* <div style={cardSub}>Шүүлт биш — өсөлтийнхөө эхлэлийн цэг</div> */}
 
         {/* Gentle summary */}
         <div style={summary}>
