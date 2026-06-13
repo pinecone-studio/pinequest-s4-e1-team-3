@@ -290,7 +290,10 @@ export function DeskChatPanel({
     }
 
     // Tutorial: the companion has finished replying → now point at "end & save".
-    if (tutorialActive && TUTORIAL_STEPS[currentStep]?.target === "chat-input") {
+    if (
+      tutorialActive &&
+      TUTORIAL_STEPS[currentStep]?.target === "chat-input"
+    ) {
       advanceStep();
     }
 
@@ -1033,7 +1036,7 @@ export function DeskChatPanel({
                 type="button"
                 className="dc-drawer-hotspot"
                 onClick={() => setDrawerOpen(true)}
-                aria-label="Хуучин тэмдэглэл харахын тулд шургуулгаа нээ"
+                aria-label="Хуучин тэмдэглэл харахын тулд шургуулгаа нээгээрэй"
               />
 
               <div className="dc-desk-actions">
@@ -1082,7 +1085,7 @@ export function DeskChatPanel({
                         savingNote || !noteTitle.trim() || !noteBody.trim()
                       }
                     >
-                      {savingNote ? "Бичиж байна…" : "Ширээнд хавчуулах"}
+                      {savingNote ? "Бичиж байна…" : "Хадгалах"}
                     </button>
                   </div>
                 </div>

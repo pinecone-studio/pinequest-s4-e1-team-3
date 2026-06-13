@@ -2,18 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useAnimationControls, useReducedMotion } from "framer-motion";
-import type { LucideIcon } from "lucide-react";
-import {
-  Sun,
-  CloudSun,
-  Cloudy,
-  CloudFog,
-  Wind,
-  CloudDrizzle,
-  CloudRain,
-  CloudRainWind,
-  CloudLightning,
-} from "lucide-react";
 import { useFetchJson } from "@/hooks/useFetchJson";
 import type { ForecastDay } from "./types";
 
@@ -31,16 +19,16 @@ const WEATHER_EMOJI: Record<string, string> = {
 };
 
 const WEATHER_PHRASES: Record<string, string> = {
-  sunny: "Цэлмэг тэнгэр",
-  partly_cloudy: "Тайван тэнгэр",
+  sunny: "Нартай",
+  partly_cloudy: "Бага зэрэг үүлэрхэг",
   clear_sky: "Цэлмэг тэнгэр",
-  rainy: "Зөөлөн бороо",
-  light_rain: "Шиврээ бороо",
-  heavy_rain: "Ширүүн бороо",
-  windy: "Тогтворгүй салхи",
+  rainy: "Бороотой",
+  light_rain: "Шиврээ бороотой",
+  heavy_rain: "Ширүүн бороотой",
+  windy: "Тогтворгүй салхитай",
   foggy: "Манантай",
-  cloudy: "Намуухан үүлэрхэг",
-  stormy: "Хүчтэй шуурга",
+  cloudy: "Үүлэрхэг",
+  stormy: "Хүчтэй шуургатай",
 };
 
 // 1 = sunny (best, graph bottom)  5 = heavy storm (worst, graph top)
@@ -58,15 +46,15 @@ const WEATHER_SCORE: Record<string, number> = {
 };
 
 const MOOD_PHRASES: Record<string, string> = {
-  calm: "Тайван, найдвартай",
-  happy: "Гэгээлэг",
-  grateful: "Талархалтай",
-  sad: "Бага зэрэг хүнд",
-  reflective: "Эмзэг",
-  anxious: "Тайван бус",
-  motivated: "Урам зоригтой",
-  confused: "Эргэлзээтэй",
-  angry: "Уурласан",
+  calm: "Дөлгөөн",
+  happy: "Таатай",
+  grateful: "Талархалсан",
+  sad: "Гунигтай",
+  reflective: "Эргэцүүлсэн",
+  anxious: "үймэрсэн",
+  motivated: "Урам зориг дүүрэн",
+  confused: "Эргэлзсэн",
+  angry: "Догшин",
 };
 
 function moodPhrase(mood: string) {
@@ -194,8 +182,8 @@ export function MoodPill() {
         </span>
         <span className="value">
           {today
-            ? (WEATHER_PHRASES[today.weather] ?? "Тайван тэнгэр")
-            : "Тайван тэнгэр"}
+            ? (WEATHER_PHRASES[today.weather] ?? "Цэлмэг тэнгэр")
+            : "Цэлмэг тэнгэр"}
         </span>
       </motion.button>
 
