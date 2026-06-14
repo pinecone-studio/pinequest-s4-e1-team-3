@@ -17,6 +17,8 @@ interface TutorialSpotlightProps {
   large?: boolean;
   /** Full-width UI (the pond stone controls) — frame the whole thing. */
   wide?: boolean;
+  /** Extra px added to the cutout height (grows up + down evenly). */
+  extraHeight?: number;
 }
 
 const DIM = "rgba(20,18,10,0.62)";
@@ -26,6 +28,7 @@ export function TutorialSpotlight({
   visible,
   large = false,
   wide = false,
+  extraHeight = 0,
 }: TutorialSpotlightProps) {
   const [spot, setSpot] = useState<SpotRect | null>(null);
   const retryRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -61,7 +64,10 @@ export function TutorialSpotlight({
     const cx = r.left + r.width / 2;
     const cy = r.top + r.height / 2;
     const width = Math.min(r.width + PADDING * 2, Math.min(MAX_W, vw * (wide ? 0.96 : large ? 0.9 : 0.82)));
-    const height = Math.min(r.height + PADDING * 2, Math.min(MAX_H, vh * (large ? 0.72 : 0.5)));
+    const height = Math.min(
+      r.height + PADDING * 2 + extraHeight,
+      Math.min(MAX_H, vh * (large ? 0.72 : 0.5)),
+    );
 
     const radius =
       Math.min(width, height) / 2 <= 70 ? Math.min(width, height) / 2 : big ? 34 : 26;
@@ -85,7 +91,7 @@ export function TutorialSpotlight({
       window.removeEventListener("resize", measure);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetSelector, visible, large, wide]);
+  }, [targetSelector, visible, large, wide, extraHeight]);
 
   if (!visible) return null;
 

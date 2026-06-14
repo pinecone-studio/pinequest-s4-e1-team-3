@@ -42,6 +42,9 @@ export interface TutorialStepDef {
   /** "large" = bigger glow; "wide" = full-width UI (pond controls);
    *  "none" = tooltip only, no spotlight cutout. */
   spotlight?: "normal" | "large" | "wide" | "none";
+  /** Extra px added to the spotlight cutout height (grows up + down evenly).
+   *  Used for short targets like a single flower sprite. */
+  extraHeight?: number;
   timerMs?: number;
 }
 
@@ -69,6 +72,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
     instructionMn: "Таны цэцгүүд энд төрдөг. Эхлэхийн тулд дарна уу.",
     advanceOn: "action",
     spotlight: "large",
+    extraHeight: 130,
   },
   // 2 — Pick a flower
   {
@@ -90,6 +94,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
     instructionMn:
       "Энэ таны шинэ цэцэг. Яриа эхлүүлэхийн тулд дээр нь дарна уу.",
     advanceOn: "action",
+    extraHeight: 130,
   },
   // 4 — Have a small chat (send a message, wait for the reply)
   {

@@ -4,7 +4,6 @@ import "./globals.css";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { ClerkProvider } from "@clerk/nextjs";
-import ConditionalHeader from "@/components/conditional-header";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -38,7 +37,6 @@ export default function RootLayout({
           signInFallbackRedirectUrl="/garden"
           signUpFallbackRedirectUrl="/garden"
         >
-          <ConditionalHeader />
           {children}
         </ClerkProvider>
       </body>

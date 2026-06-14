@@ -99,6 +99,7 @@ export function TutorialOverlay({ panel }: TutorialOverlayProps) {
         visible={show && stepDef.spotlight !== "none"}
         large={stepDef.spotlight === "large"}
         wide={stepDef.spotlight === "wide"}
+        extraHeight={stepDef.extraHeight}
       />
 
       {/* AnimatePresence so the tooltip fades smoothly between sub-steps */}
@@ -116,31 +117,62 @@ export function TutorialOverlay({ panel }: TutorialOverlayProps) {
         )}
       </AnimatePresence>
 
-      {/* Skip tutorial — always available while the tutorial is running */}
+      {/* Next + Skip controls — always available while the tutorial runs, so
+          the user can step forward past any beat or leave the tour entirely. */}
       {visible && !overlaySuppressed && (
-        <button
-          type="button"
-          onClick={skipTutorial}
+        <div
           style={{
             position: "fixed",
             bottom: 18,
             right: 22,
             zIndex: 10000,
-            background: "none",
-            border: "none",
-            color: "rgba(247,241,228,0.7)",
-            fontSize: 12,
-            fontWeight: 600,
-            fontFamily: "'Mulish', system-ui, sans-serif",
-            cursor: "pointer",
-            padding: "4px 0",
-            textDecoration: "underline",
-            textUnderlineOffset: "3px",
-            letterSpacing: "0.03em",
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
           }}
         >
-          Заавар алгасах
-        </button>
+          <button
+            type="button"
+            onClick={skipTutorial}
+            style={{
+              background: "none",
+              border: "none",
+              color: "rgba(247,241,228,0.7)",
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: "'Mulish', system-ui, sans-serif",
+              cursor: "pointer",
+              padding: "4px 0",
+              textDecoration: "underline",
+              textUnderlineOffset: "3px",
+              letterSpacing: "0.03em",
+            }}
+          >
+            Заавар алгасах
+          </button>
+          {/* On got-it steps the tooltip already carries the advance button. */}
+          {!showButton && (
+            <button
+              type="button"
+              onClick={advanceStep}
+              style={{
+                background: "rgba(247,241,228,0.95)",
+                color: "#3a3a2c",
+                border: "none",
+                borderRadius: 999,
+                padding: "7px 16px",
+                fontSize: 12,
+                fontWeight: 700,
+                fontFamily: "'Mulish', system-ui, sans-serif",
+                cursor: "pointer",
+                letterSpacing: "0.02em",
+                boxShadow: "0 4px 14px rgba(0,0,0,0.22)",
+              }}
+            >
+              Дараах →
+            </button>
+          )}
+        </div>
       )}
     </>
   );
