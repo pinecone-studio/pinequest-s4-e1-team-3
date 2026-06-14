@@ -68,9 +68,11 @@ export function WeeklyCheckInBird({
       body: JSON.stringify({ answers }),
     });
     setSubmitted(true);
+    // The reflection can be taken any time, so keep the bird around — just
+    // close the dialog and reset for the next time.
     setTimeout(() => {
       setOpen(false);
-      setVisible(false);
+      setSubmitted(false);
     }, 2000);
   }
 
@@ -84,6 +86,9 @@ export function WeeklyCheckInBird({
     });
     // Onboarding is now done for this session — don't re-offer it on replay.
     setStillNeedsOnboarding(false);
+    // Keep the bird present so the (now always-available) weekly test can be
+    // taken any time, without waiting for a page reload.
+    setVisible(true);
     setOpen(false);
     advanceStep();
   }
@@ -281,7 +286,7 @@ export function WeeklyCheckInBird({
                     color: "#2c2516",
                   }}
                 >
-                  Баярлалаа. Долоо хоногийн дараа уулзацгаая.
+                  Баярлалаа. Хүссэн үедээ дахин эргэцүүлээрэй.
                 </p>
               </div>
             ) : (

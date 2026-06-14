@@ -24,8 +24,6 @@ import {
 } from "@/lib/eqScoring";
 import { loadAndLogCombinedEQProfile } from "@/lib/eqSignals";
 
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-
 async function latestWeekly(userId: string) {
   return prisma.eQAssessment.findFirst({
     where: { userId, type: "weekly" },
@@ -61,22 +59,16 @@ export async function GET() {
     });
   }
 
-  // Rotation: which set to show this week. A set repeats only every 3 weeks.
+  // Rotation: which set to show next. A set repeats only every 3 reflections.
   const setIndex = weeklyCount % 3;
 
-  // First weekly unlocks 7 days after onboarding; subsequent ones 7 days after
-  // the previous weekly. lastWeekly wins if it exists.
-  const referenceDate = lastWeekly?.completedAt ?? onboarding.completedAt;
-  const elapsed = Date.now() - referenceDate.getTime();
-  const available = elapsed >= SEVEN_DAYS_MS;
-  const daysUntilNext = available
-    ? 0
-    : Math.ceil((SEVEN_DAYS_MS - elapsed) / (24 * 60 * 60 * 1000));
-
+  // The reflection is always available once onboarding is done — there's no
+  // 7-day lock, so the check-in bird stays present and the test can be taken
+  // any time. (Kept `daysUntilNext` in the shape for backwards compatibility.)
   return NextResponse.json({
     hasEverTaken: !!lastWeekly,
-    available,
-    daysUntilNext,
+    available: true,
+    daysUntilNext: 0,
     lastTakenAt: lastWeekly?.completedAt.toISOString() ?? null,
     setIndex,
   });
@@ -86,13 +78,9 @@ export async function POST(req: Request) {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // No time lock — the reflection can be submitted any time. We still load the
+  // previous one to compute week-over-week change.
   const previous = await latestWeekly(user.id);
-  if (previous && Date.now() - previous.completedAt.getTime() < SEVEN_DAYS_MS) {
-    return NextResponse.json(
-      { error: "Weekly reflection is not available yet" },
-      { status: 400 },
-    );
-  }
 
   const body = await req.json().catch(() => null);
   const rawAnswers: RawAnswer[] = Array.isArray(body?.answers) ? body.answers : [];
