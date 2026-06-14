@@ -46,9 +46,23 @@ export interface TutorialStepDef {
 }
 
 export const TUTORIAL_STEPS: TutorialStepDef[] = [
-  // 0 — Open the Greenhouse
+  // 0 — Check-in bird → onboarding test. The bird normally only appears once a
+  //     week, but during the tour WeeklyCheckInBird force-shows itself here so
+  //     we can spotlight it like the greenhouse. Clicking it opens the one-time
+  //     20-question onboarding test; finishing that calls advanceStep (action).
   {
     step: 0,
+    target: "weekly-checkin",
+    panel: "garden",
+    headlineMn: "Эхний эргэцүүлэл",
+    instructionMn:
+      "Долоо хоног тутамд энэ шувуу баруун дээд буланд гарч ирж, тестээ өгөхийг сануулна. Эхлэхийн тулд дээр нь дарж эхний хэдэн асуултад хариулаарай. Тест бөглөсний дараа хариу болон үр дүн чинь «Эргэцүүлэл» хэсэгт орж, хадгалагдана.",
+    advanceOn: "action",
+    spotlight: "large",
+  },
+  // 1 — Open the Greenhouse
+  {
+    step: 1,
     target: "greenhouse",
     panel: "garden",
     headlineMn: "Хүлэмж",
@@ -56,9 +70,9 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
     advanceOn: "action",
     spotlight: "large",
   },
-  // 1 — Pick a flower
+  // 2 — Pick a flower
   {
-    step: 1,
+    step: 2,
     target: "flower-picker",
     panel: "workshop",
     headlineMn: "Анхны ярилцах төрлөө сонгоно уу",
@@ -67,9 +81,9 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
     advanceOn: "action",
     spotlight: "large",
   },
-  // 2 — Click the planted flower (garden pans to it)
+  // 3 — Click the planted flower (garden pans to it)
   {
-    step: 2,
+    step: 3,
     target: "flower-planted",
     panel: "garden",
     headlineMn: "Сонгосон төрлийн яриагаа эхлүүл",
@@ -77,9 +91,9 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
       "Энэ таны шинэ цэцэг. Яриа эхлүүлэхийн тулд дээр нь дарна уу.",
     advanceOn: "action",
   },
-  // 3 — Have a small chat (send a message, wait for the reply)
+  // 4 — Have a small chat (send a message, wait for the reply)
   {
-    step: 3,
+    step: 4,
     target: "chat-input",
     panel: "notes",
     headlineMn: "Бяцхан яриа",
@@ -87,9 +101,9 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
       "Яриа эхлүүж хэдэн үг бичээд илгээгээрэй. Хариултыг нь хүлээгээрэй.",
     advanceOn: "action",
   },
-  // 4 — End & save (grows a task)
+  // 5 — End & save (grows a task)
   {
-    step: 4,
+    step: 5,
     target: "chat-end",
     panel: "notes",
     headlineMn: "Яриагаа хадгал",
@@ -97,9 +111,9 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
       "Сайн байна. Одоо «Дуусгаж хадгалах» товчийг дарж яриагаа хадгалаарай — үүнээс даалгавар ургана.",
     advanceOn: "action",
   },
-  // 5 — Click the Task Tree (garden landmark → opens the panel)
+  // 6 — Click the Task Tree (garden landmark → opens the panel)
   {
-    step: 5,
+    step: 6,
     target: "task-tree",
     panel: "garden",
     headlineMn: "Даалгаврын мод",
@@ -107,9 +121,9 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
       "Энэ бол таны Даалгаврын мод. Нээхийн тулд дээр нь дарна уу.",
     advanceOn: "action",
   },
-  // 6 — Explain the task tags (inside the task panel)
+  // 7 — Explain the task tags (inside the task panel)
   {
-    step: 6,
+    step: 7,
     target: "task-tree-frame",
     panel: "tasks",
     headlineMn: "Таны даалгаврууд",
@@ -118,18 +132,18 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
     advanceOn: "got-it",
     buttonLabel: "Ойлголоо →",
   },
-  // 7 — Click the Pond (garden landmark → opens the panel)
+  // 8 — Click the Pond (garden landmark → opens the panel)
   {
-    step: 7,
+    step: 8,
     target: "pond",
     panel: "garden",
     headlineMn: "Нуур",
     instructionMn: "Энэ бол таны Нуур. Нээхийн тулд дээр нь дарна уу.",
     advanceOn: "action",
   },
-  // 8 — Explain rock throwing (inside the pond panel)
+  // 9 — Explain rock throwing (inside the pond panel)
   {
-    step: 8,
+    step: 9,
     target: "pond-throw",
     panel: "pond",
     headlineMn: "Чулуу шидэх",
@@ -139,9 +153,9 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
     buttonLabel: "Ойлголоо →",
     spotlight: "wide",
   },
-  // 9 — Closing (precise-language message)
+  // 10 — Closing (precise-language message)
   {
-    step: 9,
+    step: 10,
     target: null,
     panel: null,
     headlineMn: "Бэлэн боллоо 🌿",

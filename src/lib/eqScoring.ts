@@ -424,8 +424,9 @@ export interface CombinedEQProfile {
   evidenceSource: "conversation" | "weekly" | "onboarding" | null;
   currentSuggestedFocus: AreaKey | null;
   nextCoachingSuggestion: string | null;
-  // Per-area blended percentage (Test + Chat Analysis + Task Behavior),
-  // using the BLEND_WEIGHTS table. Console-only for now — not shown in UI.
+  // Per-area blended percentage (Test + Chat Analysis + Task Behavior), using
+  // the BLEND_WEIGHTS table. Drives the "Чиний EQ зураглал" radar in the
+  // Reflection panel (EQDashboard) via GET /api/eq/profile.
   blendedScores: Record<AreaKey, number>;
   blendedBreakdown: Record<AreaKey, { test: number; chat: number | null; task: number | null }>;
 }

@@ -111,11 +111,21 @@ function smoothPath(pts: Pt[]): string {
   return d;
 }
 
-export function MoodPill() {
+export function MoodPill({
+  onOpenChange,
+}: {
+  /** Notified when the forecast dropdown opens/closes, so neighbours (e.g. the
+   *  replay-tutorial button) can move out of the dropdown's way. */
+  onOpenChange?: (open: boolean) => void;
+} = {}) {
   const { data: apiData } = useFetchJson<ForecastDay[]>(
     "/api/forecast?period=weekly",
   );
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
   const [hovered, setHovered] = useState<string | null>(null);
   const reduceMotion = useReducedMotion();
   const pulseControls = useAnimationControls();

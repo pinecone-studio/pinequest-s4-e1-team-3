@@ -2,20 +2,49 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { getWeeklySet } from "@/lib/eqQuestions";
+import { getWeeklySet, ONBOARDING_QUESTIONS } from "@/lib/eqQuestions";
 import { EQTestStepper } from "@/components/eq/EQTestStepper";
 import type { EQAnswer } from "@/components/eq/EQTestStepper";
+import { useTutorial } from "@/components/tutorial/TutorialContext";
+import { TUTORIAL_STEPS } from "@/components/tutorial/steps";
 
 type WeeklyStatus = {
   available: boolean;
   setIndex: number;
 };
 
-export function WeeklyCheckInBird() {
+export function WeeklyCheckInBird({
+  needsOnboarding = false,
+}: {
+  /** True when the user hasn't taken the 20-question onboarding test yet.
+   *  During the tour the bird then opens the onboarding test (not the weekly
+   *  one), and completing it advances the tour. */
+  needsOnboarding?: boolean;
+}) {
   const [visible, setVisible] = useState(false);
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [setIndex, setSetIndex] = useState(0);
+  // `needsOnboarding` is a server prop captured at page load; once the user
+  // finishes the onboarding test in this session it's stale. Track completion
+  // locally so replaying the tour doesn't re-offer the 20-question test.
+  const [stillNeedsOnboarding, setStillNeedsOnboarding] =
+    useState(needsOnboarding);
+
+  // The bird's tour step. We force-show the bird here so it can be spotlit like
+  // the greenhouse. For a brand-new user (needsOnboarding) clicking it opens
+  // the one-time 20-question onboarding test; finishing that advances the tour.
+  const { tutorialActive, currentStep, advanceStep, setOverlaySuppressed } =
+    useTutorial();
+  const tutorialPreview =
+    tutorialActive && TUTORIAL_STEPS[currentStep]?.target === "weekly-checkin";
+  const onboardingMode = tutorialPreview && stillNeedsOnboarding;
+
+  // While the bird's test modal is open during the tour, hide the tutorial
+  // overlay so its dimmer/tooltip don't render on top of the dialog.
+  useEffect(() => {
+    setOverlaySuppressed(open && tutorialPreview);
+  }, [open, tutorialPreview, setOverlaySuppressed]);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,11 +74,25 @@ export function WeeklyCheckInBird() {
     }, 2000);
   }
 
+  // Onboarding test (taken once, via the bird, during the guided tour). On
+  // success we close the dialog and advance the tour to the next step.
+  async function handleOnboardingSubmit(answers: EQAnswer[]) {
+    await fetch("/api/eq/onboarding", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answers }),
+    });
+    // Onboarding is now done for this session — don't re-offer it on replay.
+    setStillNeedsOnboarding(false);
+    setOpen(false);
+    advanceStep();
+  }
+
   function dismiss() {
     setOpen(false);
   }
 
-  if (!visible) return null;
+  if (!visible && !tutorialPreview) return null;
 
   return (
     <>
@@ -57,7 +100,21 @@ export function WeeklyCheckInBird() {
       <button
         type="button"
         aria-label="7 хоногийн тестээ өгөөрэй"
-        onClick={() => setOpen(true)}
+        data-tutorial-target="weekly-checkin"
+        onClick={() => {
+          // New user on the tour → open the 20-question onboarding test.
+          if (onboardingMode) {
+            setOpen(true);
+            return;
+          }
+          // Already-onboarded user replaying the tour: nothing to fill here, so
+          // clicking the (example) bird just advances to the next step.
+          if (tutorialPreview) {
+            advanceStep();
+            return;
+          }
+          setOpen(true);
+        }}
         style={{
           position: "fixed",
           top: 96,
@@ -238,14 +295,18 @@ export function WeeklyCheckInBird() {
                     marginBottom: 6,
                   }}
                 >
-                  7 хоногийн тест
+                  {onboardingMode ? "Эхлэхийн өмнө бяцхан эргэцүүлэл" : "7 хоногийн тест"}
                 </h2>
                 <p style={{ fontSize: 13, color: "#8a7a5a", marginBottom: 28 }}>
-                  Долоо хоног тутам нэг удаа.
+                  {onboardingMode
+                    ? "Энэ бол шалгалт биш — өнөөдөр хаана байгаагаа ойлгоход туслах хэдэн асуулт."
+                    : "Долоо хоног тутам нэг удаа."}
                 </p>
                 <EQTestStepper
-                  questions={getWeeklySet(setIndex)}
-                  onSubmit={handleSubmit}
+                  questions={
+                    onboardingMode ? ONBOARDING_QUESTIONS : getWeeklySet(setIndex)
+                  }
+                  onSubmit={onboardingMode ? handleOnboardingSubmit : handleSubmit}
                   submitLabel="Дуусгах"
                 />
               </>
