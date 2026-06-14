@@ -28,6 +28,7 @@ export function TutorialOverlay({ panel }: TutorialOverlayProps) {
     tutorialActive,
     currentStep,
     companion,
+    overlaySuppressed,
     advanceStep,
     skipTutorial,
     completeTutorial,
@@ -87,7 +88,9 @@ export function TutorialOverlay({ panel }: TutorialOverlayProps) {
   if (!tutorialActive || !stepDef) return null;
 
   const showButton = stepDef.advanceOn === "got-it";
-  const show = visible && armed;
+  // Hide the overlay while a step's own modal is open (e.g. the bird's
+  // onboarding test) so the spotlight dimmer doesn't cover it.
+  const show = visible && armed && !overlaySuppressed;
 
   return (
     <>
@@ -114,7 +117,7 @@ export function TutorialOverlay({ panel }: TutorialOverlayProps) {
       </AnimatePresence>
 
       {/* Skip tutorial — always available while the tutorial is running */}
-      {visible && (
+      {visible && !overlaySuppressed && (
         <button
           type="button"
           onClick={skipTutorial}

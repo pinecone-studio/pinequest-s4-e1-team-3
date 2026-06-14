@@ -51,18 +51,36 @@ const TUTORIAL_PAN_PCT: Record<string, number> = {
 
 // Public export: wraps the inner component with TutorialProvider so the
 // inner component can call useTutorial() as a descendant.
-export function GardenShell({ userName }: { userName: string }) {
+export function GardenShell({
+  userName,
+  needsOnboarding = false,
+}: {
+  userName: string;
+  needsOnboarding?: boolean;
+}) {
   return (
-    <TutorialProvider>
-      <GardenShellContent userName={userName} />
+    <TutorialProvider needsOnboarding={needsOnboarding}>
+      <GardenShellContent
+        userName={userName}
+        needsOnboarding={needsOnboarding}
+      />
     </TutorialProvider>
   );
 }
 
 // All the real logic lives here, inside the provider.
-function GardenShellContent({ userName }: { userName: string }) {
+function GardenShellContent({
+  userName,
+  needsOnboarding,
+}: {
+  userName: string;
+  needsOnboarding: boolean;
+}) {
   const [panel, setPanel] = useState<PanelKey>("garden");
   const [nightMode, setNightMode] = useState(false);
+  // Forecast dropdown (MoodPill) open — the replay-tutorial button lifts above
+  // the dropdown while it's open so the two don't overlap (bottom-left stack).
+  const [moodOpen, setMoodOpen] = useState(false);
   const [selectedFlowerId, setSelectedFlowerId] = useState<
     string | undefined
   >();
@@ -239,6 +257,7 @@ function GardenShellContent({ userName }: { userName: string }) {
         onOpenFlowerChat={openFlowerChat}
         userName={userName}
         nightMode={nightMode}
+        onMoodOpenChange={setMoodOpen}
         // Tutorial: highlight the newly-planted flower in the garden
         tutorialFlowerId={
           tutorialActive && curTarget === "flower-planted"
@@ -330,7 +349,8 @@ function GardenShellContent({ userName }: { userName: string }) {
           style={{
             position: "fixed",
             left: 28,
-            bottom: 82,
+            // Lift above the forecast dropdown while it's open so they don't overlap.
+            bottom: moodOpen ? 310 : 82,
             zIndex: 30,
             display: "inline-flex",
             alignItems: "center",
@@ -348,6 +368,7 @@ function GardenShellContent({ userName }: { userName: string }) {
             backdropFilter: "blur(8px)",
             WebkitBackdropFilter: "blur(8px)",
             boxShadow: "0 6px 18px rgba(0,0,0,0.22)",
+            transition: "bottom 0.22s ease",
           }}
         >
           <span aria-hidden style={{ fontSize: 13 }}>
@@ -357,7 +378,7 @@ function GardenShellContent({ userName }: { userName: string }) {
         </button>
       )}
 
-      <WeeklyCheckInBird />
+      <WeeklyCheckInBird needsOnboarding={needsOnboarding} />
       <TutorialOverlay panel={panel} />
     </div>
   );

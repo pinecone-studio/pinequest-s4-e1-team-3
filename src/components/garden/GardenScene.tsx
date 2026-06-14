@@ -283,6 +283,7 @@ export function GardenScene({
   centerFlowerId,
   centerWorldXPct,
   refetchKey = 0,
+  onMoodOpenChange,
 }: {
   onOpenWorkshop: () => void;
   onOpenTaskTree: () => void;
@@ -290,6 +291,8 @@ export function GardenScene({
   onOpenFlowerChat: (flowerId: string) => void;
   userName: string;
   nightMode?: boolean;
+  /** Forwarded to MoodPill so the shell can react to the forecast dropdown. */
+  onMoodOpenChange?: (open: boolean) => void;
   /** When set, marks that flower with data-tutorial-target="flower-planted". */
   tutorialFlowerId?: string;
   /** When set, pans the garden so this flower is horizontally centered. */
@@ -751,7 +754,7 @@ export function GardenScene({
 
       <div className="garden-bottom-row">
         <div className="garden-bottom-stack">
-          <MoodPill />
+          <MoodPill onOpenChange={onMoodOpenChange} />
         </div>
 
         <div className="garden-filter-bar">

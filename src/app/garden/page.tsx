@@ -26,11 +26,17 @@ export default async function GardenPage() {
   const user = await getUser();
   if (!user) redirect("/sign-in");
 
-  // Hard gate: must finish the onboarding EQ reflection first.
+  // New users are no longer bounced to a separate /onboarding page. Instead
+  // they enter the garden and the guided tour walks them in — its first step
+  // is the check-in bird, and clicking it opens the one-time 20-question
+  // onboarding test. We pass whether onboarding is still pending so the client
+  // can start the tour and route the bird's click to the onboarding test.
   const profile = await prisma.userEQProfile.findUnique({
     where: { userId: user.id },
   });
-  if (!profile?.onboardingCompleted) redirect("/onboarding");
+  const needsOnboarding = !profile?.onboardingCompleted;
 
-  return <GardenShell userName={user.name ?? ""} />;
+  return (
+    <GardenShell userName={user.name ?? ""} needsOnboarding={needsOnboarding} />
+  );
 }
