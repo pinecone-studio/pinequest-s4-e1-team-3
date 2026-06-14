@@ -50,14 +50,22 @@ export function tileCenter(col: number, row: number): [number, number] {
   return [posX, posY];
 }
 
-// Safe grass zones — all G tiles reachable without crossing path/water/tree.
-// Left bank: cols 0-4, rows 5-9.  Right meadow: cols 18-24, rows 5-9.
+// Safe grass zones — G tiles that are clear of BOTH the pond's edge and the
+// floating bottom chrome (mood pill + filter bar, anchored ~26px from bottom).
+//   Left bank:    cols 0-4,  rows 5-8
+//   Right meadow: cols 19-24, rows 5-8
+// Deliberately excluded:
+//   - col 18  — grass but flush against the pond's east edge (water runs to
+//               col 17), so a bloom there visually sits on the water. col 19
+//               (posX 78%) gives a clean buffer.
+//   - row 9   — its tile center is posY 95%, which puts the flower behind the
+//               bottom filter bar / mood pill. row 8 (posY 85%) clears it.
 export const GRASS_TILES: [number, number][] = [
   ...[0, 1, 2, 3, 4].flatMap((c) =>
-    [5, 6, 7, 8, 9].map((r) => [c, r] as [number, number])
+    [5, 6, 7, 8].map((r) => [c, r] as [number, number])
   ),
-  ...[18, 19, 20, 21, 22, 23, 24].flatMap((c) =>
-    [5, 6, 7, 8, 9].map((r) => [c, r] as [number, number])
+  ...[19, 20, 21, 22, 23, 24].flatMap((c) =>
+    [5, 6, 7, 8].map((r) => [c, r] as [number, number])
   ),
 ];
 
