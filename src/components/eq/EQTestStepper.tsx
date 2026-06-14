@@ -97,8 +97,43 @@ export function EQTestStepper({
     }
   }
 
+  // Demo: auto-answer every question with a random option, then submit. Handy
+  // for testing the flow without clicking through all the questions.
+  async function demoFill() {
+    if (submitting) return;
+    const demoAnswers = questions.map((qq) => ({
+      questionId: qq.id,
+      selectedOption:
+        qq.options[Math.floor(Math.random() * qq.options.length)].label,
+    }));
+    setAnswers(
+      Object.fromEntries(demoAnswers.map((a) => [a.questionId, a.selectedOption])),
+    );
+    setIndex(total - 1);
+    setError("");
+    setSubmitting(true);
+    try {
+      await onSubmit(demoAnswers);
+    } catch {
+      setError("Хадгалахад алдаа гарлаа. Дахин оролдоно уу.");
+      setSubmitting(false);
+    }
+  }
+
   return (
     <div style={S.wrap}>
+      {/* Demo — auto-fill all answers and submit (for testing) */}
+      <div style={S.demoRow}>
+        <button
+          type="button"
+          onClick={demoFill}
+          disabled={submitting}
+          style={{ ...S.demoBtn, ...(submitting ? S.navDisabled : null) }}
+        >
+          ⚡ Demo — бүгдийг автоматаар бөглөх
+        </button>
+      </div>
+
       {/* Progress */}
       <div style={S.progressRow}>
         <span style={S.section}>{AREA_LABEL_MN[q.eqArea]}</span>
@@ -173,6 +208,19 @@ export function EQTestStepper({
 
 const S: Record<string, React.CSSProperties> = {
   wrap: { width: "100%", maxWidth: 560, margin: "0 auto" },
+  demoRow: { display: "flex", justifyContent: "flex-end", marginBottom: 12 },
+  demoBtn: {
+    background: "rgba(58,58,44,0.06)",
+    color: "#7a6e60",
+    border: "1px dashed rgba(122,158,114,0.5)",
+    borderRadius: 999,
+    padding: "5px 12px",
+    fontSize: 11.5,
+    fontWeight: 700,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    letterSpacing: "0.02em",
+  },
   progressRow: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 },
   section: { fontSize: 12, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7a9e72" },
   count: { fontSize: 12, color: "#9a8f7d", fontWeight: 600 },

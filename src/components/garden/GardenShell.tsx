@@ -166,6 +166,25 @@ function GardenShellContent({
           }
         }
       } catch {}
+      // Delete the mood "stone" the pipeline created for this conversation. Its
+      // conversation FK is SetNull too, so deleting the conversation would just
+      // orphan the stone and leave it sitting in the pond for a brand-new user.
+      try {
+        const res = await fetch("/api/mood");
+        if (res.ok) {
+          const stones = (await res.json()) as {
+            id: string;
+            conversationId: string | null;
+          }[];
+          for (const s of stones) {
+            if (s.conversationId === convId) {
+              try {
+                await fetch(`/api/mood?id=${s.id}`, { method: "DELETE" });
+              } catch {}
+            }
+          }
+        }
+      } catch {}
       try {
         await fetch(`/api/conversations/${convId}`, { method: "DELETE" });
       } catch {}
