@@ -801,7 +801,6 @@ export function DeskChatPanel({
                   type="button"
                   onClick={() => {
                     if (conversationId) onOpenTasks(conversationId);
-                    onClose();
                   }}
                   style={{
                     marginTop: 8,
