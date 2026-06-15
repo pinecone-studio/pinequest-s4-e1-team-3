@@ -78,6 +78,9 @@ function GardenShellContent({
 }) {
   const [panel, setPanel] = useState<PanelKey>("garden");
   const [nightMode, setNightMode] = useState(false);
+  // When the chat panel is opened from the top-nav "Түүх" tab we show the
+  // history list straight away; opening it from a flower shows the chat.
+  const [notesStartHistory, setNotesStartHistory] = useState(false);
   // Forecast dropdown (MoodPill) open — the replay-tutorial button lifts above
   // the dropdown while it's open so the two don't overlap (bottom-left stack).
   const [moodOpen, setMoodOpen] = useState(false);
@@ -232,9 +235,17 @@ function GardenShellContent({
 
   function openFlowerChat(flowerId: string) {
     setSelectedFlowerId(flowerId);
+    setNotesStartHistory(false); // a flower → straight into its chat
     setPanel("notes");
     // flower-planted: clicking the flower opens chat → advance into the chat
     if (tutorialActive && curTarget === "flower-planted") advanceStep();
+  }
+
+  // Top-nav select: the "Түүх" (notes) tab opens the chat panel directly on its
+  // history list; every other tab is a plain panel switch.
+  function handleNavSelect(key: PanelKey) {
+    if (key === "notes") setNotesStartHistory(true);
+    setPanel(key);
   }
 
   function openBirds() {
@@ -298,7 +309,7 @@ function GardenShellContent({
       />
       <GardenTopNav
         active={panel}
-        onSelect={setPanel}
+        onSelect={handleNavSelect}
         nightMode={nightMode}
         onToggleNight={() => setNightMode((n) => !n)}
         onOpenBirds={openBirds}
@@ -320,6 +331,7 @@ function GardenShellContent({
               setPanel("garden");
               advanceStep();
             } else {
+              setNotesStartHistory(false); // freshly planted → open its chat
               setPanel("notes");
             }
           }}
@@ -334,6 +346,7 @@ function GardenShellContent({
             key="desk-chat"
             onClose={close}
             flowerId={selectedFlowerId}
+            startInHistory={notesStartHistory}
             onOpenTasks={(convId: string) => {
               setTaskConversationId(convId);
               setExpectingTask(true);

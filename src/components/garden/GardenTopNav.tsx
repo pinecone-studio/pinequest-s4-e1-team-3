@@ -9,7 +9,7 @@
 "use client";
 
 import { UserButton } from "@clerk/nextjs";
-import { Leaf, MessageCircle, Waves, Sprout, ListTree, Bird, Sun, Moon, HeartHandshake } from "lucide-react";
+import { Leaf, History, Waves, Sprout, ListTree, Bird, Sun, Moon, HeartHandshake } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import type { PanelKey } from "./GardenShell";
@@ -22,7 +22,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { key: "garden",   label: "Цэцэрлэг",        Icon: Leaf          },
-  { key: "notes",    label: "Чат",            Icon: MessageCircle },
+  { key: "notes",    label: "Түүх",            Icon: History       },
   { key: "pond",     label: "Нуур",            Icon: Waves         },
   { key: "workshop", label: "Хүлэмж",          Icon: Sprout        },
   { key: "tasks",    label: "Даалгаврын мод",  Icon: ListTree      },

@@ -16,7 +16,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useFetchJson } from "@/hooks/useFetchJson";
@@ -33,8 +33,33 @@ type ConvItem = {
   createdAt: string;
   summary: string | null;
   mood: string | null;
+  tags: string[];
   flower: { id: string; species: { key: string; name: string; color: string } };
   firstMessage: string | null;
+};
+
+// "What was it about" line: prefer the extracted topic tags, fall back to the
+// summary, then the raw first message.
+function convTopic(c: ConvItem): string {
+  if (c.tags && c.tags.length > 0) {
+    return c.tags
+      .slice(0, 4)
+      .map((t) => t.charAt(0).toUpperCase() + t.slice(1))
+      .join(" · ");
+  }
+  return c.summary ?? c.firstMessage ?? "—";
+}
+
+// The five flower species, used for the history filter chips.
+const SPECIES_KEYS = ["daisy", "lavender", "sunflower", "iris", "rose"];
+
+// species key → flower artwork in /public/garden (note Iris is capitalised).
+const SPECIES_IMG: Record<string, string> = {
+  daisy: "/garden/daisy.png",
+  lavender: "/garden/lavender.png",
+  sunflower: "/garden/sunflower.png",
+  iris: "/garden/Iris.png",
+  rose: "/garden/rose.png",
 };
 
 // When the user has no flower yet, the desk chat starts a conversation
@@ -55,10 +80,14 @@ export function DeskChatPanel({
   onClose,
   flowerId,
   onOpenTasks,
+  startInHistory = false,
 }: {
   onClose: () => void;
   flowerId?: string;
   onOpenTasks?: (conversationId: string) => void;
+  /** Open straight to the "Түүх" (previous conversations) view, e.g. when the
+   *  panel is reached from the top-nav History tab rather than a flower. */
+  startInHistory?: boolean;
 }) {
   const reduceMotion = useReducedMotion();
   const { tutorialActive, currentStep, advanceStep } = useTutorial();
@@ -174,12 +203,31 @@ export function DeskChatPanel({
   const recorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  // History panel
-  const [showHistory, setShowHistory] = useState(false);
+  // History panel — opens directly when reached from the top-nav History tab.
+  const [showHistory, setShowHistory] = useState(startInHistory);
   const [historyConvs, setHistoryConvs] = useState<ConvItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  // History search (by topic/preview text) + filter by flower species.
+  const [historySearch, setHistorySearch] = useState("");
+  const [speciesFilter, setSpeciesFilter] = useState<string | null>(null);
+  const [showFilter, setShowFilter] = useState(false);
+
+  const q = historySearch.trim().toLowerCase();
+  const filteredConvs = historyConvs.filter((c) => {
+    if (speciesFilter && c.flower.species.key !== speciesFilter) return false;
+    if (!q) return true;
+    const hay = [
+      c.firstMessage ?? "",
+      c.summary ?? "",
+      (c.tags ?? []).join(" "),
+      SPECIES_NAME_MN[c.flower.species.key] ?? c.flower.species.name,
+    ]
+      .join(" ")
+      .toLowerCase();
+    return hay.includes(q);
+  });
 
   // Reset the "saved" state whenever we switch to a different conversation.
   useEffect(() => {
@@ -436,10 +484,8 @@ export function DeskChatPanel({
     }
   }
 
-  async function openHistory() {
-    const next = !showHistory;
-    setShowHistory(next);
-    if (!next || historyLoaded) return;
+  const loadHistory = useCallback(async () => {
+    if (historyLoaded) return;
     setHistoryLoading(true);
     try {
       const r = await fetch("/api/conversations");
@@ -448,7 +494,23 @@ export function DeskChatPanel({
     } finally {
       setHistoryLoading(false);
     }
+  }, [historyLoaded]);
+
+  async function openHistory() {
+    const next = !showHistory;
+    setShowHistory(next);
+    if (next) loadHistory();
   }
+
+  // Reached from the top-nav "Түүх" tab (on mount, or while the panel is
+  // already open) → show the history list and load it.
+  useEffect(() => {
+    if (startInHistory) {
+      setShowHistory(true);
+      loadHistory();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startInHistory]);
 
   function switchToConversation(conv: ConvItem) {
     setOverrideConvId(conv.id);
@@ -505,42 +567,141 @@ export function DeskChatPanel({
               ⚘
             </span>
             <div className="dc-head-text" data-tutorial-target="chat-companion">
-              <h2>{companionName}</h2>
-              <p>{topic || "Таны дэмжигч"}</p>
+              {showHistory ? (
+                <h2>Түүх</h2>
+              ) : (
+                <>
+                  <h2>{companionName}</h2>
+                  <p>{topic || "Таны дэмжигч"}</p>
+                </>
+              )}
             </div>
-            <button
-              type="button"
-              className={"dc-history-btn" + (showHistory ? " active" : "")}
-              onClick={openHistory}
-              title="Өмнөх яриануудыг харах"
-            >
-              {showHistory ? "← Яриа" : "Түүх"}
-            </button>
-            {completed ? (
-              <span className="dc-saved" aria-live="polite">
-                Хадгалсан 🌸
-              </span>
-            ) : conversationId && (messages.length > 0 || tutorialActive) ? (
-              <button
-                type="button"
-                className="dc-end"
-                data-tutorial-target="chat-end"
-                onClick={endConversation}
-                disabled={completing}
-                title="Энэ яриаг хадгал — дурсамж нь таны цэцгийг ургуулна"
-              >
-                {completing ? "Хадгалж байна…" : "Дуусгаж хадгалах"}
-              </button>
-            ) : (
-              <span className="dc-leaf" aria-hidden>
-                🍃
-              </span>
+            {/* Chat-only header controls — hidden in the history view */}
+            {!showHistory && (
+              <>
+                <button
+                  type="button"
+                  className="dc-history-btn"
+                  onClick={openHistory}
+                  title="Өмнөх яриануудыг харах"
+                >
+                  Түүх
+                </button>
+                {completed ? (
+                  <span className="dc-saved" aria-live="polite">
+                    Хадгалсан 🌸
+                  </span>
+                ) : conversationId && (messages.length > 0 || tutorialActive) ? (
+                  <button
+                    type="button"
+                    className="dc-end"
+                    data-tutorial-target="chat-end"
+                    onClick={endConversation}
+                    disabled={completing}
+                    title="Энэ яриаг хадгал — дурсамж нь таны цэцгийг ургуулна"
+                  >
+                    {completing ? "Хадгалж байна…" : "Дуусгаж хадгалах"}
+                  </button>
+                ) : (
+                  <span className="dc-leaf" aria-hidden>
+                    🍃
+                  </span>
+                )}
+              </>
             )}
           </header>
 
           {showHistory ? (
             <div className="dc-history">
               <p className="dc-history-head">Өмнөх ярианууд</p>
+
+              {/* Search (by topic) + species filter */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  padding: "0 16px 10px",
+                  alignItems: "center",
+                }}
+              >
+                <input
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  placeholder="Сэдвээр хайх…"
+                  style={{
+                    flex: 1,
+                    border: "1px solid rgba(58,58,44,0.18)",
+                    background: "rgba(255,255,255,0.6)",
+                    borderRadius: 999,
+                    padding: "8px 14px",
+                    fontSize: 13,
+                    color: "#3a3228",
+                    fontFamily: "inherit",
+                    outline: "none",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowFilter((v) => !v)}
+                  style={{
+                    flexShrink: 0,
+                    border: `1px solid ${showFilter || speciesFilter ? "rgba(154,168,127,0.6)" : "rgba(58,58,44,0.2)"}`,
+                    background:
+                      showFilter || speciesFilter
+                        ? "rgba(154,168,127,0.22)"
+                        : "rgba(255,255,255,0.5)",
+                    color: "#3a3228",
+                    borderRadius: 999,
+                    padding: "8px 14px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  ⚙ Шүүлт{speciesFilter ? " · 1" : ""}
+                </button>
+              </div>
+
+              {showFilter && (
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 6,
+                    padding: "0 16px 12px",
+                  }}
+                >
+                  {SPECIES_KEYS.map((key) => {
+                    const on = speciesFilter === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() =>
+                          setSpeciesFilter((cur) => (cur === key ? null : key))
+                        }
+                        style={{
+                          border: `1px solid ${on ? "rgba(154,168,127,0.7)" : "rgba(58,58,44,0.18)"}`,
+                          background: on
+                            ? "rgba(154,168,127,0.3)"
+                            : "rgba(255,255,255,0.5)",
+                          color: "#3a3228",
+                          borderRadius: 999,
+                          padding: "5px 11px",
+                          fontSize: 12,
+                          fontWeight: on ? 700 : 500,
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        {SPECIES_NAME_MN[key] ?? key}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
               {historyLoading ? (
                 <div className="dc-history-empty">
                   <span className="dc-typing" aria-label="Ачаалж байна">
@@ -551,8 +712,10 @@ export function DeskChatPanel({
                 </div>
               ) : historyConvs.length === 0 ? (
                 <p className="dc-history-empty">Одоогоор өмнөх яриа алга.</p>
+              ) : filteredConvs.length === 0 ? (
+                <p className="dc-history-empty">Илэрц олдсонгүй.</p>
               ) : (
-                historyConvs.map((conv) => {
+                filteredConvs.map((conv) => {
                   const d = new Date(conv.createdAt);
                   const dateStr = d.toLocaleDateString("default", {
                     month: "short",
@@ -571,11 +734,28 @@ export function DeskChatPanel({
                     >
                       <span
                         className="dc-history-dot"
-                        style={{ background: conv.flower.species.color }}
-                      />
+                        style={{
+                          background: `${conv.flower.species.color}33`,
+                        }}
+                      >
+                        {SPECIES_IMG[conv.flower.species.key] && (
+                          <Image
+                            src={SPECIES_IMG[conv.flower.species.key]}
+                            alt=""
+                            width={38}
+                            height={38}
+                            unoptimized
+                            style={{
+                              width: "92%",
+                              height: "92%",
+                              objectFit: "contain",
+                            }}
+                          />
+                        )}
+                      </span>
                       <div className="dc-history-body">
                         <p className="dc-history-preview">
-                          {conv.firstMessage ?? conv.summary ?? "—"}
+                          {convTopic(conv)}
                         </p>
                         <p className="dc-history-meta">
                           {SPECIES_NAME_MN[conv.flower.species.key] ??
@@ -821,6 +1001,7 @@ export function DeskChatPanel({
             </div>
           )}
 
+          {!showHistory && (
           <div className="dc-input" data-tutorial-target="chat-input">
             {voiceMode ? (
               <>
@@ -905,6 +1086,7 @@ export function DeskChatPanel({
               </>
             )}
           </div>
+          )}
         </section>
 
         {/* ---- RIGHT: the painted desk + pinned notes ---- */}
