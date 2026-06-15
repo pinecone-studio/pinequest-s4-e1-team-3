@@ -90,4 +90,12 @@
   html {
     @apply font-sans;
   }
+  /* Custom garden-trowel cursor everywhere. The hotspot (6 4) sits near the
+     blade tip; if /garden/cursor.png is missing the browser falls back to the
+     normal cursor. !important so it overrides per-element cursor styles too. */
+  *,
+  *::before,
+  *::after {
+    cursor: url("/garden/cursor.png") 2 1, auto !important;
+  }
 }
