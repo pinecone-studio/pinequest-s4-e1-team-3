@@ -45,6 +45,7 @@ export async function GET() {
           id: true,
           summary: true,
           mood: true,
+          tags: true,
           species: {
             select: { key: true, name: true, color: true },
           },
@@ -66,6 +67,7 @@ export async function GET() {
       createdAt: c.createdAt,
       summary: c.flower.summary,
       mood: c.flower.mood,
+      tags: c.flower.tags ?? [],
       flower: {
         id: c.flower.id,
         species: c.flower.species,
