@@ -704,14 +704,12 @@ export function PondPanel({ onClose }: { onClose: () => void }) {
                     style={{
                       background:
                         selectedStoneId === s.id
-                          ? "rgba(247,241,228,0.28)"
-                          : "rgba(247,241,228,0.08)",
-                      border: `1px solid ${selectedStoneId === s.id ? "rgba(247,241,228,0.5)" : "rgba(247,241,228,0.18)"}`,
+                          ? "rgba(154,168,127,0.32)"
+                          : "rgba(58,58,44,0.06)",
+                      border: `1px solid ${selectedStoneId === s.id ? "rgba(154,168,127,0.55)" : "rgba(58,58,44,0.15)"}`,
                       borderRadius: 10,
                       color:
-                        selectedStoneId === s.id
-                          ? "#f0ede8"
-                          : "rgba(240,237,232,0.75)",
+                        selectedStoneId === s.id ? "#3a3a2c" : "rgba(58,58,44,0.7)",
                       fontSize: 13,
                       fontWeight: selectedStoneId === s.id ? 600 : 500,
                       padding: "8px 14px",
