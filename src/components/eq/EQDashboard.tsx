@@ -13,6 +13,7 @@
 
 "use client";
 
+import { useState } from "react";
 import type { EQArea } from "@prisma/client";
 import { useFetchJson } from "@/hooks/useFetchJson";
 import { FlowerStatsRadar } from "@/components/garden/FlowerStatsRadar";
@@ -26,6 +27,10 @@ type AreaRow = {
   score: number;
   max: number;
   pct: number;
+  /** Onboarding baseline %, or null if there's nothing to compare yet. */
+  initialPct: number | null;
+  /** Current − initial, or null. Positive = improved, negative = declined. */
+  changePct: number | null;
   level: EQLevel;
 };
 
@@ -56,6 +61,7 @@ export function EQDashboard({ refreshKey = 0 }: { refreshKey?: number }) {
   // refreshKey is part of the URL so a change after submitting a weekly test
   // forces a re-fetch via useFetchJson.
   const { data } = useFetchJson<ProfileData>(`/api/eq/profile?r=${refreshKey}`);
+  const [changeOpen, setChangeOpen] = useState(false);
 
   if (!data || !data.hasProfile) return null;
 
@@ -100,9 +106,61 @@ export function EQDashboard({ refreshKey = 0 }: { refreshKey?: number }) {
             max={100}
           />
         </div>
+
+        {/* Change since the very first (onboarding) test — collapsible */}
+        {data.areas.some((a) => a.changePct !== null) && (
+          <div style={changeSection}>
+            <button
+              type="button"
+              onClick={() => setChangeOpen((v) => !v)}
+              aria-expanded={changeOpen}
+              style={changeToggle}
+            >
+              <span>Ахиц</span>
+              <span
+                aria-hidden
+                style={{
+                  transform: changeOpen ? "rotate(180deg)" : "none",
+                  transition: "transform 0.18s ease",
+                  fontSize: 10,
+                }}
+              >
+                ▾
+              </span>
+            </button>
+            {changeOpen && (
+              <div style={changeList}>
+                {data.areas.map((a) => (
+                  <div key={a.key} style={changeRow}>
+                    <span style={changeLabel}>{AREA_META[a.area].label}</span>
+                    <ChangeBadge change={a.changePct} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+// Up / down / same indicator for one area's change since onboarding.
+function ChangeBadge({ change }: { change: number | null }) {
+  if (change === null) {
+    return <span style={{ ...changeBadge, color: "#9a8f7d" }}>—</span>;
+  }
+  if (change > 0) {
+    return (
+      <span style={{ ...changeBadge, color: "#5a8a4a" }}>↑ +{change}%</span>
+    );
+  }
+  if (change < 0) {
+    return (
+      <span style={{ ...changeBadge, color: "#c2654f" }}>↓ {change}%</span>
+    );
+  }
+  return <span style={{ ...changeBadge, color: "#9a8f7d" }}>→ 0%</span>;
 }
 
 // Fills the overlay (inset:0) but never blocks the bottom sheet's button:
@@ -157,4 +215,47 @@ const radarWrap: React.CSSProperties = {
   display: "flex",
   justifyContent: "center",
   margin: "2px 0 2px",
+};
+
+const changeSection: React.CSSProperties = {
+  marginTop: 10,
+  paddingTop: 12,
+  borderTop: "1px solid rgba(58,58,44,0.1)",
+  // The parent overlay is pointer-events:none; re-enable here so the toggle
+  // button is clickable.
+  pointerEvents: "auto",
+};
+const changeToggle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  width: "100%",
+  background: "none",
+  border: "none",
+  padding: 0,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  fontSize: 11,
+  fontWeight: 800,
+  letterSpacing: "0.07em",
+  textTransform: "uppercase",
+  color: "#9a8f7d",
+};
+const changeList: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 5,
+  marginTop: 8,
+};
+const changeRow: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  fontSize: 12.5,
+};
+const changeLabel: React.CSSProperties = { color: "#3a3228" };
+const changeBadge: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 800,
+  fontVariantNumeric: "tabular-nums",
 };

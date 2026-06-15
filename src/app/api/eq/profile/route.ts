@@ -24,7 +24,7 @@ export async function GET() {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const [latest, recentWeeklies, combined] = await Promise.all([
+  const [latest, recentWeeklies, onboarding, combined] = await Promise.all([
     prisma.eQAssessment.findFirst({
       where: { userId: user.id },
       orderBy: { completedAt: "desc" },
@@ -34,10 +34,18 @@ export async function GET() {
       orderBy: { completedAt: "desc" },
       take: 2,
     }),
+    prisma.eQAssessment.findFirst({
+      where: { userId: user.id, type: "onboarding" },
+      orderBy: { completedAt: "desc" },
+    }),
     loadCombinedEQProfile(user.id),
   ]);
 
   if (!latest) return NextResponse.json({ hasProfile: false });
+
+  // Baseline = the onboarding test, as a per-area percentage (max 16/area), so
+  // we can show how each area has moved since the very start.
+  const initialScores = onboarding ? assessmentAreaScores(onboarding) : null;
 
   // Trend = direction vs the previous weekly (same 8-pt scale). What matters
   // for an individual is their own movement, not an absolute score. Null
@@ -57,14 +65,24 @@ export async function GET() {
   const maxPerArea = questionsPerArea * 4;
   const scores = assessmentAreaScores(latest);
 
+  const ONBOARDING_MAX_PER_AREA = 4 * 4; // 4 questions/area, 4 pts each
   const areas = EQ_AREAS.map((area) => {
     const score = scores[area];
+    const pct = Math.round((score / maxPerArea) * 100);
+    // Baseline percentage from onboarding (null if this user has no onboarding,
+    // or if the latest test IS the onboarding — i.e. nothing to compare yet).
+    const initialPct =
+      initialScores && onboarding && onboarding.id !== latest.id
+        ? Math.round((initialScores[area] / ONBOARDING_MAX_PER_AREA) * 100)
+        : null;
     return {
       area,
       key: AREA_KEY[area],
       score,
       max: maxPerArea,
-      pct: Math.round((score / maxPerArea) * 100),
+      pct,
+      initialPct,
+      changePct: initialPct === null ? null : pct - initialPct,
       level: getAreaLevel(score, questionsPerArea),
     };
   });
